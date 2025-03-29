@@ -5,7 +5,8 @@ import sys
 import os
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                             QHBoxLayout, QLabel, QPushButton, QFileDialog, 
-                            QListWidget, QListWidgetItem, QTextEdit, QMessageBox)
+                            QListWidget, QListWidgetItem, QTextEdit, QMessageBox,
+                            QCheckBox)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QClipboard
 
@@ -22,6 +23,7 @@ class TaskGUIMin(QMainWindow):
         self.task_collection = None
         self.command_generator = None
         self.current_taskfile_path = None
+        self.parallel_mode = False
         
         # 设置窗口属性
         self.setWindowTitle("任务文件解析器")
@@ -82,6 +84,17 @@ class TaskGUIMin(QMainWindow):
         
         main_layout.addLayout(content_layout)
         
+        # 模式选择布局
+        mode_layout = QHBoxLayout()
+        self.parallel_checkbox = QCheckBox("并行模式")
+        self.parallel_checkbox.setToolTip("启用并行模式将同时执行多个任务，而不是按顺序执行")
+        self.parallel_checkbox.stateChanged.connect(self.toggle_parallel_mode)
+        
+        mode_layout.addWidget(self.parallel_checkbox)
+        mode_layout.addStretch()
+        
+        main_layout.addLayout(mode_layout)
+        
         # 按钮布局
         buttons_layout = QHBoxLayout()
         
@@ -100,6 +113,19 @@ class TaskGUIMin(QMainWindow):
         buttons_layout.addWidget(self.execute_button)
         
         main_layout.addLayout(buttons_layout)
+        
+        # 创建状态栏
+        self.statusBar().showMessage("就绪")
+    
+    def toggle_parallel_mode(self, state):
+        """切换并行/串行模式"""
+        self.parallel_mode = (state == Qt.CheckState.Checked.value)
+        self.update_command()
+        
+        if self.parallel_mode:
+            self.statusBar().showMessage("并行模式：将同时执行多个任务", 3000)
+        else:
+            self.statusBar().showMessage("串行模式：将按顺序执行所有任务", 3000)
     
     def browse_file(self):
         """浏览并打开任务文件"""
@@ -115,7 +141,11 @@ class TaskGUIMin(QMainWindow):
                 # 解析任务文件
                 self.task_collection = self.parser.parse_file(file_path)
                 self.current_taskfile_path = file_path
-                self.command_generator = CommandGenerator(self.task_collection, self.current_taskfile_path)
+                self.command_generator = CommandGenerator(
+                    self.task_collection, 
+                    self.current_taskfile_path,
+                    self.parallel_mode
+                )
                 
                 # 更新界面
                 self.file_path_label.setText(os.path.basename(file_path))
@@ -140,7 +170,7 @@ class TaskGUIMin(QMainWindow):
     
     def update_command(self):
         """更新命令预览"""
-        if not self.task_collection or not self.command_generator:
+        if not self.task_collection:
             return
         
         # 更新任务选择状态
@@ -157,12 +187,17 @@ class TaskGUIMin(QMainWindow):
                 task.is_selected = True
                 task.order = i
         
+        # 更新命令生成器的并行模式设置
+        if self.command_generator:
+            self.command_generator.parallel_mode = self.parallel_mode
+        
         # 生成命令
-        command = self.command_generator.generate_command()
-        self.command_preview.setText(command)
+        if self.command_generator:
+            command = self.command_generator.generate_command()
+            self.command_preview.setText(command)
         
         # 更新复制按钮状态
-        has_tasks = bool(self.task_collection.get_selected_tasks())
+        has_tasks = self.task_collection and bool(self.task_collection.get_selected_tasks())
         self.copy_button.setEnabled(has_tasks)
     
     def copy_command(self):
@@ -196,9 +231,13 @@ class TaskGUIMin(QMainWindow):
             return
         
         # 执行命令
+        self.statusBar().showMessage(f"正在执行任务，请稍候...", 0)
+        QApplication.processEvents()  # 刷新界面
+        
         success, output = self.command_generator.execute_command()
         
         # 显示结果
+        self.statusBar().showMessage("就绪")
         if success:
             QMessageBox.information(self, "成功", "任务执行成功:\n" + output)
         else:

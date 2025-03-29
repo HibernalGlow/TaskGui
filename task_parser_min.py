@@ -4,6 +4,7 @@
 import yaml
 import os
 import subprocess
+import threading
 from typing import List, Dict, Optional
 
 class Task:
@@ -91,9 +92,10 @@ class TaskfileParser:
 class CommandGenerator:
     """命令生成器"""
     
-    def __init__(self, task_collection, taskfile_path=None):
+    def __init__(self, task_collection, taskfile_path=None, parallel_mode=False):
         self.task_collection = task_collection
         self.taskfile_path = taskfile_path
+        self.parallel_mode = parallel_mode
     
     def generate_command(self) -> str:
         """生成使用task命令行工具的命令"""
@@ -108,30 +110,49 @@ class CommandGenerator:
         # 构建命令 - 使用task工具
         task_names = [task.name for task in sorted_tasks]
         
-        # 基本命令
-        command = "task"
-        
-        # 如果有指定taskfile路径，添加--taskfile参数
-        if self.taskfile_path:
-            command += f" --taskfile {self.taskfile_path}"
-        
-        # 添加任务名称
-        command += " " + " ".join(task_names)
-        
-        return command
+        if self.parallel_mode:
+            # 并行模式：返回多行命令，每行运行一个任务
+            commands = []
+            for task_name in task_names:
+                cmd = "task"
+                if self.taskfile_path:
+                    cmd += f" --taskfile {self.taskfile_path}"
+                cmd += f" {task_name}"
+                commands.append(cmd)
+            return "\n".join(commands)
+        else:
+            # 串行模式：一条命令运行所有任务
+            command = "task"
+            if self.taskfile_path:
+                command += f" --taskfile {self.taskfile_path}"
+            command += " " + " ".join(task_names)
+            return command
     
     def execute_command(self) -> tuple:
         """
         执行生成的命令
         返回: (成功标志, 输出内容)
         """
-        command = self.generate_command()
+        selected_tasks = self.task_collection.get_selected_tasks()
         
-        if command.startswith('#'):
+        if not selected_tasks:
             return False, "没有选择任务，无法执行"
         
+        # 对任务进行排序
+        sorted_tasks = sorted(selected_tasks, key=lambda t: t.order)
+        task_names = [task.name for task in sorted_tasks]
+        
+        if self.parallel_mode and len(task_names) > 1:
+            # 并行模式：同时执行多个任务
+            return self._execute_parallel(task_names)
+        else:
+            # 串行模式：执行单个命令
+            command = self.generate_command()
+            return self._execute_single_command(command)
+    
+    def _execute_single_command(self, command: str) -> tuple:
+        """执行单个命令"""
         try:
-            # 执行命令
             process = subprocess.Popen(
                 command, 
                 shell=True, 
@@ -148,14 +169,77 @@ class CommandGenerator:
                 return False, f"错误: {stderr}"
         except Exception as e:
             return False, f"执行错误: {str(e)}"
+    
+    def _execute_parallel(self, task_names: List[str]) -> tuple:
+        """并行执行多个任务"""
+        results = []
+        success_count = 0
+        error_messages = []
+        
+        # 定义执行单个任务的函数
+        def execute_task(task_name):
+            nonlocal success_count, error_messages
+            cmd = "task"
+            if self.taskfile_path:
+                cmd += f" --taskfile {self.taskfile_path}"
+            cmd += f" {task_name}"
+            
+            try:
+                process = subprocess.Popen(
+                    cmd, 
+                    shell=True, 
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                
+                stdout, stderr = process.communicate()
+                
+                if process.returncode == 0:
+                    results.append((task_name, True, stdout))
+                    success_count += 1
+                else:
+                    results.append((task_name, False, stderr))
+                    error_messages.append(f"{task_name}: {stderr}")
+            except Exception as e:
+                results.append((task_name, False, str(e)))
+                error_messages.append(f"{task_name}: {str(e)}")
+        
+        # 创建并启动线程
+        threads = []
+        for task_name in task_names:
+            thread = threading.Thread(target=execute_task, args=(task_name,))
+            threads.append(thread)
+            thread.start()
+        
+        # 等待所有线程完成
+        for thread in threads:
+            thread.join()
+        
+        # 构建输出
+        output = []
+        for task_name, success, result in sorted(results, key=lambda x: task_names.index(x[0])):
+            status = "成功" if success else "失败"
+            output.append(f"任务 {task_name}: {status}")
+            output.append(result)
+            output.append("-" * 40)
+        
+        # 确定整体成功/失败状态
+        all_success = success_count == len(task_names)
+        
+        if all_success:
+            return True, "\n".join(output)
+        else:
+            return False, "\n".join([f"部分任务执行失败 ({success_count}/{len(task_names)} 成功)"] + error_messages + ["", "详细信息:"] + output)
 
-def parse_and_execute_taskfile(filepath, selected_task_names=None):
+def parse_and_execute_taskfile(filepath, selected_task_names=None, parallel_mode=False):
     """
     解析Taskfile并执行选定的任务
     
     Args:
         filepath: Taskfile的路径
         selected_task_names: 选定的任务名称列表
+        parallel_mode: 是否并行执行任务
     
     Returns:
         (命令字符串, 执行结果元组)
@@ -174,7 +258,7 @@ def parse_and_execute_taskfile(filepath, selected_task_names=None):
                 task.order = selected_task_names.index(task_name)
     
     # 生成命令
-    command_generator = CommandGenerator(task_collection, filepath)
+    command_generator = CommandGenerator(task_collection, filepath, parallel_mode)
     command = command_generator.generate_command()
     
     # 执行命令
@@ -188,14 +272,18 @@ if __name__ == "__main__":
     import sys
     
     if len(sys.argv) < 2:
-        print("用法: python task_parser_min.py <taskfile_path> [task1 task2 ...]")
+        print("用法: python task_parser_min.py <taskfile_path> [task1 task2 ...] [--parallel]")
         sys.exit(1)
     
     taskfile_path = sys.argv[1]
-    selected_tasks = sys.argv[2:] if len(sys.argv) > 2 else None
+    parallel_mode = "--parallel" in sys.argv
+    
+    # 过滤掉--parallel参数
+    task_args = [arg for arg in sys.argv[2:] if arg != "--parallel"]
+    selected_tasks = task_args if task_args else None
     
     try:
-        command, result = parse_and_execute_taskfile(taskfile_path, selected_tasks)
+        command, result = parse_and_execute_taskfile(taskfile_path, selected_tasks, parallel_mode)
         
         print(f"生成的命令: {command}")
         
