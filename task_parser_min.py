@@ -5,6 +5,8 @@ import yaml
 import os
 import subprocess
 import threading
+import platform
+import shlex
 from typing import List, Dict, Optional
 
 class Task:
@@ -42,6 +44,12 @@ class TaskCollection:
     def get_selected_tasks(self) -> List[Task]:
         """获取已选择的任务"""
         return [task for task in self.tasks.values() if task.is_selected]
+    
+    def clear_selection(self) -> None:
+        """清空所有任务的选择状态"""
+        for task in self.tasks.values():
+            task.is_selected = False
+            task.order = 0
 
 class TaskfileParser:
     """Taskfile解析器"""
@@ -142,95 +150,105 @@ class CommandGenerator:
         sorted_tasks = sorted(selected_tasks, key=lambda t: t.order)
         task_names = [task.name for task in sorted_tasks]
         
+        result = None
         if self.parallel_mode and len(task_names) > 1:
             # 并行模式：同时执行多个任务
-            return self._execute_parallel(task_names)
+            result = self._execute_parallel_in_wt(task_names)
         else:
             # 串行模式：执行单个命令
             command = self.generate_command()
-            return self._execute_single_command(command)
+            result = self._execute_in_wt(command)
+        
+        # 清空选择
+        self.task_collection.clear_selection()
+        
+        return result
     
-    def _execute_single_command(self, command: str) -> tuple:
-        """执行单个命令"""
+    def _execute_in_wt(self, command: str) -> tuple:
+        """在Windows Terminal中执行命令"""
         try:
-            process = subprocess.Popen(
-                command, 
-                shell=True, 
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
-            
-            stdout, stderr = process.communicate()
-            
-            if process.returncode == 0:
-                return True, stdout
+            # Windows平台使用wt.exe启动PowerShell
+            if platform.system() == 'Windows':
+                # 转义PowerShell命令中的引号
+                ps_command = command.replace('"', '`"')
+                # 构造wt.exe命令
+                wt_command = f'wt.exe powershell -NoExit -Command "{ps_command}"'
+                subprocess.Popen(wt_command, shell=True)
+                return True, f"已在Windows Terminal中启动PowerShell执行命令: {command}"
+            # Linux/Mac平台
             else:
-                return False, f"错误: {stderr}"
-        except Exception as e:
-            return False, f"执行错误: {str(e)}"
-    
-    def _execute_parallel(self, task_names: List[str]) -> tuple:
-        """并行执行多个任务"""
-        results = []
-        success_count = 0
-        error_messages = []
-        
-        # 定义执行单个任务的函数
-        def execute_task(task_name):
-            nonlocal success_count, error_messages
-            cmd = "task"
-            if self.taskfile_path:
-                cmd += f" --taskfile {self.taskfile_path}"
-            cmd += f" {task_name}"
-            
-            try:
-                process = subprocess.Popen(
-                    cmd, 
-                    shell=True, 
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True
-                )
-                
-                stdout, stderr = process.communicate()
-                
-                if process.returncode == 0:
-                    results.append((task_name, True, stdout))
-                    success_count += 1
+                # 根据不同的终端模拟器调整命令
+                if os.path.exists('/usr/bin/gnome-terminal'):
+                    full_command = f'gnome-terminal -- bash -c "{command}; exec bash"'
+                elif os.path.exists('/usr/bin/xterm'):
+                    full_command = f'xterm -e "{command}; bash"'
+                elif os.path.exists('/usr/bin/konsole'):
+                    full_command = f'konsole -e "{command}; bash"'
+                elif os.path.exists('/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal'):
+                    full_command = f'open -a Terminal "{command}"'
                 else:
-                    results.append((task_name, False, stderr))
-                    error_messages.append(f"{task_name}: {stderr}")
-            except Exception as e:
-                results.append((task_name, False, str(e)))
-                error_messages.append(f"{task_name}: {str(e)}")
-        
-        # 创建并启动线程
-        threads = []
-        for task_name in task_names:
-            thread = threading.Thread(target=execute_task, args=(task_name,))
-            threads.append(thread)
-            thread.start()
-        
-        # 等待所有线程完成
-        for thread in threads:
-            thread.join()
-        
-        # 构建输出
-        output = []
-        for task_name, success, result in sorted(results, key=lambda x: task_names.index(x[0])):
-            status = "成功" if success else "失败"
-            output.append(f"任务 {task_name}: {status}")
-            output.append(result)
-            output.append("-" * 40)
-        
-        # 确定整体成功/失败状态
-        all_success = success_count == len(task_names)
-        
-        if all_success:
-            return True, "\n".join(output)
-        else:
-            return False, "\n".join([f"部分任务执行失败 ({success_count}/{len(task_names)} 成功)"] + error_messages + ["", "详细信息:"] + output)
+                    full_command = f'x-terminal-emulator -e "{command}; bash"'
+                
+                subprocess.Popen(full_command, shell=True)
+                return True, f"已在终端窗口中启动命令: {command}"
+        except Exception as e:
+            return False, f"启动命令窗口失败: {str(e)}"
+    
+    def _execute_parallel_in_wt(self, task_names: List[str]) -> tuple:
+        """在多个Windows Terminal标签页中并行执行任务"""
+        try:
+            if platform.system() == 'Windows':
+                # 构造wt.exe命令，为每个任务创建一个新标签页
+                wt_args = []
+                first_tab = True
+                
+                for task_name in task_names:
+                    cmd = "task"
+                    if self.taskfile_path:
+                        cmd += f" --taskfile {self.taskfile_path}"
+                    cmd += f" {task_name}"
+                    
+                    # 转义PowerShell命令中的引号
+                    ps_command = cmd.replace('"', '`"')
+                    
+                    if first_tab:
+                        # 第一个标签页使用不同的语法
+                        wt_args.append(f'powershell -NoExit -Command "{ps_command}"')
+                        first_tab = False
+                    else:
+                        # 后续标签页使用new-tab
+                        wt_args.append(f'--tab "powershell -NoExit -Command \'{ps_command}\'"')
+                
+                # 构造完整的wt命令
+                wt_command = "wt.exe " + " ".join(wt_args)
+                subprocess.Popen(wt_command, shell=True)
+                
+                return True, f"已在Windows Terminal的{len(task_names)}个标签页中启动任务"
+            else:
+                # 在Linux/Mac上还是使用多个窗口
+                for task_name in task_names:
+                    cmd = "task"
+                    if self.taskfile_path:
+                        cmd += f" --taskfile {self.taskfile_path}"
+                    cmd += f" {task_name}"
+                    
+                    # 根据不同的终端模拟器调整命令
+                    if os.path.exists('/usr/bin/gnome-terminal'):
+                        full_command = f'gnome-terminal -- bash -c "{cmd}; exec bash"'
+                    elif os.path.exists('/usr/bin/xterm'):
+                        full_command = f'xterm -e "{cmd}; bash"'
+                    elif os.path.exists('/usr/bin/konsole'):
+                        full_command = f'konsole -e "{cmd}; bash"'
+                    elif os.path.exists('/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal'):
+                        full_command = f'open -a Terminal "{cmd}"'
+                    else:
+                        full_command = f'x-terminal-emulator -e "{cmd}; bash"'
+                    
+                    subprocess.Popen(full_command, shell=True)
+                
+                return True, f"已在{len(task_names)}个独立窗口中启动任务"
+        except Exception as e:
+            return False, f"启动命令窗口失败: {str(e)}"
 
 def parse_and_execute_taskfile(filepath, selected_task_names=None, parallel_mode=False):
     """
