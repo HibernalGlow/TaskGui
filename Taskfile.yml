@@ -1,0 +1,170 @@
+version: '3'
+
+tasks:
+  one_name:
+    desc: one_name
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\comic\uuid\one_name.py"'
+
+  auto_uuid:
+    desc: auto_uuid
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\comic\uuid\auto_uuid.py"'
+
+  auto_repack:
+    desc: auto_repack
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\folder\auto_repack.py"'
+
+  video_format:
+    desc: video_format
+    dir: D:\1VSCODE
+    cmds:
+      - '".venv\Scripts\python.exe" "D:\1VSCODE\GlowToolBox\src\scripts\folder\video_format.py" -c'
+
+  manga_archive_classifier:
+    desc: manga_archive_classifier
+    dir: D:\1VSCODE\1ehv\archive
+    cmds:
+      - '".venv\Scripts\python.exe" "D:\1VSCODE\GlowToolBox\src\scripts\comic\manga_archive_classifier.py" -c'
+
+  pics_convert:
+    desc: pics_convert
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\pics\pics_convert.py" -c'
+
+  organize_folder:
+    desc: organize_folder
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\folder\organize_folder.py"'
+
+  sn_fix:
+    desc: sn_fix
+    dir: D:\1VSCODE
+    cmds:
+      - '".venv\Scripts\python.exe" "D:\1VSCODE\GlowToolBox\src\scripts\refactor\sn_fix.py" -c'
+
+  img_filter:
+    desc: img_filter
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\fliter\img_filter.py"'
+
+  no_translate_find:
+    desc: no_translate_find
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\fliter\no_translate_find.py" -c'
+
+  find_same_artist:
+    desc: find_same_artist
+    dir: D:\1VSCODE
+    cmds:
+      - '".venv\Scripts\python.exe" "D:\1VSCODE\GlowToolBox\src\scripts\comic\classify\find_same_artist.py"'
+
+  artbook_dedup:
+    desc: artbook_dedup
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\fliter\artbook_dedup.py"'
+
+  restore_bak:
+    desc: restore_bak
+    dir: D:\1VSCODE
+    cmds:
+      - '".venv\Scripts\python.exe" "D:\1VSCODE\GlowToolBox\src\scripts\refactor\restore_bak.py"'
+
+  auto_recycle:
+    desc: auto_recycle
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\folder\auto_recycle.py"'
+
+  comic_low_width:
+    desc: comic-low-width
+    dir: D:\1VSCODE
+    cmds:
+      - '".venv\Scripts\python.exe" "D:\1VSCODE\GlowToolBox\src\scripts\comic-low-width\main.py"'
+
+  width_filter:
+    desc: width_filter
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\fliter\width_filter.py"'
+
+  recruit_cover_filter:
+    desc: recruit_cover_filter
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\fliter\recruit_cover_filter.py"'
+
+  psd_convert_clipboard:
+    desc: psd_convert --clipboard
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\pics\psd_convert.py" --clipboard'
+
+  auto_unzip:
+    desc: auto_unzip
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\folder\auto_unzip.py"'
+
+  merge_part_folders:
+    desc: merge_part_folders
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\folder\merge_part_folders.py"'
+
+  single_packer_cg:
+    desc: single_packer -c -g
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\nodes\archive\single_packer.py" -c -g'
+
+  upscale_bus:
+    desc: upscale_bus
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\fliter\upscale_bus.py"'
+
+  rename_images:
+    desc: rename_images
+    dir: D:\1VSCODE
+    cmds:
+      - '".venv\Scripts\python.exe" "D:\1VSCODE\GlowToolBox\src\scripts\folder\rename_images.py"'
+
+  batch_img_filter:
+    desc: batch_img_filter
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\fliter\batch_img_filter.py"'
+
+  janai_monitor:
+    desc: janai_monitor
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\comic\upscale\janai_monitor.py"'
+
+  timestamps_record:
+    desc: timestamps_record
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\folder\timestamps_record.py"'
+
+  auto_cover:
+    desc: auto_cover
+    dir: D:\1VSCODE\GlowToolBox
+    cmds:
+      - '".venv\Scripts\python.exe" "src\scripts\comic\uuid\auto_cover.py"'
+
+  gallery_finder:
+    desc: gallery_finder -c -o
+    dir: D:\1VSCODE
+    cmds:
+      - '".venv\Scripts\python.exe" "D:\1VSCODE\GlowToolBox\src\scripts\nodes\archive\gallery_finder.py" -c -o'

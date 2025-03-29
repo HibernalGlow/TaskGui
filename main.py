@@ -14,7 +14,7 @@ def main():
     # 设置应用样式
     style_path = os.path.join(QDir.currentPath(), "resources", "styles", "dark_theme.qss")
     if os.path.exists(style_path):
-        with open(style_path, "r") as f:
+        with open(style_path, "r", encoding="utf-8") as f:
             app.setStyleSheet(f.read())
     
     # 创建主窗口
