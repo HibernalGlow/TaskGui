@@ -75,7 +75,7 @@ tasks:
 
   restore_bak:
     desc: restore_bak
-    dir: D:\1VSCODE
+    dir: D:\1VSCODE\GlowToolBox
     cmds:
       - '".venv\Scripts\python.exe" "D:\1VSCODE\GlowToolBox\src\scripts\refactor\restore_bak.py"'
 

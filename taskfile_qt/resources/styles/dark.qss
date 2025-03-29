@@ -1,0 +1,173 @@
+/* 暗色主题样式表 */
+
+QMainWindow {
+    background-color: #2d2d2d;
+    color: #f0f0f0;
+}
+
+QWidget {
+    background-color: #2d2d2d;
+    color: #f0f0f0;
+}
+
+QLabel {
+    color: #f0f0f0;
+    font-size: 12px;
+}
+
+QPushButton {
+    background-color: #3a3a3a;
+    color: #f0f0f0;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+QPushButton:hover {
+    background-color: #4a4a4a;
+    border: 1px solid #666666;
+}
+
+QPushButton:pressed {
+    background-color: #555555;
+}
+
+QPushButton:disabled {
+    background-color: #2a2a2a;
+    color: #707070;
+    border: 1px solid #444444;
+}
+
+QCheckBox {
+    color: #f0f0f0;
+    font-size: 12px;
+    spacing: 5px;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+QCheckBox::indicator:unchecked {
+    border: 1px solid #555555;
+    background-color: #2d2d2d;
+}
+
+QCheckBox::indicator:checked {
+    border: 1px solid #555555;
+    background-color: #1e6fb9;
+}
+
+QComboBox {
+    background-color: #3a3a3a;
+    color: #f0f0f0;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 2px 8px;
+    min-width: 6em;
+}
+
+QComboBox:hover {
+    background-color: #4a4a4a;
+}
+
+QComboBox:on {
+    background-color: #4a4a4a;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left: 1px solid #555555;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #3a3a3a;
+    color: #f0f0f0;
+    selection-background-color: #1e6fb9;
+    selection-color: #f0f0f0;
+    border: 1px solid #555555;
+}
+
+QScrollArea {
+    background-color: #2d2d2d;
+    border: 1px solid #555555;
+    border-radius: 4px;
+}
+
+QScrollBar:vertical {
+    background-color: #2d2d2d;
+    width: 12px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #555555;
+    min-height: 20px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #666666;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background-color: #2d2d2d;
+    height: 12px;
+    margin: 0px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #555555;
+    min-width: 20px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #666666;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+QTextEdit {
+    background-color: #232323;
+    color: #f0f0f0;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    font-family: Consolas, Monaco, monospace;
+    selection-background-color: #1e6fb9;
+    selection-color: #f0f0f0;
+}
+
+QStatusBar {
+    background-color: #333333;
+    color: #f0f0f0;
+}
+
+/* 任务卡片样式 */
+TaskCardWidget {
+    background-color: #3a3a3a;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 8px;
+    margin: 4px;
+}
+
+TaskCardWidget:hover {
+    background-color: #404040;
+    border: 1px solid #666666;
+}
+
+TaskCardWidget[selected="true"] {
+    background-color: #1e3f5a;
+    border: 1px solid #3c7fb1;
+} 
