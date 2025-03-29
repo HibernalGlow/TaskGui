@@ -11,12 +11,16 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QClipboard
 
 from task_parser_min import TaskfileParser, CommandGenerator
+from config_manager import ConfigManager
 
 class TaskGUIMin(QMainWindow):
     """最小功能实现的任务GUI界面"""
     
     def __init__(self):
         super().__init__()
+        
+        # 初始化配置管理器
+        self.config_manager = ConfigManager()
         
         # 初始化解析器
         self.parser = TaskfileParser()
@@ -31,6 +35,9 @@ class TaskGUIMin(QMainWindow):
         
         # 初始化界面
         self._init_ui()
+        
+        # 加载上次打开的文件和并行模式设置
+        self.load_last_session()
         
     def _init_ui(self):
         """初始化界面"""
@@ -117,44 +124,84 @@ class TaskGUIMin(QMainWindow):
         # 创建状态栏
         self.statusBar().showMessage("就绪")
     
+    def load_last_session(self):
+        """加载上次会话的设置"""
+        # 加载并行模式设置
+        parallel_mode = self.config_manager.get("parallel_mode", False)
+        self.parallel_mode = parallel_mode
+        self.parallel_checkbox.setChecked(parallel_mode)
+        
+        # 加载上次打开的文件
+        last_file = self.config_manager.get("last_file")
+        if last_file and os.path.exists(last_file):
+            self.load_taskfile(last_file)
+            self.statusBar().showMessage(f"已加载上次打开的文件: {os.path.basename(last_file)}", 3000)
+    
+    def save_session(self):
+        """保存当前会话设置"""
+        # 保存并行模式设置
+        self.config_manager.set("parallel_mode", self.parallel_mode)
+        
+        # 保存当前文件路径
+        if self.current_taskfile_path:
+            self.config_manager.set("last_file", self.current_taskfile_path)
+    
     def toggle_parallel_mode(self, state):
         """切换并行/串行模式"""
         self.parallel_mode = (state == Qt.CheckState.Checked.value)
         self.update_command()
+        
+        # 保存设置
+        self.config_manager.set("parallel_mode", self.parallel_mode)
         
         if self.parallel_mode:
             self.statusBar().showMessage("并行模式：将同时执行多个任务", 3000)
         else:
             self.statusBar().showMessage("串行模式：将按顺序执行所有任务", 3000)
     
+    def load_taskfile(self, file_path):
+        """加载指定的任务文件"""
+        try:
+            # 解析任务文件
+            self.task_collection = self.parser.parse_file(file_path)
+            self.current_taskfile_path = file_path
+            self.command_generator = CommandGenerator(
+                self.task_collection, 
+                self.current_taskfile_path,
+                self.parallel_mode
+            )
+            
+            # 更新界面
+            self.file_path_label.setText(os.path.basename(file_path))
+            self.populate_task_list()
+            self.update_command()
+            self.execute_button.setEnabled(True)
+            self.copy_button.setEnabled(True)
+            
+            # 保存到配置
+            self.config_manager.set("last_file", file_path)
+            
+            return True
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"无法解析任务文件: {str(e)}")
+            return False
+    
     def browse_file(self):
         """浏览并打开任务文件"""
+        # 获取上次打开的目录作为起始目录
+        start_dir = ""
+        if self.current_taskfile_path:
+            start_dir = os.path.dirname(self.current_taskfile_path)
+        
         file_path, _ = QFileDialog.getOpenFileName(
             self, 
             "选择任务文件", 
-            "", 
+            start_dir, 
             "YAML Files (*.yml *.yaml);;All Files (*)"
         )
         
         if file_path:
-            try:
-                # 解析任务文件
-                self.task_collection = self.parser.parse_file(file_path)
-                self.current_taskfile_path = file_path
-                self.command_generator = CommandGenerator(
-                    self.task_collection, 
-                    self.current_taskfile_path,
-                    self.parallel_mode
-                )
-                
-                # 更新界面
-                self.file_path_label.setText(os.path.basename(file_path))
-                self.populate_task_list()
-                self.update_command()
-                self.execute_button.setEnabled(True)
-                self.copy_button.setEnabled(True)
-            except Exception as e:
-                QMessageBox.critical(self, "错误", f"无法解析任务文件: {str(e)}")
+            self.load_taskfile(file_path)
     
     def populate_task_list(self):
         """填充任务列表"""
@@ -242,6 +289,12 @@ class TaskGUIMin(QMainWindow):
             QMessageBox.information(self, "成功", "任务执行成功:\n" + output)
         else:
             QMessageBox.critical(self, "错误", "任务执行失败:\n" + output)
+    
+    def closeEvent(self, event):
+        """窗口关闭事件处理"""
+        # 保存当前会话设置
+        self.save_session()
+        event.accept()
 
 def main():
     app = QApplication(sys.argv)
