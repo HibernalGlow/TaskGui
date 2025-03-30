@@ -189,10 +189,10 @@ tasks:
 
   video_format:
     desc: "🎬 视频格式转换 - 处理视频格式问题"
-    dir: D:\1VSCODE
+    dir: "{{.ROOT_DIR}}"
     tags: [folder, video, format]
     cmds:
-      - '"{{.PYTHON}}" "src\scripts\folder\video_format.py" -c'
+      - '"{{.PYTHON}}" "src\scripts\folder\video_format.py"'
 
   width_filter:
     desc: "📏 宽度过滤器 - 基于宽度过滤图像"
