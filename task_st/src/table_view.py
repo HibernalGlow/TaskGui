@@ -25,8 +25,8 @@ def render_table_view(filtered_df, current_taskfile):
     """
     st.markdown("### 任务列表")
     
-    # 使用自定义表格渲染，避免data_editor的闪烁问题
-    render_custom_table(filtered_df, current_taskfile)
+    # 改为优先使用标准data_editor
+    render_edit_table(filtered_df, current_taskfile)
     
     # 显示已选择的任务操作区域
     render_selected_tasks_section(filtered_df, current_taskfile)
@@ -45,11 +45,16 @@ def render_selected_tasks_section(filtered_df, current_taskfile):
     with col1:
         st.markdown(f"### 已选择 {len(selected_tasks)} 个任务")
     
+    # 定义清除选择的回调函数
+    def clear_selection():
+        st.session_state.selected_tasks = []
+        if 'selected' in st.session_state:
+            for task in st.session_state.selected:
+                st.session_state.selected[task] = False
+    
     with col2:
-        # 清除选择按钮 - 直接更新状态，不使用回调
-        if st.button("清除选择", key="clear_table_selection"):
-            # 清空选中任务列表
-            st.session_state.selected_tasks = []
+        if st.button("清除选择", key="clear_table_selection", on_click=clear_selection):
+            pass  # 清除选择的动作由回调函数处理，避免刷新
     
     with col3:
         if st.button("运行选中的任务", key="run_selected_tasks"):
@@ -135,86 +140,111 @@ def render_selected_tasks_section(filtered_df, current_taskfile):
                             
                             st.markdown("---")
 
-def render_custom_table(filtered_df, current_taskfile):
-    """自定义表格实现 - 使用手动创建的复选框和列，避免data_editor的闪烁问题"""
+def render_edit_table(filtered_df, current_taskfile):
+    """标准表格实现 - 使用Streamlit原生data_editor"""
+    
+    # 准备表格数据
+    filtered_df_copy = filtered_df.copy()
+    filtered_df_copy['tags_str'] = filtered_df_copy['tags'].apply(lambda x: ', '.join(x) if isinstance(x, list) else '')
+    filtered_df_copy['显示名称'] = filtered_df_copy.apply(lambda x: f"{x['emoji']} {x['name']}", axis=1)
     
     # 初始化会话状态
     if 'selected_tasks' not in st.session_state:
         st.session_state.selected_tasks = []
+        
+    if 'selected' not in st.session_state:
+        st.session_state.selected = {task: False for task in filtered_df_copy['name']}
     
-    # 为每一行创建一个唯一的选择键
-    def toggle_task(task_name):
-        if task_name in st.session_state.selected_tasks:
-            st.session_state.selected_tasks.remove(task_name)
-        else:
-            st.session_state.selected_tasks.append(task_name)
+    # 更新选择状态 - 确保所有新任务都被添加到选择状态中
+    for task in filtered_df_copy['name']:
+        if task not in st.session_state.selected:
+            st.session_state.selected[task] = False
     
-    # 创建表头
-    header_col1, header_col2, header_col3, header_col4, header_col5 = st.columns([1, 3, 8, 3, 4])
-    with header_col1:
-        st.markdown("**选择**")
-    with header_col2:
-        st.markdown("**任务名称**")
-    with header_col3:
-        st.markdown("**描述**")
-    with header_col4:
-        st.markdown("**标签**")
-    with header_col5:
-        st.markdown("**目录**")
+    # 设置已选择的任务状态
+    for task in st.session_state.selected_tasks:
+        if task in st.session_state.selected:
+            st.session_state.selected[task] = True
     
-    # 创建表格主体 - 使用容器包装以获得更好的样式
-    with st.container():
-        for _, task in filtered_df.iterrows():
-            task_name = task['name']
+    # 创建勾选框列
+    filtered_df_copy['选择'] = filtered_df_copy['name'].apply(
+        lambda x: st.session_state.selected.get(x, False)
+    )
+    
+    # 准备要显示的列 - 现在包含选择列
+    display_df = filtered_df_copy[['选择', 'name', '显示名称', 'description', 'tags_str', 'directory']]
+    display_df = display_df.rename(columns={
+        'description': '描述',
+        'tags_str': '标签',
+        'directory': '目录'
+    })
+    
+    # 定义编辑器回调函数，减少页面刷新
+    def on_change():
+        if "edited_rows" in st.session_state.task_editor:
+            has_changes = False
+            for idx, changes in st.session_state.task_editor["edited_rows"].items():
+                if "选择" in changes:
+                    idx = int(idx)
+                    if idx < len(filtered_df_copy):
+                        task_name = filtered_df_copy.iloc[idx]['name']
+                        if st.session_state.selected.get(task_name) != changes["选择"]:
+                            st.session_state.selected[task_name] = changes["选择"]
+                            has_changes = True
             
-            # 判断此任务是否已选中
-            is_selected = task_name in st.session_state.selected_tasks
-            
-            # 创建行
-            col1, col2, col3, col4, col5 = st.columns([1, 3, 8, 3, 4])
-            
-            # 选择列 - 使用复选框
-            with col1:
-                # 创建一个唯一键的复选框
-                if st.checkbox("", value=is_selected, key=f"check_{task_name}", 
-                               on_change=toggle_task, args=(task_name,)):
-                    # 复选框的处理由on_change回调函数处理
-                    pass
-            
-            # 任务名称列
-            with col2:
-                st.markdown(f"{task['emoji']} {task_name}")
-            
-            # 描述列 - 截断过长的描述
-            with col3:
-                description = task['description']
-                if len(description) > 80:
-                    description = description[:80] + "..."
-                st.markdown(description)
-            
-            # 标签列
-            with col4:
-                tags_str = ', '.join([f"#{tag}" for tag in task['tags']]) if isinstance(task['tags'], list) else ''
-                st.markdown(tags_str)
-            
-            # 目录列
-            with col5:
-                st.markdown(f"`{task['directory']}`")
-            
-            # 添加分隔线
-            st.markdown("---")
+            # 只有当有变化时才更新选中的任务列表
+            if has_changes:
+                st.session_state.selected_tasks = [
+                    task for task, is_selected in st.session_state.selected.items() 
+                    if is_selected
+                ]
+    
+    # 使用标准data_editor显示表格，使用on_change回调减少刷新
+    edited_df = st.data_editor(
+        display_df,
+        column_config={
+            "name": None,  # 隐藏name列，但保留数据
+            "选择": st.column_config.CheckboxColumn(
+                "选择",
+                help="选择要操作的任务",
+                default=False,
+                width="small"
+            ),
+            "显示名称": st.column_config.TextColumn(
+                "任务名称",
+                help="任务的名称和图标",
+                width="medium"
+            ),
+            "描述": st.column_config.TextColumn(
+                "任务描述",
+                width="large"
+            ),
+            "标签": st.column_config.TextColumn(
+                "标签",
+                width="medium"
+            ),
+            "目录": st.column_config.TextColumn(
+                "任务目录",
+                width="medium"
+            )
+        },
+        hide_index=True,
+        width=None,
+        height=400,
+        use_container_width=True,
+        disabled=["显示名称", "描述", "标签", "目录"],  # 只允许编辑勾选框
+        key="task_editor",
+        on_change=on_change
+    )
+    
+    # 通过on_change回调处理勾选框变化，此处不再需要手动处理
+    # 因为这会导致不必要的刷新闪烁
 
 def render_aggrid_table(filtered_df, current_taskfile):
     """使用AgGrid渲染表格 - 保留但不使用"""
-    st.warning("AgGrid表格存在选择状态问题，已改为使用自定义表格。")
-    render_custom_table(filtered_df, current_taskfile)
-
-def render_edit_table(filtered_df, current_taskfile):
-    """标准表格实现 - 保留但重定向到自定义表格"""
-    # 由于data_editor的闪烁问题，重定向到自定义表格实现
-    render_custom_table(filtered_df, current_taskfile)
+    st.warning("AgGrid表格存在选择状态问题，已改为使用标准表格。")
+    render_edit_table(filtered_df, current_taskfile)
 
 def render_standard_table(filtered_df, current_taskfile):
     """保留向后兼容的标准表格实现"""
-    # 由于我们现在使用自定义表格，这里重定向到新函数
-    render_custom_table(filtered_df, current_taskfile)
+    # 由于我们现在使用标准data_editor，这里重定向到新函数
+    render_edit_table(filtered_df, current_taskfile)
