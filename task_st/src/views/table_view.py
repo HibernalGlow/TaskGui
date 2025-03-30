@@ -240,7 +240,7 @@ def render_edit_table(filtered_df, current_taskfile):
     # 因为这会导致不必要的刷新闪烁
 
 def render_aggrid_table(filtered_df, current_taskfile):
-    """使用AgGrid渲染表格 - 优化勾选状态获取"""
+    """使用AgGrid渲染表格 - 优化勾选状态获取并增加分组功能"""
     if not HAS_AGGRID:
         st.warning("未安装st-aggrid。请使用 `pip install streamlit-aggrid` 安装")
         render_edit_table(filtered_df, current_taskfile)
@@ -257,6 +257,10 @@ def render_aggrid_table(filtered_df, current_taskfile):
         
     if 'selected' not in st.session_state:
         st.session_state.selected = {task: False for task in filtered_df_copy['name']}
+    
+    # AgGrid分组设置状态
+    if 'aggrid_group_by' not in st.session_state:
+        st.session_state.aggrid_group_by = []
     
     # 确保所有任务都有选择状态
     for task in filtered_df_copy['name']:
@@ -276,25 +280,90 @@ def render_aggrid_table(filtered_df, current_taskfile):
         'directory': '目录'
     })
     
+    # AgGrid高级设置UI
+    with st.expander("AgGrid高级设置", expanded=False):
+        st.write("表格分组与过滤设置")
+        
+        # 分组设置
+        group_options = ["无分组", "标签", "目录"]
+        selected_group = st.selectbox(
+            "按列分组显示", 
+            options=group_options,
+            index=0,
+            key="aggrid_group_select"
+        )
+        
+        # 将选择转换为实际的列名
+        group_mapping = {
+            "标签": "标签",
+            "目录": "目录"
+        }
+        
+        # 更新分组状态
+        if selected_group != "无分组" and selected_group in group_mapping:
+            st.session_state.aggrid_group_by = [group_mapping[selected_group]]
+        else:
+            st.session_state.aggrid_group_by = []
+        
+        # 其他AgGrid功能选项
+        col1, col2 = st.columns(2)
+        with col1:
+            enable_filter = st.checkbox("启用列过滤", value=True, key="aggrid_enable_filter")
+            enable_sorting = st.checkbox("启用排序", value=True, key="aggrid_enable_sorting")
+        
+        with col2:
+            enable_editing = st.checkbox("允许编辑单元格", value=False, key="aggrid_enable_editing")
+            enable_enterprise = st.checkbox("启用企业功能", value=True, key="aggrid_enable_enterprise")
+    
     # 构建 AgGrid 选项
     gb = GridOptionsBuilder.from_dataframe(display_df)
     
     # 配置列
     gb.configure_column('name', hide=True)  # 隐藏name列，但保留数据
-    gb.configure_column('选择', header_name="选择", editable=True, cellRenderer='agCheckboxCellRenderer')
-    gb.configure_column('显示名称', header_name="任务名称", editable=False)
-    gb.configure_column('描述', header_name="任务描述", editable=False)
-    gb.configure_column('标签', header_name="标签", editable=False)
-    gb.configure_column('目录', header_name="任务目录", editable=False)
+    gb.configure_column('选择', 
+                        header_name="选择", 
+                        editable=True, 
+                        cellRenderer='agCheckboxCellRenderer',
+                        width=70)
     
-    # 移除行选择功能，只使用"选择"列的复选框
-    # gb.configure_selection(selection_mode='multiple', use_checkbox=True)
+    gb.configure_column('显示名称', 
+                       header_name="任务名称", 
+                       editable=enable_editing,
+                       enableRowGroup=True,
+                       width=150)
+    
+    gb.configure_column('描述', 
+                       header_name="任务描述", 
+                       editable=enable_editing,
+                       enableRowGroup=True,
+                       autoHeight=True,
+                       wrapText=True)
+    
+    gb.configure_column('标签', 
+                       header_name="标签", 
+                       editable=enable_editing,
+                       enableRowGroup=True,
+                       filter=True)
+    
+    gb.configure_column('目录', 
+                       header_name="任务目录", 
+                       editable=enable_editing,
+                       enableRowGroup=True,
+                       filter=True)
+    
+    # 启用分组、排序和过滤功能
+    gb.configure_default_column(
+        groupable=True,
+        filterable=enable_filter,
+        sorteable=enable_sorting,
+        editable=enable_editing,
+    )
     
     # 自定义 JavaScript 代码处理选择事件，确保状态同步
     js_code = JsCode("""
     function(params) {
         // 开启数据行选择颜色加亮
-        if (params.data.选择 === true) {
+        if (params.data && params.data.选择 === true) {
             return {
                 'background-color': 'rgba(112, 182, 255, 0.2)'
             }
@@ -303,7 +372,27 @@ def render_aggrid_table(filtered_df, current_taskfile):
     }
     """)
     
-    gb.configure_grid_options(getRowStyle=js_code)
+    gb.configure_grid_options(
+        getRowStyle=js_code,
+        # 启用分组功能
+        groupDisplayType="groupRows",
+        rowGroupPanelShow="always" if st.session_state.aggrid_group_by else "never",
+        # 根据用户选择设置默认分组
+        groupDefaultExpanded=-1,  # 全部展开
+        # 添加拖拽功能
+        rowDragManaged=True,
+        animateRows=True,
+    )
+    
+    # 设置默认分组列
+    if st.session_state.aggrid_group_by:
+        gb.configure_grid_options(
+            columnDefs=[{
+                "field": col,
+                "rowGroup": True,
+                "hide": True
+            } for col in st.session_state.aggrid_group_by]
+        )
     
     # 构建最终选项
     grid_options = gb.build()
@@ -314,12 +403,13 @@ def render_aggrid_table(filtered_df, current_taskfile):
         gridOptions=grid_options,
         update_mode=GridUpdateMode.MODEL_CHANGED,
         fit_columns_on_grid_load=True,
-        enable_enterprise_modules=False,
-        height=400,
+        enable_enterprise_modules=enable_enterprise,
+        height=500,
         width='100%',
         key='aggrid_table',
         reload_data=False,
-        allow_unsafe_jscode=True
+        allow_unsafe_jscode=True,
+        theme='streamlit',  # 可选: 'streamlit', 'light', 'dark', 'blue', 'fresh', 'material'
     )
     
     # 从 AgGrid 返回值更新选择状态
@@ -332,11 +422,12 @@ def render_aggrid_table(filtered_df, current_taskfile):
         # 更新选择状态
         for idx, row in updated_df.iterrows():
             task_name = row['name']
-            # 确保布尔值类型一致
-            current_selection = bool(row['选择'])
-            if st.session_state.selected.get(task_name) != current_selection:
-                st.session_state.selected[task_name] = current_selection
-                has_changes = True
+            if task_name and pd.notna(task_name):  # 确保任务名有效
+                # 确保布尔值类型一致
+                current_selection = bool(row['选择'])
+                if st.session_state.selected.get(task_name) != current_selection:
+                    st.session_state.selected[task_name] = current_selection
+                    has_changes = True
         
         # 只有当有变化时才更新选中的任务列表
         if has_changes:
