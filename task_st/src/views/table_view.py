@@ -339,17 +339,26 @@ def render_aggrid_table(filtered_df, current_taskfile):
                        autoHeight=True,
                        wrapText=True)
     
-    gb.configure_column('标签', 
-                       header_name="标签", 
-                       editable=enable_editing,
-                       enableRowGroup=True,
-                       filter=True)
-    
-    gb.configure_column('目录', 
-                       header_name="任务目录", 
-                       editable=enable_editing,
-                       enableRowGroup=True,
-                       filter=True)
+    # 为每列单独配置分组属性，而不是通过columnDefs整体设置
+    for col in display_df.columns:
+        if col in st.session_state.aggrid_group_by:
+            # 对需要分组的列特殊处理
+            gb.configure_column(col, 
+                               rowGroup=True,  # 设置为分组列
+                               hide=True,     # 隐藏原始列
+                               enableRowGroup=True)
+        elif col == '标签':
+            gb.configure_column(col, 
+                               header_name="标签", 
+                               editable=enable_editing,
+                               enableRowGroup=True,
+                               filter=True)
+        elif col == '目录':
+            gb.configure_column(col, 
+                               header_name="任务目录", 
+                               editable=enable_editing,
+                               enableRowGroup=True,
+                               filter=True)
     
     # 启用分组、排序和过滤功能
     gb.configure_default_column(
@@ -383,16 +392,6 @@ def render_aggrid_table(filtered_df, current_taskfile):
         rowDragManaged=True,
         animateRows=True,
     )
-    
-    # 设置默认分组列
-    if st.session_state.aggrid_group_by:
-        gb.configure_grid_options(
-            columnDefs=[{
-                "field": col,
-                "rowGroup": True,
-                "hide": True
-            } for col in st.session_state.aggrid_group_by]
-        )
     
     # 构建最终选项
     grid_options = gb.build()
