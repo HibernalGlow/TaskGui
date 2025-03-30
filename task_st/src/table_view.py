@@ -26,8 +26,8 @@ def render_table_view(filtered_df, current_taskfile):
     st.markdown("### 任务列表")
     
     # 改为优先使用标准data_editor
-    render_edit_table(filtered_df, current_taskfile)
-    
+    # render_edit_table(filtered_df, current_taskfile)
+    render_aggrid_table(filtered_df, current_taskfile)
     # 显示已选择的任务操作区域
     render_selected_tasks_section(filtered_df, current_taskfile)
 
@@ -240,9 +240,110 @@ def render_edit_table(filtered_df, current_taskfile):
     # 因为这会导致不必要的刷新闪烁
 
 def render_aggrid_table(filtered_df, current_taskfile):
-    """使用AgGrid渲染表格 - 保留但不使用"""
-    st.warning("AgGrid表格存在选择状态问题，已改为使用标准表格。")
-    render_edit_table(filtered_df, current_taskfile)
+    """使用AgGrid渲染表格 - 优化勾选状态获取"""
+    if not HAS_AGGRID:
+        st.warning("未安装st-aggrid。请使用 `pip install streamlit-aggrid` 安装")
+        render_edit_table(filtered_df, current_taskfile)
+        return
+    
+    # 准备表格数据
+    filtered_df_copy = filtered_df.copy()
+    filtered_df_copy['tags_str'] = filtered_df_copy['tags'].apply(lambda x: ', '.join(x) if isinstance(x, list) else '')
+    filtered_df_copy['显示名称'] = filtered_df_copy.apply(lambda x: f"{x['emoji']} {x['name']}", axis=1)
+    
+    # 初始化会话状态
+    if 'selected_tasks' not in st.session_state:
+        st.session_state.selected_tasks = []
+        
+    if 'selected' not in st.session_state:
+        st.session_state.selected = {task: False for task in filtered_df_copy['name']}
+    
+    # 确保所有任务都有选择状态
+    for task in filtered_df_copy['name']:
+        if task not in st.session_state.selected:
+            st.session_state.selected[task] = False
+    
+    # 创建勾选列，从会话状态获取
+    filtered_df_copy['选择'] = filtered_df_copy['name'].apply(
+        lambda x: st.session_state.selected.get(x, False)
+    )
+    
+    # 准备要显示的列
+    display_df = filtered_df_copy[['选择', 'name', '显示名称', 'description', 'tags_str', 'directory']]
+    display_df = display_df.rename(columns={
+        'description': '描述',
+        'tags_str': '标签',
+        'directory': '目录'
+    })
+    
+    # 构建 AgGrid 选项
+    gb = GridOptionsBuilder.from_dataframe(display_df)
+    
+    # 配置列
+    gb.configure_column('name', hide=True)  # 隐藏name列，但保留数据
+    gb.configure_column('选择', header_name="选择", editable=True, cellRenderer='agCheckboxCellRenderer')
+    gb.configure_column('显示名称', header_name="任务名称", editable=False)
+    gb.configure_column('描述', header_name="任务描述", editable=False)
+    gb.configure_column('标签', header_name="标签", editable=False)
+    gb.configure_column('目录', header_name="任务目录", editable=False)
+    
+    # 移除行选择功能，只使用"选择"列的复选框
+    # gb.configure_selection(selection_mode='multiple', use_checkbox=True)
+    
+    # 自定义 JavaScript 代码处理选择事件，确保状态同步
+    js_code = JsCode("""
+    function(params) {
+        // 开启数据行选择颜色加亮
+        if (params.data.选择 === true) {
+            return {
+                'background-color': 'rgba(112, 182, 255, 0.2)'
+            }
+        }
+        return null;
+    }
+    """)
+    
+    gb.configure_grid_options(getRowStyle=js_code)
+    
+    # 构建最终选项
+    grid_options = gb.build()
+    
+    # 渲染 AgGrid
+    grid_return = AgGrid(
+        display_df,
+        gridOptions=grid_options,
+        update_mode=GridUpdateMode.MODEL_CHANGED,
+        fit_columns_on_grid_load=True,
+        enable_enterprise_modules=False,
+        height=400,
+        width='100%',
+        key='aggrid_table',
+        reload_data=False,
+        allow_unsafe_jscode=True
+    )
+    
+    # 从 AgGrid 返回值更新选择状态
+    if grid_return and 'data' in grid_return:
+        updated_df = pd.DataFrame(grid_return['data'])
+        
+        # 检查选择状态是否有变化
+        has_changes = False
+        
+        # 更新选择状态
+        for idx, row in updated_df.iterrows():
+            task_name = row['name']
+            # 确保布尔值类型一致
+            current_selection = bool(row['选择'])
+            if st.session_state.selected.get(task_name) != current_selection:
+                st.session_state.selected[task_name] = current_selection
+                has_changes = True
+        
+        # 只有当有变化时才更新选中的任务列表
+        if has_changes:
+            st.session_state.selected_tasks = [
+                task for task, is_selected in st.session_state.selected.items() 
+                if is_selected
+            ]
 
 def render_standard_table(filtered_df, current_taskfile):
     """保留向后兼容的标准表格实现"""
