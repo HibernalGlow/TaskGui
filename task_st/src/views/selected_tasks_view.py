@@ -7,8 +7,8 @@ from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, g
 from ..services.task_runner import run_task_via_cmd
 from .task_card_editor import render_task_edit_form
 
-def render_selected_tasks_section(filtered_df, current_taskfile):
-    """渲染已选择任务的区域，包括清除选择按钮和卡片视图"""
+def render_selected_tasks_sidebar(filtered_df, current_taskfile):
+    """渲染右侧边栏中的已选任务区域"""
     # 初始化会话状态
     if 'selected_tasks' not in st.session_state:
         st.session_state.selected_tasks = []
@@ -17,22 +17,22 @@ def render_selected_tasks_section(filtered_df, current_taskfile):
     selected_tasks = st.session_state.selected_tasks
     
     # 显示已选择的任务数量和操作按钮
-    col1, col2, col3 = st.columns([2, 1, 1])
+    st.markdown(f"### 已选择 {len(selected_tasks)} 个任务")
+    
+    # 操作按钮区域
+    col1, col2 = st.columns(2)
     with col1:
-        st.markdown(f"### 已选择 {len(selected_tasks)} 个任务")
-    
-    # 定义清除选择的回调函数
-    def clear_selection():
-        st.session_state.selected_tasks = []
-        if 'selected' in st.session_state:
-            for task in st.session_state.selected:
-                st.session_state.selected[task] = False
-    
-    with col2:
+        # 定义清除选择的回调函数
+        def clear_selection():
+            st.session_state.selected_tasks = []
+            if 'selected' in st.session_state:
+                for task in st.session_state.selected:
+                    st.session_state.selected[task] = False
+        
         if st.button("清除选择", key="clear_table_selection", on_click=clear_selection):
             pass  # 清除选择的动作由回调函数处理，避免刷新
     
-    with col3:
+    with col2:
         if st.button("运行选中的任务", key="run_selected_tasks"):
             if not selected_tasks:
                 st.warning("请先选择要运行的任务")
@@ -52,25 +52,33 @@ def render_selected_tasks_section(filtered_df, current_taskfile):
     if selected_tasks:
         # 过滤出选中的任务数据
         selected_df = filtered_df[filtered_df['name'].isin(selected_tasks)]
-        render_task_cards(selected_df, current_taskfile)
+        render_sidebar_task_list(selected_df, current_taskfile)
 
-def render_task_cards(selected_df, current_taskfile):
-    """渲染可编辑的任务卡片"""
-    # 使用卡片视图显示选中的任务
-    with st.container():
-        # 每行显示的卡片数量
-        cards_per_row = 2  # 改为2列以便有更多空间显示编辑控件
-        
-        # 创建行
-        for i in range(0, len(selected_df), cards_per_row):
-            cols = st.columns(cards_per_row)
-            # 获取当前行的任务
-            row_tasks = selected_df.iloc[i:min(i+cards_per_row, len(selected_df))]
+def render_sidebar_task_list(selected_df, current_taskfile):
+    """在侧边栏渲染任务列表和卡片"""
+    # 任务数量
+    task_count = len(selected_df)
+    
+    # 任务导航
+    with st.expander("任务导航", expanded=True):
+        # 为每个任务创建快速导航按钮
+        for i, (_, task) in enumerate(selected_df.iterrows()):
+            task_name = task['name']
+            emoji = task.get('emoji', '📋')
             
-            # 为每个列填充卡片
-            for col_idx, (_, task) in enumerate(row_tasks.iterrows()):
-                with cols[col_idx]:
-                    render_task_card(task, current_taskfile)
+            if st.button(f"{emoji} {task_name}", key=f"nav_{task_name}"):
+                # 设置当前活动任务
+                st.session_state.active_task = task_name
+                st.rerun()
+    
+    # 初始化活动任务
+    if 'active_task' not in st.session_state and task_count > 0:
+        st.session_state.active_task = selected_df.iloc[0]['name']
+    
+    # 显示活动任务
+    if 'active_task' in st.session_state and st.session_state.active_task in selected_df['name'].values:
+        active_task = selected_df[selected_df['name'] == st.session_state.active_task].iloc[0]
+        render_task_card(active_task, current_taskfile)
 
 def render_task_card(task, current_taskfile):
     """渲染单个任务卡片，增加编辑功能"""
@@ -142,3 +150,12 @@ def render_task_card(task, current_taskfile):
                     st.success("命令已复制")
         
         st.markdown("---")
+
+# 保留原有函数，但不再直接使用
+def render_selected_tasks_section(filtered_df, current_taskfile):
+    """原本的任务区域渲染函数，保留向后兼容"""
+    pass
+
+def render_task_cards(selected_df, current_taskfile):
+    """原本的任务卡片渲染函数，保留向后兼容"""
+    pass

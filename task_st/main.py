@@ -20,6 +20,7 @@ from src import (
 )
 from src.services.taskfile import read_taskfile
 from src.utils.file_utils import open_file, get_directory_files
+from src.views.styles import apply_custom_styles
 
 # 添加当前目录到路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -82,6 +83,7 @@ def main():
         
         # 主内容区
         st.title("任务管理器")
+        apply_custom_styles()
         st.write(f"当前任务文件: `{default_taskfile}`")
         
         # 检查数据帧是否为空
