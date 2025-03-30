@@ -1,8 +1,8 @@
 import streamlit as st
 import os
-from .utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
-from .task_runner import run_task_via_cmd
-from .common import render_batch_operations
+from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
+from ..services.task_runner import run_task_via_cmd
+from ..components.batch_operations import render_batch_operations
 
 def render_card_view(filtered_df, current_taskfile):
     """渲染卡片视图"""

@@ -14,10 +14,12 @@ from src import (
     render_card_view,
     render_group_view,
     render_sidebar,
-    render_tag_filters
+    render_tag_filters,
+    find_taskfiles,
+    get_nearest_taskfile
 )
-from src.taskfile import read_taskfile
-from src.utils import find_taskfiles, get_nearest_taskfile, open_file, get_directory_files
+from src.services.taskfile import read_taskfile
+from src.utils.file_utils import open_file, get_directory_files
 
 # 添加当前目录到路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))

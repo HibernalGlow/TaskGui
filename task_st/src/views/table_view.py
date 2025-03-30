@@ -2,9 +2,9 @@ import streamlit as st
 import os
 import json
 import pandas as pd
-from .utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
-from .task_runner import run_task_via_cmd
-from .common import render_batch_operations
+from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
+from ..services.task_runner import run_task_via_cmd
+from ..components.batch_operations import render_batch_operations
 from .card_view import render_card_view
 
 # 尝试导入AgGrid
@@ -61,7 +61,7 @@ def render_selected_tasks_section(filtered_df, current_taskfile):
             if not selected_tasks:
                 st.warning("请先选择要运行的任务")
             else:
-                from .task_runner import run_multiple_tasks
+                from ..services.task_runner import run_multiple_tasks
                 with st.spinner(f"正在启动 {len(selected_tasks)} 个任务..."):
                     result_msgs = run_multiple_tasks(
                         selected_tasks, 
