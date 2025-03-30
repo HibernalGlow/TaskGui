@@ -310,10 +310,17 @@ def render_aggrid_table(filtered_df, current_taskfile):
         with col1:
             enable_filter = st.checkbox("启用列过滤", value=True, key="aggrid_enable_filter")
             enable_sorting = st.checkbox("启用排序", value=True, key="aggrid_enable_sorting")
+            enable_trigger = st.checkbox("启用交互触发器", value=True, key="aggrid_enable_trigger")
         
         with col2:
             enable_editing = st.checkbox("允许编辑单元格", value=False, key="aggrid_enable_editing")
             enable_enterprise = st.checkbox("启用企业功能", value=True, key="aggrid_enable_enterprise")
+            theme_option = st.selectbox(
+                "表格主题",
+                options=["streamlit", "light", "dark", "blue", "fresh", "material"],
+                index=0,
+                key="aggrid_theme"
+            )
     
     # 构建 AgGrid 选项
     gb = GridOptionsBuilder.from_dataframe(display_df)
@@ -381,6 +388,75 @@ def render_aggrid_table(filtered_df, current_taskfile):
     }
     """)
     
+    # 添加自定义触发器 JavaScript 代码
+    custom_js = JsCode("""
+    function(e) {
+        let api = e.api;
+        let rowData = [];
+        let selectedData = [];
+        
+        // 获取所有行数据
+        api.forEachNode(node => rowData.push(node.data));
+        
+        // 获取选中行数据
+        api.forEachNode(node => {
+            if (node.data && node.data.选择 === true) {
+                selectedData.push(node.data);
+            }
+        });
+        
+        // 当用户点击选择框时，发送数据到Streamlit
+        if (e.type === 'cellValueChanged' && e.column && e.column.colId === '选择') {
+            // 这里将选中状态数据传回Streamlit
+            let targetData = {
+                event_type: 'selection_changed',
+                rowData: rowData,
+                selectedData: selectedData
+            };
+            
+            // 发送数据到Streamlit组件
+            window.parent.postMessage({
+                type: 'streamlit:setComponentValue',
+                value: targetData
+            }, '*');
+        }
+        
+        // 当用户进行筛选、排序或分组等操作时
+        if (e.type === 'filterChanged' || e.type === 'sortChanged' || e.type === 'columnRowGroupChanged') {
+            let targetData = {
+                event_type: e.type,
+                rowData: rowData
+            };
+            
+            // 发送数据到Streamlit组件
+            window.parent.postMessage({
+                type: 'streamlit:setComponentValue',
+                value: targetData
+            }, '*');
+        }
+        
+        // 当用户编辑单元格内容时
+        if (e.type === 'cellValueChanged' && e.column && e.column.colId !== '选择') {
+            let targetData = {
+                event_type: 'cell_edited',
+                rowData: rowData,
+                changedCell: {
+                    row: e.node.rowIndex,
+                    column: e.column.colId,
+                    oldValue: e.oldValue,
+                    newValue: e.newValue
+                }
+            };
+            
+            // 发送数据到Streamlit组件
+            window.parent.postMessage({
+                type: 'streamlit:setComponentValue',
+                value: targetData
+            }, '*');
+        }
+    }
+    """)
+    
     gb.configure_grid_options(
         getRowStyle=js_code,
         # 启用分组功能
@@ -391,6 +467,11 @@ def render_aggrid_table(filtered_df, current_taskfile):
         # 添加拖拽功能
         rowDragManaged=True,
         animateRows=True,
+        # 添加事件监听器 - 用于触发器
+        onCellValueChanged=custom_js if enable_trigger else None,
+        onFilterChanged=custom_js if enable_trigger else None,
+        onSortChanged=custom_js if enable_trigger else None,
+        onColumnRowGroupChanged=custom_js if enable_trigger else None
     )
     
     # 构建最终选项
@@ -400,7 +481,7 @@ def render_aggrid_table(filtered_df, current_taskfile):
     grid_return = AgGrid(
         display_df,
         gridOptions=grid_options,
-        update_mode=GridUpdateMode.MODEL_CHANGED,
+        update_mode=GridUpdateMode.MODEL_CHANGED if not enable_trigger else GridUpdateMode.VALUE_CHANGED,
         fit_columns_on_grid_load=True,
         enable_enterprise_modules=enable_enterprise,
         height=500,
@@ -408,11 +489,32 @@ def render_aggrid_table(filtered_df, current_taskfile):
         key='aggrid_table',
         reload_data=False,
         allow_unsafe_jscode=True,
-        theme='streamlit',  # 可选: 'streamlit', 'light', 'dark', 'blue', 'fresh', 'material'
+        theme=theme_option,
     )
     
-    # 从 AgGrid 返回值更新选择状态
-    if grid_return and 'data' in grid_return:
+    # 处理 AgGrid 触发器返回的数据
+    if enable_trigger and grid_return.get('selected_rows') and 'data' in grid_return:
+        # 这里处理通过触发器获取的数据
+        if isinstance(grid_return.get('selected_rows'), list):
+            # 从触发器返回的已选择行更新选择状态
+            selected_names = [row.get('name') for row in grid_return['selected_rows'] if row.get('name')]
+            
+            # 更新选择状态
+            has_changes = False
+            for task, is_selected in st.session_state.selected.items():
+                new_selection = task in selected_names
+                if is_selected != new_selection:
+                    st.session_state.selected[task] = new_selection
+                    has_changes = True
+            
+            # 只有当有变化时才更新选中的任务列表
+            if has_changes:
+                st.session_state.selected_tasks = [
+                    task for task, is_selected in st.session_state.selected.items() 
+                    if is_selected
+                ]
+    # 标准数据处理 (无触发器或触发器未启用时)
+    elif grid_return and 'data' in grid_return:
         updated_df = pd.DataFrame(grid_return['data'])
         
         # 检查选择状态是否有变化
