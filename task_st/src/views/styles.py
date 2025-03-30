@@ -6,40 +6,40 @@ def apply_custom_styles():
     # 三列布局样式
     st.markdown("""
     <style>
-    /* 调整列间距 */
-    .row-widget.stHorizontal {
-        gap: 1rem;
+    /* 侧边栏样式优化 */
+    div[data-testid="stSidebarContent"] {
+        background-color: #f8f9fa;
     }
     
-    /* 提高导航按钮样式 */
-    .stButton button {
+    /* 任务列表样式 */
+    .task-item {
+        padding: 8px;
+        margin-bottom: 5px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .task-item:hover {
+        background-color: rgba(112, 182, 255, 0.1);
+    }
+    
+    .task-item.active {
+        background-color: rgba(112, 182, 255, 0.2);
+    }
+    
+    /* 按钮样式优化 */
+    .stButton>button {
         width: 100%;
-        text-align: left;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
     
-    /* 卡片容器样式 */
-    .task-card {
+    /* 任务详情样式 */
+    .task-detail {
+        padding: 10px;
+        margin-top: 10px;
+        background-color: #ffffff;
+        border-radius: 5px;
         border: 1px solid #e6e6e6;
-        border-radius: 0.5rem;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        background-color: #f9f9f9;
-    }
-    
-    /* 滚动条样式 */
-    .task-list-container {
-        max-height: 500px;
-        overflow-y: auto;
-        padding-right: 0.5rem;
-    }
-    
-    /* 调整任务列表视图 */
-    .stExpander {
-        border: none !important;
-        box-shadow: none !important;
     }
     </style>
     """, unsafe_allow_html=True)

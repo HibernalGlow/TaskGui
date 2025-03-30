@@ -81,9 +81,11 @@ def main():
         # 渲染侧边栏
         render_sidebar(default_taskfile)
         
+        # 应用自定义样式 - 在st.title之前添加
+        apply_custom_styles()
+        
         # 主内容区
         st.title("任务管理器")
-        apply_custom_styles()
         st.write(f"当前任务文件: `{default_taskfile}`")
         
         # 检查数据帧是否为空
