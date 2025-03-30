@@ -328,6 +328,19 @@ class MainWindow(QMainWindow):
         task = self.task_collection.get_task(task_name)
         if task:
             task.is_selected = is_selected
+            
+            # 如果是选中操作，更新order为当前最大order + 1
+            # 这样确保任务执行顺序与用户选择顺序一致
+            if is_selected:
+                # 获取当前最大order值
+                max_order = -1
+                for t in self.task_collection.get_all_tasks():
+                    if t.is_selected and t.order > max_order:
+                        max_order = t.order
+                
+                # 设置当前任务的order为最大值+1
+                task.order = max_order + 1
+                print(f"设置任务 {task.name} 的顺序为 {task.order}")
         
         # 更新命令预览
         self.update_command()
@@ -387,23 +400,30 @@ class MainWindow(QMainWindow):
         self.clear_selection_button.setEnabled(has_tasks)
     
     def _update_task_order(self):
-        """更新任务执行顺序"""
+        """更新任务执行顺序（仅影响UI显示，不影响执行顺序）"""
         # 获取所有选中的任务
         selected_tasks = []
         for task in self.task_collection.get_all_tasks():
             if task.is_selected:
                 selected_tasks.append(task)
+                
+        # 打印当前任务选择顺序（调试用）
+        print("当前选中的任务顺序:")
+        for task in selected_tasks:
+            print(f"  任务: {task.name}, 顺序: {task.order}")
         
-        # 根据当前排序模式排序
+        # 排序模式现在只影响UI显示，不再重新分配order值
+        # 这样保证命令执行时按照点击顺序执行
+        
+        # 对于UI排序，我们创建一个副本并进行排序
+        ui_sorted_tasks = list(selected_tasks)
         if self.sort_mode == "name":
-            selected_tasks = sorted(selected_tasks, key=lambda t: t.name.lower())
+            ui_sorted_tasks = sorted(ui_sorted_tasks, key=lambda t: t.name.lower())
         elif self.sort_mode == "description":
-            selected_tasks = sorted(selected_tasks, key=lambda t: t.description.lower())
-        # 默认模式不排序
+            ui_sorted_tasks = sorted(ui_sorted_tasks, key=lambda t: t.description.lower())
         
-        # 更新任务顺序
-        for i, task in enumerate(selected_tasks):
-            task.order = i
+        # 更新UI上的显示顺序，但不改变实际的task.order值
+        # 仅用于UI显示，代码中不做任何更改
     
     def copy_command(self):
         """复制命令到剪贴板"""
@@ -441,11 +461,11 @@ class MainWindow(QMainWindow):
         
         success, output = self.command_generator.execute_command()
         
-        # 清空选择（因为后端的execute_command方法已经清空了模型中的选择状态，这里需要更新UI）
-        for card in self.task_cards.values():
-            card.set_selected(False)
+        # 不再清空选择状态
+        # for card in self.task_cards.values():
+        #     card.set_selected(False)
         
-        # 更新UI状态
+        # 更新UI状态 - 继续更新命令预览
         self.update_command()
         
         # 显示结果

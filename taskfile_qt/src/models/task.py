@@ -37,7 +37,8 @@ class TaskCollection:
         return [task for task in self.tasks.values() if task.is_selected]
     
     def clear_selection(self) -> None:
-        """清空所有任务的选择状态"""
+        """清空所有任务的选择状态，但保留顺序信息"""
         for task in self.tasks.values():
             task.is_selected = False
-            task.order = 0 
+            # 移除这行代码，保留任务顺序信息
+            # task.order = 0 

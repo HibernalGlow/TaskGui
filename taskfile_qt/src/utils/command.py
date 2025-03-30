@@ -24,8 +24,18 @@ class CommandGenerator:
         if not selected_tasks:
             return "# 未选择任何任务"
         
+        # 打印选中任务的信息（调试用）
+        print("\n生成命令时的任务顺序:")
+        for task in selected_tasks:
+            print(f"  任务: {task.name}, 顺序值: {task.order}")
+        
         # 对任务进行排序
         sorted_tasks = sorted(selected_tasks, key=lambda t: t.order)
+        
+        # 打印排序后的任务顺序（调试用）
+        print("排序后的任务顺序:")
+        for task in sorted_tasks:
+            print(f"  任务: {task.name}, 顺序值: {task.order}")
         
         # 构建命令 - 使用task工具
         task_names = [task.name for task in sorted_tasks]
@@ -69,37 +79,43 @@ class CommandGenerator:
         else:
             # 串行模式：执行单个命令
             command = self.generate_command()
-            result = self._execute_in_wt(command)
-        
-        # 清空选择
-        self.task_collection.clear_selection()
+            # 获取标题 - 如果是单个任务使用该任务名，否则使用多个任务的连接字符串
+            if len(task_names) == 1:
+                title = task_names[0]
+            else:
+                # 如果任务太多，截取前2个并加省略号
+                if len(task_names) > 2:
+                    title = f"{task_names[0]}+{task_names[1]}..."
+                else:
+                    title = "+".join(task_names)
+            result = self._execute_in_wt(command, title)
         
         return result
     
-    def _execute_in_wt(self, command: str) -> tuple:
+    def _execute_in_wt(self, command: str, title: str = "Task") -> tuple:
         """在Windows Terminal中执行命令"""
         try:
             # Windows平台使用wt.exe启动PowerShell
             if platform.system() == 'Windows':
                 # 转义PowerShell命令中的引号
                 ps_command = command.replace('"', '`"')
-                # 构造wt.exe命令
-                wt_command = f'wt.exe powershell -NoExit -Command "{ps_command}"'
+                # 构造wt.exe命令，添加任务名作为标题
+                wt_command = f'wt.exe --title "{title}" powershell -NoExit -Command "{ps_command}"'
                 subprocess.Popen(wt_command, shell=True)
                 return True, f"已在Windows Terminal中启动PowerShell执行命令: {command}"
             # Linux/Mac平台
             else:
                 # 根据不同的终端模拟器调整命令
                 if os.path.exists('/usr/bin/gnome-terminal'):
-                    full_command = f'gnome-terminal -- bash -c "{command}; exec bash"'
+                    full_command = f'gnome-terminal --title "{title}" -- bash -c "{command}; exec bash"'
                 elif os.path.exists('/usr/bin/xterm'):
-                    full_command = f'xterm -e "{command}; bash"'
+                    full_command = f'xterm -T "{title}" -e "{command}; bash"'
                 elif os.path.exists('/usr/bin/konsole'):
-                    full_command = f'konsole -e "{command}; bash"'
+                    full_command = f'konsole --title "{title}" -e "{command}; bash"'
                 elif os.path.exists('/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal'):
                     full_command = f'open -a Terminal "{command}"'
                 else:
-                    full_command = f'x-terminal-emulator -e "{command}; bash"'
+                    full_command = f'x-terminal-emulator -T "{title}" -e "{command}; bash"'
                 
                 subprocess.Popen(full_command, shell=True)
                 return True, f"已在终端窗口中启动命令: {command}"
@@ -107,7 +123,7 @@ class CommandGenerator:
             return False, f"启动命令窗口失败: {str(e)}"
     
     def _execute_parallel_in_wt(self, task_names: List[str]) -> tuple:
-        """在多个Windows Terminal标签页中并行执行任务"""
+        """在多个Windows Terminal标签页中并行执行任务，每个标签页以任务名命名"""
         try:
             if platform.system() == 'Windows':
                 # 构造wt.exe命令，为每个任务创建一个新标签页
@@ -124,18 +140,18 @@ class CommandGenerator:
                     ps_command = cmd.replace('"', '`"')
                     
                     if first_tab:
-                        # 第一个标签页使用不同的语法
-                        wt_args.append(f'powershell -NoExit -Command "{ps_command}"')
+                        # 第一个标签页使用不同的语法，添加标题
+                        wt_args.append(f'--title "{task_name}" powershell -NoExit -Command "{ps_command}"')
                         first_tab = False
                     else:
-                        # 后续标签页使用new-tab
-                        wt_args.append(f'--tab "powershell -NoExit -Command \'{ps_command}\'"')
+                        # 后续标签页使用new-tab，添加标题
+                        wt_args.append(f'--tab --title "{task_name}" "powershell -NoExit -Command \'{ps_command}\'"')
                 
                 # 构造完整的wt命令
                 wt_command = "wt.exe " + " ".join(wt_args)
                 subprocess.Popen(wt_command, shell=True)
                 
-                return True, f"已在Windows Terminal的{len(task_names)}个标签页中启动任务"
+                return True, f"已在Windows Terminal的{len(task_names)}个标签页中启动任务，每个标签页都以任务名命名"
             else:
                 # 在Linux/Mac上还是使用多个窗口
                 for task_name in task_names:
@@ -144,21 +160,21 @@ class CommandGenerator:
                         cmd += f" --taskfile {self.taskfile_path}"
                     cmd += f" {task_name}"
                     
-                    # 根据不同的终端模拟器调整命令
+                    # 根据不同的终端模拟器调整命令，并设置窗口标题为任务名
                     if os.path.exists('/usr/bin/gnome-terminal'):
-                        full_command = f'gnome-terminal -- bash -c "{cmd}; exec bash"'
+                        full_command = f'gnome-terminal --title "{task_name}" -- bash -c "{cmd}; exec bash"'
                     elif os.path.exists('/usr/bin/xterm'):
-                        full_command = f'xterm -e "{cmd}; bash"'
+                        full_command = f'xterm -T "{task_name}" -e "{cmd}; bash"'
                     elif os.path.exists('/usr/bin/konsole'):
-                        full_command = f'konsole -e "{cmd}; bash"'
+                        full_command = f'konsole --title "{task_name}" -e "{cmd}; bash"'
                     elif os.path.exists('/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal'):
                         full_command = f'open -a Terminal "{cmd}"'
                     else:
-                        full_command = f'x-terminal-emulator -e "{cmd}; bash"'
+                        full_command = f'x-terminal-emulator -T "{task_name}" -e "{cmd}; bash"'
                     
                     subprocess.Popen(full_command, shell=True)
                 
-                return True, f"已在{len(task_names)}个独立窗口中启动任务"
+                return True, f"已在{len(task_names)}个独立窗口中启动任务，每个窗口都以任务名命名"
         except Exception as e:
             return False, f"启动命令窗口失败: {str(e)}"
 
