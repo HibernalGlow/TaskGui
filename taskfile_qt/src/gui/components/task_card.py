@@ -3,14 +3,16 @@
 
 from PyQt6.QtWidgets import (QFrame, QLabel, QCheckBox, QVBoxLayout, 
                             QHBoxLayout, QSizePolicy)
+from PyQt6.QtCore import Qt
 
 class TaskCardWidget(QFrame):
     """任务卡片组件"""
     
-    def __init__(self, task_name, description, parent=None):
+    def __init__(self, task_name, description, tags=None, parent=None):
         super().__init__(parent)
         self.task_name = task_name
         self.description = description
+        self.tags = tags or []
         self.is_selected = False
         
         # 设置卡片样式
@@ -44,8 +46,23 @@ class TaskCardWidget(QFrame):
             self.desc_label.setWordWrap(True)
             layout.addWidget(self.desc_label)
         
+        # 标签
+        if self.tags:
+            tags_layout = QHBoxLayout()
+            tags_label = QLabel("标签:")
+            tags_label.setStyleSheet("color: #666;")
+            tags_text = QLabel(", ".join(self.tags))
+            tags_text.setStyleSheet("color: #666; font-style: italic;")
+            tags_text.setWordWrap(True)
+            
+            tags_layout.addWidget(tags_label)
+            tags_layout.addWidget(tags_text)
+            tags_layout.addStretch()
+            
+            layout.addLayout(tags_layout)
+        
         # 设置最小高度
-        self.setMinimumHeight(50)
+        self.setMinimumHeight(70)  # 增加最小高度以适应标签行
         
     def toggle_selection(self, checked):
         """切换选择状态"""
@@ -67,4 +84,16 @@ class TaskCardWidget(QFrame):
     
     def get_selected(self):
         """获取选择状态"""
-        return self.is_selected 
+        return self.is_selected
+        
+    def set_tags(self, tags):
+        """设置标签"""
+        self.tags = tags
+        # 重新初始化UI以更新标签显示
+        # 清除现有布局
+        while self.layout().count():
+            item = self.layout().takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        # 重新创建UI
+        self._init_ui() 

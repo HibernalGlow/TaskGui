@@ -40,12 +40,18 @@ class TaskfileParser:
             # 处理目录
             dir_path = task_info.get('dir', '')
             
+            # 处理标签
+            tags = task_info.get('tags', [])
+            if isinstance(tags, str):
+                tags = [tags]
+            
             # 创建任务对象
             task = Task(
                 name=task_name,
                 command=command,
                 description=desc,
-                dir=dir_path
+                dir=dir_path,
+                tags=tags
             )
             
             # 添加到集合

@@ -3,17 +3,138 @@
 
 import os
 import sys
+import re
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, 
                             QHBoxLayout, QLabel, QPushButton, QFileDialog, 
                             QTextEdit, QMessageBox, QCheckBox, QScrollArea,
-                            QGridLayout, QComboBox, QSizePolicy, QToolBar, QApplication)
+                            QGridLayout, QComboBox, QSizePolicy, QToolBar, QApplication,
+                            QListWidget, QDialog, QLineEdit, QListWidgetItem, QFrame,
+                            QGroupBox, QRadioButton, QButtonGroup, QMenu)
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QAction
+from PyQt6.QtGui import QAction, QColor, QCursor
 
 from src.gui.components.task_card import TaskCardWidget
 from src.core.parser import TaskfileParser
 from src.core.config import ConfigManager
 from src.utils.command import CommandGenerator
+
+class TagDialog(QDialog):
+    """标签编辑对话框"""
+    
+    def __init__(self, task, all_tags, parent=None):
+        super().__init__(parent)
+        self.task = task
+        self.all_tags = all_tags
+        self.setWindowTitle(f"编辑标签 - {task.name}")
+        self.setMinimumSize(400, 300)
+        self._init_ui()
+    
+    def _init_ui(self):
+        """初始化界面"""
+        layout = QVBoxLayout(self)
+        
+        # 当前标签列表
+        current_group = QGroupBox("当前标签")
+        current_layout = QVBoxLayout()
+        self.current_tags_list = QListWidget()
+        self.current_tags_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
+        self._populate_current_tags()
+        remove_button = QPushButton("移除选中的标签")
+        remove_button.clicked.connect(self._remove_selected_tag)
+        
+        current_layout.addWidget(self.current_tags_list)
+        current_layout.addWidget(remove_button)
+        current_group.setLayout(current_layout)
+        
+        # 添加新标签
+        add_group = QGroupBox("添加标签")
+        add_layout = QVBoxLayout()
+        
+        # 输入新标签
+        add_new_layout = QHBoxLayout()
+        self.new_tag_input = QLineEdit()
+        self.new_tag_input.setPlaceholderText("输入新标签名称...")
+        add_new_button = QPushButton("添加")
+        add_new_button.clicked.connect(self._add_new_tag)
+        add_new_layout.addWidget(self.new_tag_input)
+        add_new_layout.addWidget(add_new_button)
+        
+        # 从现有标签中选择
+        existing_group = QGroupBox("从现有标签中选择")
+        existing_layout = QVBoxLayout()
+        self.existing_tags_list = QListWidget()
+        self._populate_existing_tags()
+        add_existing_button = QPushButton("添加选中的标签")
+        add_existing_button.clicked.connect(self._add_existing_tag)
+        
+        existing_layout.addWidget(self.existing_tags_list)
+        existing_layout.addWidget(add_existing_button)
+        existing_group.setLayout(existing_layout)
+        
+        add_layout.addLayout(add_new_layout)
+        add_layout.addWidget(existing_group)
+        add_group.setLayout(add_layout)
+        
+        # 确定/取消按钮
+        buttons_layout = QHBoxLayout()
+        ok_button = QPushButton("确定")
+        ok_button.clicked.connect(self.accept)
+        cancel_button = QPushButton("取消")
+        cancel_button.clicked.connect(self.reject)
+        
+        buttons_layout.addStretch()
+        buttons_layout.addWidget(ok_button)
+        buttons_layout.addWidget(cancel_button)
+        
+        layout.addWidget(current_group)
+        layout.addWidget(add_group)
+        layout.addLayout(buttons_layout)
+    
+    def _populate_current_tags(self):
+        """填充当前标签列表"""
+        self.current_tags_list.clear()
+        for tag in self.task.tags:
+            self.current_tags_list.addItem(tag)
+    
+    def _populate_existing_tags(self):
+        """填充现有标签列表，排除当前任务已有的标签"""
+        self.existing_tags_list.clear()
+        for tag in sorted(self.all_tags):
+            if tag not in self.task.tags:
+                self.existing_tags_list.addItem(tag)
+    
+    def _remove_selected_tag(self):
+        """移除选中的标签"""
+        selected_items = self.current_tags_list.selectedItems()
+        if not selected_items:
+            return
+            
+        tag = selected_items[0].text()
+        self.task.remove_tag(tag)
+        self._populate_current_tags()
+        self._populate_existing_tags()
+    
+    def _add_new_tag(self):
+        """添加新标签"""
+        tag = self.new_tag_input.text().strip()
+        if not tag:
+            return
+            
+        self.task.add_tag(tag)
+        self.new_tag_input.clear()
+        self._populate_current_tags()
+        self._populate_existing_tags()
+    
+    def _add_existing_tag(self):
+        """添加选中的现有标签"""
+        selected_items = self.existing_tags_list.selectedItems()
+        if not selected_items:
+            return
+            
+        tag = selected_items[0].text()
+        self.task.add_tag(tag)
+        self._populate_current_tags()
+        self._populate_existing_tags()
 
 class MainWindow(QMainWindow):
     """主窗口类"""
@@ -37,9 +158,12 @@ class MainWindow(QMainWindow):
         # 排序方式
         self.sort_mode = "name"  # 默认按名称排序
         
+        # 标签筛选
+        self.active_tag_filter = None  # 当前激活的标签筛选
+        
         # 设置窗口属性
         self.setWindowTitle("任务文件解析器")
-        self.setMinimumSize(700, 500)
+        self.setMinimumSize(800, 600)
         
         # 初始化界面
         self._init_ui()
@@ -69,8 +193,58 @@ class MainWindow(QMainWindow):
         
         main_layout.addLayout(file_layout)
         
+        # 标签工具栏 - 显示所有可用标签的按钮
+        self.tags_toolbar = QFrame()
+        self.tags_toolbar.setFrameShape(QFrame.Shape.StyledPanel)
+        self.tags_toolbar_layout = QHBoxLayout(self.tags_toolbar)
+        self.tags_toolbar_layout.setContentsMargins(5, 5, 5, 5)
+        self.tags_toolbar_layout.setSpacing(5)
+        
+        # 添加标签标题
+        toolbar_label = QLabel("快速标签筛选:")
+        toolbar_label.setStyleSheet("font-weight: bold;")
+        self.tags_toolbar_layout.addWidget(toolbar_label)
+        
+        # 添加"显示全部"按钮
+        all_button = QPushButton("显示全部")
+        all_button.setCheckable(True)
+        all_button.setChecked(True)
+        all_button.clicked.connect(lambda: self.quick_filter_by_tag(None))
+        self.all_tags_button = all_button
+        self.tags_toolbar_layout.addWidget(all_button)
+        
+        # 标签管理
+        self.manage_tags_button = QPushButton("管理标签组")
+        self.manage_tags_button.clicked.connect(self.manage_tag_groups)
+        
+        self.tags_toolbar_layout.addStretch()
+        self.tags_toolbar_layout.addWidget(self.manage_tags_button)
+        
+        main_layout.addWidget(self.tags_toolbar)
+        
         # 任务列表和命令预览
         content_layout = QHBoxLayout()
+        
+        # 侧边栏布局 - 用于标签筛选
+        sidebar_layout = QVBoxLayout()
+        tags_label = QLabel("按标签筛选:")
+        self.tags_list = QListWidget()
+        self.tags_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
+        self.tags_list.itemClicked.connect(self.filter_by_tag)
+        
+        # 添加"显示全部"选项
+        self.show_all_item = QListWidgetItem("显示全部")
+        self.show_all_item.setData(Qt.ItemDataRole.UserRole, "all")
+        self.tags_list.addItem(self.show_all_item)
+        
+        # 添加分隔线
+        separator_item = QListWidgetItem("")
+        separator_item.setFlags(Qt.ItemFlag.NoItemFlags)
+        separator_item.setBackground(QColor(200, 200, 200))
+        self.tags_list.addItem(separator_item)
+        
+        sidebar_layout.addWidget(tags_label)
+        sidebar_layout.addWidget(self.tags_list)
         
         # 任务卡片部分
         tasks_layout = QVBoxLayout()
@@ -119,7 +293,12 @@ class MainWindow(QMainWindow):
         self.scroll_area.setWidget(self.task_container)
         tasks_layout.addWidget(self.scroll_area)
         
-        content_layout.addLayout(tasks_layout)
+        # 将侧边栏和任务卡片区域放入水平布局
+        tasks_container_layout = QHBoxLayout()
+        tasks_container_layout.addLayout(sidebar_layout, 1)  # 侧边栏占比较小
+        tasks_container_layout.addLayout(tasks_layout, 3)    # 任务卡片区域占比较大
+        
+        content_layout.addLayout(tasks_container_layout, 2)  # 任务部分占整体的2/3
         
         # 命令预览
         command_layout = QVBoxLayout()
@@ -130,9 +309,7 @@ class MainWindow(QMainWindow):
         command_layout.addWidget(command_label)
         command_layout.addWidget(self.command_preview)
         
-        content_layout.addLayout(command_layout)
-        content_layout.setStretch(0, 2)  # 任务列表占比更大
-        content_layout.setStretch(1, 1)  # 命令预览
+        content_layout.addLayout(command_layout, 1)  # 命令预览占整体的1/3
         
         main_layout.addLayout(content_layout)
         
@@ -168,6 +345,116 @@ class MainWindow(QMainWindow):
         
         # 创建状态栏
         self.statusBar().showMessage("就绪")
+    
+    def populate_tags_list(self):
+        """填充标签列表"""
+        # 保留"显示全部"和分隔线
+        current_count = self.tags_list.count()
+        for i in range(current_count - 2, -1, -1):
+            self.tags_list.takeItem(2)
+        
+        if not self.task_collection:
+            return
+            
+        # 获取所有标签并排序
+        all_tags = sorted(self.task_collection.get_all_tags())
+        
+        # 添加标签到列表
+        for tag in all_tags:
+            item = QListWidgetItem(tag)
+            item.setData(Qt.ItemDataRole.UserRole, tag)
+            self.tags_list.addItem(item)
+        
+        # 选中"显示全部"
+        self.tags_list.setCurrentItem(self.show_all_item)
+    
+    def populate_tags_toolbar(self):
+        """填充标签工具栏"""
+        # 清除现有的标签按钮，保留标签标题和管理按钮
+        for i in range(self.tags_toolbar_layout.count() - 1, 1, -1):
+            item = self.tags_toolbar_layout.itemAt(i)
+            if item.widget() and item.widget() != self.manage_tags_button:
+                item.widget().deleteLater()
+        
+        if not self.task_collection:
+            return
+        
+        # 获取所有标签
+        all_tags = sorted(self.task_collection.get_all_tags())
+        
+        # 重置当前选中按钮
+        self.all_tags_button.setChecked(self.active_tag_filter is None)
+        
+        # 添加标签按钮
+        for tag in all_tags:
+            tag_button = QPushButton(tag)
+            tag_button.setCheckable(True)
+            tag_button.setChecked(self.active_tag_filter == tag)
+            tag_button.clicked.connect(lambda checked, t=tag: self.quick_filter_by_tag(t))
+            
+            # 在全部按钮和管理按钮之间插入新按钮
+            self.tags_toolbar_layout.insertWidget(
+                self.tags_toolbar_layout.count() - 2,  # 在倒数第二个位置插入
+                tag_button
+            )
+    
+    def quick_filter_by_tag(self, tag):
+        """通过工具栏按钮快速筛选标签"""
+        # 更新所有按钮状态
+        for i in range(self.tags_toolbar_layout.count()):
+            item = self.tags_toolbar_layout.itemAt(i)
+            if item.widget() and isinstance(item.widget(), QPushButton):
+                button = item.widget()
+                if button == self.all_tags_button:
+                    button.setChecked(tag is None)
+                elif button != self.manage_tags_button and button.text() == tag:
+                    button.setChecked(True)
+                elif button != self.manage_tags_button:
+                    button.setChecked(False)
+        
+        # 更新当前标签筛选
+        self.active_tag_filter = tag
+        
+        # 更新标签列表选择
+        if tag is None:
+            self.tags_list.setCurrentItem(self.show_all_item)
+        else:
+            for i in range(self.tags_list.count()):
+                item = self.tags_list.item(i)
+                if item.data(Qt.ItemDataRole.UserRole) == tag:
+                    self.tags_list.setCurrentItem(item)
+                    break
+        
+        # 刷新任务卡片显示
+        self.populate_task_cards()
+        
+        # 更新状态栏
+        if tag is None:
+            self.statusBar().showMessage("显示所有任务", 3000)
+        else:
+            self.statusBar().showMessage(f"筛选标签: {tag}", 3000)
+    
+    def manage_tag_groups(self):
+        """管理标签组"""
+        QMessageBox.information(self, "标签组管理", "此功能将在未来版本中提供，敬请期待！")
+    
+    def filter_by_tag(self, item):
+        """根据标签筛选任务"""
+        tag_data = item.data(Qt.ItemDataRole.UserRole)
+        
+        # 更新当前标签筛选
+        if tag_data == "all":
+            self.active_tag_filter = None
+            self.statusBar().showMessage("显示所有任务", 3000)
+        else:
+            self.active_tag_filter = tag_data
+            self.statusBar().showMessage(f"筛选标签: {tag_data}", 3000)
+        
+        # 更新工具栏按钮状态
+        self.populate_tags_toolbar()
+        
+        # 刷新任务卡片显示
+        self.populate_task_cards()
     
     def load_last_session(self):
         """加载上次会话的设置"""
@@ -228,6 +515,8 @@ class MainWindow(QMainWindow):
             
             # 更新界面
             self.file_path_label.setText(os.path.basename(file_path))
+            self.populate_tags_list()
+            self.populate_tags_toolbar()
             self.populate_task_cards()
             self.update_command()
             self.execute_button.setEnabled(False)
@@ -275,6 +564,10 @@ class MainWindow(QMainWindow):
         # 获取所有任务
         tasks = self.task_collection.get_all_tasks()
         
+        # 如果有标签筛选，先应用筛选
+        if self.active_tag_filter:
+            tasks = [task for task in tasks if task.has_tag(self.active_tag_filter)]
+        
         # 根据排序模式排序
         if self.sort_mode == "name":
             tasks = sorted(tasks, key=lambda t: t.name.lower())
@@ -311,14 +604,64 @@ class MainWindow(QMainWindow):
         if not self.task_collection:
             return
         
+        # 获取任务列表
+        tasks = self.task_collection.get_all_tasks()
+        
+        # 如果有标签筛选，应用筛选
+        if self.active_tag_filter:
+            tasks = [task for task in tasks if task.has_tag(self.active_tag_filter)]
+        
         # 创建卡片
-        for task in self.task_collection.get_all_tasks():
-            card = TaskCardWidget(task.name, task.description)
+        for task in tasks:
+            card = TaskCardWidget(task.name, task.description, task.tags)
             card.checkbox.toggled.connect(lambda checked, t=task.name: self.task_card_selection_changed(t, checked))
+            
+            # 添加右键菜单
+            card.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            card.customContextMenuRequested.connect(lambda pos, t=task.name: self.show_task_context_menu(pos, t))
+            
             self.task_cards[task.name] = card
         
         # 按当前排序模式排序并显示
         self.sort_task_cards()
+    
+    def show_task_context_menu(self, position, task_name):
+        """显示任务卡片的右键菜单"""
+        task = self.task_collection.get_task(task_name)
+        if not task:
+            return
+        
+        menu = QMenu()
+        edit_tags_action = menu.addAction("编辑标签")
+        
+        # 显示标签菜单在卡片位置
+        card = self.task_cards.get(task_name)
+        if not card:
+            return
+            
+        action = menu.exec(card.mapToGlobal(position))
+        if action == edit_tags_action:
+            self.edit_task_tags(task)
+    
+    def edit_task_tags(self, task):
+        """编辑任务标签"""
+        # 获取所有标签
+        all_tags = self.task_collection.get_all_tags()
+        
+        # 创建并显示标签编辑对话框
+        dialog = TagDialog(task, all_tags, self)
+        result = dialog.exec()
+        
+        # 如果用户确认编辑，刷新相关界面并保存更改
+        if result == QDialog.DialogCode.Accepted:
+            # 重新填充标签列表
+            self.populate_tags_list()
+            # 更新工具栏
+            self.populate_tags_toolbar()
+            # 刷新任务卡片
+            self.populate_task_cards()
+            # 保存更改到Taskfile.yml
+            self.save_taskfile()
     
     def task_card_selection_changed(self, task_name, is_selected):
         """当任务卡片选择状态变化时更新命令预览"""
@@ -350,17 +693,20 @@ class MainWindow(QMainWindow):
         if not self.task_collection:
             return
         
-        # 选中所有卡片
-        for card in self.task_cards.values():
+        # 选中所有可见卡片 (考虑标签筛选)
+        visible_tasks = set()
+        for task_name, card in self.task_cards.items():
             card.set_selected(True)
+            visible_tasks.add(task_name)
         
-        # 选中所有任务模型
+        # 选中所有可见任务模型
         for task in self.task_collection.get_all_tasks():
-            task.is_selected = True
+            if task.name in visible_tasks:
+                task.is_selected = True
         
         # 更新UI状态
         self.update_command()
-        self.statusBar().showMessage("已选择所有任务", 3000)
+        self.statusBar().showMessage("已选择所有可见任务", 3000)
     
     def clear_selection(self):
         """清空选择"""
@@ -479,4 +825,50 @@ class MainWindow(QMainWindow):
         """窗口关闭事件处理"""
         # 保存当前会话设置
         self.save_session()
-        event.accept() 
+        event.accept()
+    
+    def save_taskfile(self):
+        """保存任务文件"""
+        if not self.task_collection or not self.current_taskfile_path:
+            return False
+            
+        try:
+            # 读取原始文件
+            with open(self.current_taskfile_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                
+            # 逐个更新任务的标签
+            for task in self.task_collection.get_all_tasks():
+                # 准备标签字符串
+                tag_strings = []
+                for tag in task.tags:
+                    tag_strings.append(f"'{tag}'")
+                tags_str = f"tags: [{', '.join(tag_strings)}]"
+                
+                if task.tags:
+                    # 查找任务定义区域
+                    task_pattern = r'(' + re.escape(task.name) + r':.*?)\n(\s+)tags:.*?\n'
+                    
+                    # 如果找到现有的tags行，替换它
+                    if re.search(task_pattern, content, re.DOTALL):
+                        replacement = r'\1\n\2' + tags_str + r'\n'
+                        content = re.sub(task_pattern, replacement, content)
+                    else:
+                        # 如果没找到，在desc行后添加
+                        desc_pattern = r'(' + re.escape(task.name) + r':.*?\n(\s+)desc:.*?\n)'
+                        match = re.search(desc_pattern, content, re.DOTALL)
+                        if match:
+                            indent = match.group(2)
+                            replacement = r'\1' + indent + tags_str + r'\n'
+                            content = re.sub(desc_pattern, replacement, content)
+            
+            # 写回文件
+            with open(self.current_taskfile_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+                
+            self.statusBar().showMessage("标签已保存到Taskfile.yml", 3000)
+            return True
+            
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"保存文件失败: {str(e)}")
+            return False 
