@@ -1,5 +1,8 @@
 import streamlit as st
+import pandas as pd
 import os
+import sys
+import traceback
 from src import (
     init_session_state, 
     setup_css,
@@ -13,79 +16,116 @@ from src import (
     render_sidebar,
     render_tag_filters
 )
+from src.taskfile import read_taskfile
+from src.utils import find_taskfiles, get_nearest_taskfile, open_file, get_directory_files
+
+# 添加当前目录到路径
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # 设置页面配置
 st.set_page_config(
-    page_title="GlowToolBox 任务管理器",
+    page_title="任务管理器",
+    page_icon="🔧",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
+# 添加自定义CSS
+st.markdown("""
+<style>
+    .tag {
+        background-color: #f0f2f6;
+        border-radius: 10px;
+        padding: 2px 8px;
+        margin: 2px;
+        display: inline-block;
+        font-size: 0.8em;
+    }
+    .stButton>button {
+        width: 100%;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 def main():
-    """
-    主应用程序入口
-    
-    功能说明:
-    1. 支持排序和过滤任务
-    2. 支持打开任务相关文件（使用默认程序）
-    3. 显示任务命令和复制功能
-    4. 表格视图支持AgGrid（如果安装）或标准表格
-    
-    安装AgGrid（更好的表格体验）:
-    pip install streamlit-aggrid
-    """
+    """主函数"""
     try:
-        st.title("🧰 GlowToolBox 任务管理器")
-        
         # 初始化会话状态
-        init_session_state()
+        if 'selected_tasks' not in st.session_state:
+            st.session_state.selected_tasks = []
         
-        # 设置CSS样式
-        setup_css()
+        if 'current_view' not in st.session_state:
+            st.session_state.current_view = "表格视图"
+        
+        if 'run_parallel' not in st.session_state:
+            st.session_state.run_parallel = False
+        
+        # 加载任务文件
+        default_taskfile = get_nearest_taskfile()
+        
+        # 检查任务文件是否存在
+        if not os.path.exists(default_taskfile):
+            taskfiles = find_taskfiles(os.path.dirname(os.path.abspath(__file__)))
+            if taskfiles:
+                default_taskfile = taskfiles[0]
+            else:
+                st.error("找不到任务文件，请创建一个任务文件或指定正确的路径")
+                return
+        
+        # 读取任务文件
+        tasks_df = read_taskfile(default_taskfile)
         
         # 渲染侧边栏
-        sidebar_data = render_sidebar(st.session_state.last_taskfile_path)
+        render_sidebar(default_taskfile)
         
-        # 加载任务
-        tasks, current_taskfile = load_taskfile(st.session_state.last_taskfile_path)
-        if not tasks:
-            st.warning(f"未能加载任务或Taskfile为空: {current_taskfile}")
+        # 主内容区
+        st.title("任务管理器")
+        st.write(f"当前任务文件: `{default_taskfile}`")
+        
+        # 检查数据帧是否为空
+        if tasks_df.empty:
+            st.warning("任务文件中没有找到任务。请确保任务文件格式正确。")
             return
-            
-        df = prepare_dataframe(tasks)
-        
-        if df.empty:
-            st.warning(f"任务DataFrame为空: {current_taskfile}")
-            return
-        
-        # 显示当前Taskfile路径
-        st.markdown(f"**当前Taskfile**: `{current_taskfile}`")
-        
-        # 提取所有标签并渲染标签过滤器
-        all_tags = get_all_tags(df)
-        selected_tags, search_term = render_tag_filters(all_tags)
         
         # 应用过滤器
-        filtered_df = filter_tasks(df, selected_tags, search_term)
+        filtered_df = filter_tasks(tasks_df)
         
-        if filtered_df.empty:
-            st.info("没有匹配的任务，请调整过滤条件")
-            return
+        # 显示任务
+        current_view = st.session_state.current_view
+        
+        if current_view == "表格视图":
+            render_table_view(filtered_df, default_taskfile)
+        elif current_view == "卡片视图":
+            render_card_view(filtered_df, default_taskfile)
+        elif current_view == "分组视图":
+            render_group_view(filtered_df, default_taskfile)
             
-        # 根据视图类型渲染不同的视图
-        view_type = sidebar_data["view_type"]
-        if view_type == "表格视图":
-            render_table_view(filtered_df, current_taskfile)
-        elif view_type == "卡片视图":
-            render_card_view(filtered_df, current_taskfile)
-        elif view_type == "分组视图":
-            render_group_view(filtered_df, current_taskfile)
-    
     except Exception as e:
         st.error(f"发生错误: {str(e)}")
-        st.info("如果是关于st-aggrid的错误，请尝试安装: pip install streamlit-aggrid")
-        import traceback
+        st.error("如果错误与st-aggrid相关，请确保已安装: `pip install streamlit-aggrid`")
         st.code(traceback.format_exc())
+
+def filter_tasks(tasks_df):
+    """根据过滤条件过滤任务"""
+    filtered_df = tasks_df.copy()
+    
+    # 应用搜索过滤
+    if 'search_task' in st.session_state and st.session_state.search_task:
+        search_term = st.session_state.search_task.lower()
+        # 过滤名称或描述包含搜索词的任务
+        mask = filtered_df['name'].str.lower().str.contains(search_term, na=False) | \
+               filtered_df['description'].str.lower().str.contains(search_term, na=False)
+        filtered_df = filtered_df[mask]
+    
+    # 应用标签过滤
+    if 'tags_filter' in st.session_state and st.session_state.tags_filter:
+        tags_to_filter = st.session_state.tags_filter
+        # 过滤包含所选标签的任务
+        filtered_df = filtered_df[filtered_df['tags'].apply(
+            lambda x: any(tag in x for tag in tags_to_filter) if isinstance(x, list) else False
+        )]
+    
+    return filtered_df
 
 if __name__ == "__main__":
     main()

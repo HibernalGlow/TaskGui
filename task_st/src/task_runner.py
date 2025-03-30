@@ -1,82 +1,91 @@
 import subprocess
-import tempfile
-import threading
 import os
-from datetime import datetime
+import threading
 from .utils import get_task_command
 
-def run_task_via_cmd(task_name, taskfile_path=None):
+def run_task_via_cmd(task_name, taskfile_path):
     """
-    通过后台打开CMD运行任务
+    通过命令行运行指定的任务
     
     参数:
         task_name: 任务名称
-        taskfile_path: Taskfile路径
-        
+        taskfile_path: Taskfile的路径
+    
     返回:
-        result: 任务运行结果信息
+        布尔值，表示是否成功启动任务
     """
-    # 创建一个临时的批处理文件
-    with tempfile.NamedTemporaryFile(suffix='.bat', delete=False, mode='w') as f:
-        f.write('@echo off\n')
-        f.write('title 执行任务: %s\n' % task_name)
-        f.write('color 0A\n')  # 设置绿色文字
-        f.write('echo 正在执行任务: %s\n' % task_name)
-        f.write('echo 时间: %s\n' % datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        f.write('echo ======================================\n')
+    try:
+        cmd = get_task_command(task_name, taskfile_path)
+        if not cmd:
+            return False
         
-        # 构建task命令，如果有指定taskfile
-        if taskfile_path and os.path.exists(taskfile_path):
-            f.write(f'task --taskfile "{taskfile_path}" {task_name}\n')
-        else:
-            f.write(f'task {task_name}\n')
+        # 确定任务的工作目录
+        from .taskfile import read_taskfile
+        tasks_df = read_taskfile(taskfile_path)
+        task_row = tasks_df[tasks_df['name'] == task_name]
         
-        f.write('echo ======================================\n')
-        f.write('echo 任务执行完成\n')
-        f.write('echo 请按任意键关闭窗口...\n')
-        f.write('pause > nul\n')
-        batch_file = f.name
-    
-    # 使用subprocess启动CMD窗口但不等待它完成
-    subprocess.Popen(['start', 'cmd', '/c', batch_file], shell=True)
-    
-    return {
-        'success': True,
-        'output': "任务已在新窗口中启动，请查看CMD窗口获取输出",
-        'error': ""
-    }
+        if task_row.empty:
+            return False
+            
+        # 使用任务的目录作为工作目录
+        work_dir = task_row['directory'].values[0]
+        if not work_dir or not os.path.exists(work_dir):
+            work_dir = os.path.dirname(taskfile_path)
+        
+        # 创建一个新的cmd/控制台窗口来运行任务
+        if os.name == 'nt':  # Windows
+            subprocess.Popen(
+                f'start cmd /c "cd /d "{work_dir}" && {cmd} && pause"',
+                shell=True
+            )
+        else:  # Linux/Mac
+            subprocess.Popen(
+                f'gnome-terminal -- bash -c "cd "{work_dir}" && {cmd}; read -p \'按回车键继续...\'"',
+                shell=True
+            )
+        
+        return True
+    except Exception as e:
+        print(f"运行任务时出错: {str(e)}")
+        return False
 
-def run_multiple_tasks(task_names, taskfile_path=None, parallel=False):
+def run_multiple_tasks(task_names, taskfile_path, parallel=False):
     """
-    运行多个任务 - 支持并行
+    运行多个任务
     
     参数:
         task_names: 任务名称列表
-        taskfile_path: Taskfile路径
-        parallel: 是否并行运行
-        
+        taskfile_path: Taskfile的路径
+        parallel: 是否并行执行，默认为False
+    
     返回:
-        result_msg: 任务运行结果信息
+        字符串列表，包含每个任务的运行结果信息
     """
-    if not task_names or len(task_names) == 0:
-        return "没有选择任务"
-        
+    results = []
+    
     if parallel:
-        # 并行运行
+        # 使用线程并行运行任务
         threads = []
         for task_name in task_names:
             thread = threading.Thread(
-                target=run_task_via_cmd,
-                args=(task_name, taskfile_path)
+                target=lambda tn=task_name: run_task_via_cmd(tn, taskfile_path)
             )
-            thread.daemon = True
-            threads.append(thread)
             thread.start()
+            threads.append(thread)
+            results.append(f"已启动任务: {task_name}")
         
-        # 不等待线程完成
-        return f"已并行启动 {len(task_names)} 个任务"
+        # 等待所有线程完成
+        for thread in threads:
+            thread.join(0.1)  # 非阻塞等待
+        
+        return results
     else:
-        # 顺序运行
+        # 顺序运行任务
         for task_name in task_names:
-            run_task_via_cmd(task_name, taskfile_path)
-        return f"已顺序启动 {len(task_names)} 个任务" 
+            success = run_task_via_cmd(task_name, taskfile_path)
+            if success:
+                results.append(f"已启动任务: {task_name}")
+            else:
+                results.append(f"启动任务失败: {task_name}")
+        
+        return results 

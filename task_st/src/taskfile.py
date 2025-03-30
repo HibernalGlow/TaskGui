@@ -121,4 +121,57 @@ def filter_tasks(df, selected_tags=None, search_term=None):
             filtered_df['description'].str.contains(search_term, case=False, na=False)
         ]
     
-    return filtered_df 
+    return filtered_df
+
+def read_taskfile(taskfile_path):
+    """
+    读取Taskfile并返回DataFrame格式的任务列表
+    
+    参数:
+        taskfile_path: Taskfile的路径
+        
+    返回:
+        pandas.DataFrame: 包含任务信息的DataFrame
+    """
+    if not os.path.exists(taskfile_path):
+        return pd.DataFrame()
+    
+    try:
+        with open(taskfile_path, 'r', encoding='utf-8') as f:
+            taskfile_content = yaml.safe_load(f)
+        
+        # 检查是否有任务节点
+        if not taskfile_content or 'tasks' not in taskfile_content:
+            return pd.DataFrame()
+        
+        tasks = taskfile_content['tasks']
+        task_list = []
+        
+        # 遍历所有任务，提取信息
+        for task_name, task_info in tasks.items():
+            task_data = {
+                'name': task_name,
+                'cmd': task_info.get('cmds', [None])[0] if isinstance(task_info.get('cmds', []), list) else None,
+                'description': task_info.get('desc', ''),
+                'directory': task_info.get('dir', os.path.dirname(taskfile_path)),
+                'emoji': task_info.get('emoji', '📋'),
+                'tags': task_info.get('tags', []),
+            }
+            task_list.append(task_data)
+        
+        # 创建DataFrame
+        df = pd.DataFrame(task_list)
+        
+        # 确保标签字段存在且格式正确
+        if 'tags' not in df.columns:
+            df['tags'] = [[]]
+        
+        # 确保emoji字段存在
+        if 'emoji' not in df.columns:
+            df['emoji'] = '📋'
+        
+        return df
+    
+    except Exception as e:
+        print(f"读取Taskfile时出错: {str(e)}")
+        return pd.DataFrame() 
