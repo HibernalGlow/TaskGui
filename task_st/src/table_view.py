@@ -21,17 +21,119 @@ def render_table_view(filtered_df, current_taskfile):
     """
     st.markdown("### 任务列表")
     
-    # 检查是否有AgGrid可用，如果有则使用AgGrid
-    if HAS_AGGRID:
-        render_aggrid_table(filtered_df, current_taskfile)
-    else:
-        render_standard_table(filtered_df, current_taskfile)
+    # 使用data_editor替代AgGrid
+    render_data_editor_table(filtered_df, current_taskfile)
     
-    # 批量操作部分 - 这部分对两种表格视图都适用
+    # 批量操作部分
     render_batch_operations(current_taskfile, view_key="table")
 
+def render_data_editor_table(filtered_df, current_taskfile):
+    """使用st.data_editor渲染表格"""
+    # 准备表格数据
+    filtered_df_copy = filtered_df.copy()
+    filtered_df_copy['tags_str'] = filtered_df_copy['tags'].apply(lambda x: ', '.join(x) if isinstance(x, list) else '')
+    
+    # 只显示需要的列
+    display_cols = ['name', 'emoji', 'description', 'tags_str', 'directory']
+    display_df = filtered_df_copy[display_cols]
+    
+    # 定义列配置
+    column_config = {
+        "name": st.column_config.TextColumn("任务名称"),
+        "emoji": st.column_config.TextColumn("图标", width="small"),
+        "description": st.column_config.TextColumn("描述"),
+        "tags_str": st.column_config.TextColumn("标签"),
+        "directory": st.column_config.TextColumn("目录"),
+    }
+    
+    # 显示表格
+    edited_df = st.data_editor(
+        display_df,
+        column_config=column_config,
+        use_container_width=True,
+        height=400,
+        disabled=True,
+        hide_index=True,
+        key="task_data_editor"
+    )
+    
+    # 添加交互式操作，允许选择任务
+    st.markdown("#### 任务操作")
+    
+    task_selection = st.selectbox(
+        "选择要操作的任务:",
+        options=list(filtered_df['name']),
+        key="task_selection"
+    )
+    
+    if task_selection:
+        action_cols = st.columns(3)
+        with action_cols[0]:
+            if st.button("运行任务", key="run_selected_task"):
+                with st.spinner(f"正在启动任务 {task_selection}..."):
+                    result = run_task_via_cmd(task_selection, current_taskfile)
+                st.success(f"任务 {task_selection} 已在新窗口启动")
+        
+        with action_cols[1]:
+            if st.button("查看文件", key="view_files"):
+                task_dir = filtered_df[filtered_df['name'] == task_selection]['directory'].values[0]
+                if task_dir and os.path.exists(task_dir):
+                    files = get_directory_files(task_dir)
+                    if files:
+                        st.markdown(f"### {task_selection} 文件")
+                        file_cols = st.columns(min(5, len(files)))
+                        for i, file in enumerate(files):
+                            with file_cols[i % len(file_cols)]:
+                                file_path = os.path.join(task_dir, file)
+                                if st.button(file, key=f"file_{task_selection}_{i}"):
+                                    if open_file(file_path):
+                                        st.success(f"已打开: {file}")
+                    else:
+                        st.info(f"任务 {task_selection} 目录中没有找到文件")
+        
+        with action_cols[2]:
+            if st.button("复制命令", key="copy_task_cmd"):
+                cmd = get_task_command(task_selection, current_taskfile)
+                copy_to_clipboard(cmd)
+                st.success(f"已复制命令: {cmd}")
+    
+    # 多选部分
+    st.markdown("#### 批量选择任务")
+    
+    # 将任务分为两列显示
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        for i, (_, row) in enumerate(filtered_df.iloc[::2].iterrows()):
+            task_name = row['name']
+            task_selected = st.checkbox(
+                f"{row['emoji']} {task_name}", 
+                key=f"std_task_{task_name}"
+            )
+            if task_selected:
+                if 'selected_tasks' not in st.session_state:
+                    st.session_state.selected_tasks = []
+                if task_name not in st.session_state.selected_tasks:
+                    st.session_state.selected_tasks.append(task_name)
+            elif 'selected_tasks' in st.session_state and task_name in st.session_state.selected_tasks:
+                st.session_state.selected_tasks.remove(task_name)
+                
+    with col2:
+        for i, (_, row) in enumerate(filtered_df.iloc[1::2].iterrows()):
+            task_name = row['name']
+            task_selected = st.checkbox(
+                f"{row['emoji']} {task_name}", 
+                key=f"std_task_{task_name}"
+            )
+            if task_selected:
+                if 'selected_tasks' not in st.session_state:
+                    st.session_state.selected_tasks = []
+                if task_name not in st.session_state.selected_tasks:
+                    st.session_state.selected_tasks.append(task_name)
+            elif 'selected_tasks' in st.session_state and task_name in st.session_state.selected_tasks:
+                st.session_state.selected_tasks.remove(task_name)
+
 def render_aggrid_table(filtered_df, current_taskfile):
-    """使用AgGrid渲染表格"""
+    """使用AgGrid渲染表格 - 已弃用，保留代码仅供参考"""
     # 准备表格数据
     # 添加工具列方便用户进行操作
     filtered_df_copy = filtered_df.copy()
@@ -203,7 +305,7 @@ def render_aggrid_table(filtered_df, current_taskfile):
                 st.error(f"处理按钮事件时出错: {str(e)}")
 
 def render_standard_table(filtered_df, current_taskfile):
-    """不使用AgGrid，使用标准Streamlit表格组件渲染表格"""
+    """不使用AgGrid，使用标准Streamlit表格组件渲染表格 - 已弃用，保留代码仅供参考"""
     # 显示命令列
     filtered_df_copy = filtered_df.copy()
     filtered_df_copy['tags_str'] = filtered_df_copy['tags'].apply(lambda x: ', '.join(x) if isinstance(x, list) else '')

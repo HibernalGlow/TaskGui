@@ -7,10 +7,4 @@ import json
 from .common import render_sidebar, render_tag_filters, get_all_tags
 from .table_view import render_table_view
 from .card_view import render_card_view
-from .group_view import render_group_view
-
-try:
-    from st_aggrid import AgGrid, GridOptionsBuilder, JsCode, GridUpdateMode
-    HAS_AGGRID = True
-except ImportError:
-    HAS_AGGRID = False 
+from .group_view import render_group_view 
