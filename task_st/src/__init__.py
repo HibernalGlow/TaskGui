@@ -1,49 +1,34 @@
-"""
-任务管理器主包
-"""
-from .app import main
-from .utils import (
-    get_task_command, 
-    copy_to_clipboard, 
-    get_directory_files, 
-    open_file,
-    set_page_config,
-    setup_css,
-    initialize_session_state,
-    update_running_task_status,
-    get_task_status,
-    load_task_data,
-    apply_filters
-)
+# GlowToolBox 任务管理器包
+from .utils import init_session_state, copy_to_clipboard, get_task_command, DEFAULT_TASKFILE_PATH, setup_css, open_file, get_directory_files
+from .taskfile import load_taskfile, prepare_dataframe, get_all_tags, filter_tasks
 from .task_runner import run_task_via_cmd, run_multiple_tasks
 from .views import (
-    render_table_view,
-    render_card_view,
-    render_group_view,
-    render_settings_view,
-    render_aggrid_table,
-    render_batch_operations
+    render_table_view, 
+    render_card_view, 
+    render_group_view, 
+    render_batch_operations,
+    render_sidebar,
+    render_tag_filters
 )
 
 __all__ = [
-    'main',
-    'get_task_command',
+    'init_session_state',
     'copy_to_clipboard',
-    'get_directory_files',
-    'open_file',
-    'set_page_config',
+    'get_task_command',
+    'DEFAULT_TASKFILE_PATH',
     'setup_css',
-    'initialize_session_state',
-    'update_running_task_status',
-    'get_task_status',
-    'load_task_data',
-    'apply_filters',
+    'open_file',
+    'get_directory_files',
+    'load_taskfile',
+    'prepare_dataframe',
+    'get_all_tags',
+    'filter_tasks',
     'run_task_via_cmd',
     'run_multiple_tasks',
     'render_table_view',
     'render_card_view',
     'render_group_view',
-    'render_settings_view',
-    'render_aggrid_table',
-    'render_batch_operations'
+    'render_batch_operations',
+    'render_sidebar',
+    'render_tag_filters'
 ] 
