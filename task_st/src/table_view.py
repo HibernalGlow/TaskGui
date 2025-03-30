@@ -1,15 +1,19 @@
 import streamlit as st
 import os
 import json
+import pandas as pd
 from .utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from .task_runner import run_task_via_cmd
 from .common import render_batch_operations
+from .card_view import render_card_view
 
+# 尝试导入AgGrid
 try:
-    from st_aggrid import AgGrid, GridOptionsBuilder, JsCode, GridUpdateMode
+    from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
     HAS_AGGRID = True
 except ImportError:
     HAS_AGGRID = False
+    st.error("未安装st-aggrid。请使用 `pip install streamlit-aggrid` 安装")
 
 def render_table_view(filtered_df, current_taskfile):
     """
@@ -21,372 +25,196 @@ def render_table_view(filtered_df, current_taskfile):
     """
     st.markdown("### 任务列表")
     
-    # 使用data_editor替代AgGrid
-    render_data_editor_table(filtered_df, current_taskfile)
+    # 使用自定义表格渲染，避免data_editor的闪烁问题
+    render_custom_table(filtered_df, current_taskfile)
     
-    # 批量操作部分
-    render_batch_operations(current_taskfile, view_key="table")
+    # 显示已选择的任务操作区域
+    render_selected_tasks_section(filtered_df, current_taskfile)
 
-def render_data_editor_table(filtered_df, current_taskfile):
-    """使用st.data_editor渲染表格"""
-    # 准备表格数据
-    filtered_df_copy = filtered_df.copy()
-    filtered_df_copy['tags_str'] = filtered_df_copy['tags'].apply(lambda x: ', '.join(x) if isinstance(x, list) else '')
+def render_selected_tasks_section(filtered_df, current_taskfile):
+    """渲染已选择任务的区域，包括清除选择按钮和卡片视图"""
+    # 初始化会话状态
+    if 'selected_tasks' not in st.session_state:
+        st.session_state.selected_tasks = []
     
-    # 只显示需要的列
-    display_cols = ['name', 'emoji', 'description', 'tags_str', 'directory']
-    display_df = filtered_df_copy[display_cols]
+    # 获取选中的任务列表
+    selected_tasks = st.session_state.selected_tasks
     
-    # 定义列配置
-    column_config = {
-        "name": st.column_config.TextColumn("任务名称"),
-        "emoji": st.column_config.TextColumn("图标", width="small"),
-        "description": st.column_config.TextColumn("描述"),
-        "tags_str": st.column_config.TextColumn("标签"),
-        "directory": st.column_config.TextColumn("目录"),
-    }
-    
-    # 显示表格
-    edited_df = st.data_editor(
-        display_df,
-        column_config=column_config,
-        use_container_width=True,
-        height=400,
-        disabled=True,
-        hide_index=True,
-        key="task_data_editor"
-    )
-    
-    # 添加交互式操作，允许选择任务
-    st.markdown("#### 任务操作")
-    
-    task_selection = st.selectbox(
-        "选择要操作的任务:",
-        options=list(filtered_df['name']),
-        key="task_selection"
-    )
-    
-    if task_selection:
-        action_cols = st.columns(3)
-        with action_cols[0]:
-            if st.button("运行任务", key="run_selected_task"):
-                with st.spinner(f"正在启动任务 {task_selection}..."):
-                    result = run_task_via_cmd(task_selection, current_taskfile)
-                st.success(f"任务 {task_selection} 已在新窗口启动")
-        
-        with action_cols[1]:
-            if st.button("查看文件", key="view_files"):
-                task_dir = filtered_df[filtered_df['name'] == task_selection]['directory'].values[0]
-                if task_dir and os.path.exists(task_dir):
-                    files = get_directory_files(task_dir)
-                    if files:
-                        st.markdown(f"### {task_selection} 文件")
-                        file_cols = st.columns(min(5, len(files)))
-                        for i, file in enumerate(files):
-                            with file_cols[i % len(file_cols)]:
-                                file_path = os.path.join(task_dir, file)
-                                if st.button(file, key=f"file_{task_selection}_{i}"):
-                                    if open_file(file_path):
-                                        st.success(f"已打开: {file}")
-                    else:
-                        st.info(f"任务 {task_selection} 目录中没有找到文件")
-        
-        with action_cols[2]:
-            if st.button("复制命令", key="copy_task_cmd"):
-                cmd = get_task_command(task_selection, current_taskfile)
-                copy_to_clipboard(cmd)
-                st.success(f"已复制命令: {cmd}")
-    
-    # 多选部分
-    st.markdown("#### 批量选择任务")
-    
-    # 将任务分为两列显示
-    col1, col2 = st.columns([1, 1])
+    # 显示已选择的任务数量和操作按钮
+    col1, col2, col3 = st.columns([2, 1, 1])
     with col1:
-        for i, (_, row) in enumerate(filtered_df.iloc[::2].iterrows()):
-            task_name = row['name']
-            task_selected = st.checkbox(
-                f"{row['emoji']} {task_name}", 
-                key=f"std_task_{task_name}"
-            )
-            if task_selected:
-                if 'selected_tasks' not in st.session_state:
-                    st.session_state.selected_tasks = []
-                if task_name not in st.session_state.selected_tasks:
-                    st.session_state.selected_tasks.append(task_name)
-            elif 'selected_tasks' in st.session_state and task_name in st.session_state.selected_tasks:
-                st.session_state.selected_tasks.remove(task_name)
-                
+        st.markdown(f"### 已选择 {len(selected_tasks)} 个任务")
+    
     with col2:
-        for i, (_, row) in enumerate(filtered_df.iloc[1::2].iterrows()):
-            task_name = row['name']
-            task_selected = st.checkbox(
-                f"{row['emoji']} {task_name}", 
-                key=f"std_task_{task_name}"
-            )
-            if task_selected:
-                if 'selected_tasks' not in st.session_state:
-                    st.session_state.selected_tasks = []
-                if task_name not in st.session_state.selected_tasks:
-                    st.session_state.selected_tasks.append(task_name)
-            elif 'selected_tasks' in st.session_state and task_name in st.session_state.selected_tasks:
-                st.session_state.selected_tasks.remove(task_name)
+        # 清除选择按钮 - 直接更新状态，不使用回调
+        if st.button("清除选择", key="clear_table_selection"):
+            # 清空选中任务列表
+            st.session_state.selected_tasks = []
+    
+    with col3:
+        if st.button("运行选中的任务", key="run_selected_tasks"):
+            if not selected_tasks:
+                st.warning("请先选择要运行的任务")
+            else:
+                from .task_runner import run_multiple_tasks
+                with st.spinner(f"正在启动 {len(selected_tasks)} 个任务..."):
+                    result_msgs = run_multiple_tasks(
+                        selected_tasks, 
+                        current_taskfile, 
+                        parallel=st.session_state.get('run_parallel', False)
+                    )
+                
+                for msg in result_msgs:
+                    st.success(msg)
+    
+    # 如果有选中的任务，显示卡片视图
+    if selected_tasks:
+        # 过滤出选中的任务数据
+        selected_df = filtered_df[filtered_df['name'].isin(selected_tasks)]
+        
+        # 使用卡片视图显示选中的任务
+        with st.container():
+            # 每行显示的卡片数量
+            cards_per_row = 3
+            
+            # 创建行
+            for i in range(0, len(selected_df), cards_per_row):
+                cols = st.columns(cards_per_row)
+                # 获取当前行的任务
+                row_tasks = selected_df.iloc[i:min(i+cards_per_row, len(selected_df))]
+                
+                # 为每个列填充卡片
+                for col_idx, (_, task) in enumerate(row_tasks.iterrows()):
+                    with cols[col_idx]:
+                        with st.container():
+                            # 卡片标题
+                            st.markdown(f"### {task['emoji']} {task['name']}")
+                            
+                            # 描述
+                            st.markdown(f"**描述**: {task['description']}")
+                            
+                            # 标签
+                            tags_str = ', '.join([f"#{tag}" for tag in task['tags']]) if isinstance(task['tags'], list) else ''
+                            st.markdown(f"**标签**: {tags_str}")
+                            
+                            # 目录
+                            st.markdown(f"**目录**: `{task['directory']}`")
+                            
+                            # 命令
+                            cmd = get_task_command(task['name'], current_taskfile)
+                            st.code(cmd, language="bash")
+                            
+                            # 操作按钮，不包含选择框（已经在表格中选择了）
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                if st.button("运行", key=f"run_selected_{task['name']}"):
+                                    with st.spinner(f"正在启动任务 {task['name']}..."):
+                                        result = run_task_via_cmd(task['name'], current_taskfile)
+                                    st.success(f"任务 {task['name']} 已在新窗口启动")
+                            
+                            with col2:
+                                # 文件按钮
+                                if st.button("文件", key=f"file_selected_{task['name']}"):
+                                    if task['directory'] and os.path.exists(task['directory']):
+                                        files = get_directory_files(task['directory'])
+                                        if files:
+                                            st.markdown("##### 文件列表")
+                                            for j, file in enumerate(files):
+                                                file_path = os.path.join(task['directory'], file)
+                                                if st.button(file, key=f"file_selected_{task['name']}_{j}"):
+                                                    if open_file(file_path):
+                                                        st.success(f"已打开: {file}")
+                                    else:
+                                        st.info("没有找到文件")
+                            
+                            with col3:
+                                # 复制命令按钮
+                                if st.button("复制", key=f"copy_selected_{task['name']}"):
+                                    copy_to_clipboard(cmd)
+                                    st.success("命令已复制")
+                            
+                            st.markdown("---")
+
+def render_custom_table(filtered_df, current_taskfile):
+    """自定义表格实现 - 使用手动创建的复选框和列，避免data_editor的闪烁问题"""
+    
+    # 初始化会话状态
+    if 'selected_tasks' not in st.session_state:
+        st.session_state.selected_tasks = []
+    
+    # 为每一行创建一个唯一的选择键
+    def toggle_task(task_name):
+        if task_name in st.session_state.selected_tasks:
+            st.session_state.selected_tasks.remove(task_name)
+        else:
+            st.session_state.selected_tasks.append(task_name)
+    
+    # 创建表头
+    header_col1, header_col2, header_col3, header_col4, header_col5 = st.columns([1, 3, 8, 3, 4])
+    with header_col1:
+        st.markdown("**选择**")
+    with header_col2:
+        st.markdown("**任务名称**")
+    with header_col3:
+        st.markdown("**描述**")
+    with header_col4:
+        st.markdown("**标签**")
+    with header_col5:
+        st.markdown("**目录**")
+    
+    # 创建表格主体 - 使用容器包装以获得更好的样式
+    with st.container():
+        for _, task in filtered_df.iterrows():
+            task_name = task['name']
+            
+            # 判断此任务是否已选中
+            is_selected = task_name in st.session_state.selected_tasks
+            
+            # 创建行
+            col1, col2, col3, col4, col5 = st.columns([1, 3, 8, 3, 4])
+            
+            # 选择列 - 使用复选框
+            with col1:
+                # 创建一个唯一键的复选框
+                if st.checkbox("", value=is_selected, key=f"check_{task_name}", 
+                               on_change=toggle_task, args=(task_name,)):
+                    # 复选框的处理由on_change回调函数处理
+                    pass
+            
+            # 任务名称列
+            with col2:
+                st.markdown(f"{task['emoji']} {task_name}")
+            
+            # 描述列 - 截断过长的描述
+            with col3:
+                description = task['description']
+                if len(description) > 80:
+                    description = description[:80] + "..."
+                st.markdown(description)
+            
+            # 标签列
+            with col4:
+                tags_str = ', '.join([f"#{tag}" for tag in task['tags']]) if isinstance(task['tags'], list) else ''
+                st.markdown(tags_str)
+            
+            # 目录列
+            with col5:
+                st.markdown(f"`{task['directory']}`")
+            
+            # 添加分隔线
+            st.markdown("---")
 
 def render_aggrid_table(filtered_df, current_taskfile):
-    """使用AgGrid渲染表格 - 已弃用，保留代码仅供参考"""
-    # 准备表格数据
-    # 添加工具列方便用户进行操作
-    filtered_df_copy = filtered_df.copy()
-    filtered_df_copy['tags_str'] = filtered_df_copy['tags'].apply(lambda x: ', '.join(x) if isinstance(x, list) else '')
-    
-    # 为每个任务添加一个按钮列
-    filtered_df_copy['buttons'] = '操作'
-    
-    # 只显示需要的列
-    display_cols = ['name', 'emoji', 'description', 'tags_str', 'directory', 'buttons']
-    filtered_df_display = filtered_df_copy[display_cols]
-    
-    # 配置AgGrid
-    gb = GridOptionsBuilder.from_dataframe(filtered_df_display)
-    
-    # 设置列属性
-    gb.configure_column('name', header_name="任务名称", width=150)
-    gb.configure_column('emoji', header_name="图标", width=70)
-    gb.configure_column('description', header_name="描述", width=300)
-    gb.configure_column('tags_str', header_name="标签", width=150)
-    gb.configure_column('directory', header_name="目录", width=200)
-    
-    # 添加自定义按钮渲染器
-    btn_renderer = JsCode("""
-    function(params) {
-        var task = params.data.name;
-        return `
-            <div style="display: flex; gap: 5px;">
-                <button style="background-color: #4CAF50; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;"
-                    onclick="document.dispatchEvent(new CustomEvent('run_task', {detail: {task: '${task}'}}))">
-                    运行
-                </button>
-                <button style="background-color: #2196F3; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;"
-                    onclick="document.dispatchEvent(new CustomEvent('open_files', {detail: {task: '${task}'}}))">
-                    文件
-                </button>
-                <button style="background-color: #9E9E9E; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;"
-                    onclick="document.dispatchEvent(new CustomEvent('copy_cmd', {detail: {task: '${task}'}}))">
-                    复制
-                </button>
-            </div>
-        `;
-    }
-    """)
-    
-    # 配置按钮列
-    gb.configure_column(
-        'buttons',
-        header_name="操作",
-        cellRenderer=btn_renderer,
-        width=200
-    )
-    
-    # 配置多选模式和排序
-    gb.configure_selection(selection_mode='multiple', use_checkbox=True, pre_selected_rows=[])
-    gb.configure_grid_options(domLayout='normal')
-    gb.configure_default_column(sortable=True, filterable=True)
-    
-    # 添加事件回调
-    js_event_handlers = JsCode("""
-    function(e) {
-        if (!window.taskEventsAttached) {
-            window.taskEventsAttached = true;
-            
-            document.addEventListener('run_task', function(e) {
-                const task = e.detail.task;
-                const data = {
-                    type: 'run_task',
-                    task: task
-                };
-                window.parent.postMessage({
-                    type: "streamlit:setComponentValue",
-                    value: JSON.stringify(data)
-                }, "*");
-            });
-            
-            document.addEventListener('open_files', function(e) {
-                const task = e.detail.task;
-                const data = {
-                    type: 'open_files',
-                    task: task
-                };
-                window.parent.postMessage({
-                    type: "streamlit:setComponentValue",
-                    value: JSON.stringify(data)
-                }, "*");
-            });
-            
-            document.addEventListener('copy_cmd', function(e) {
-                const task = e.detail.task;
-                const data = {
-                    type: 'copy_cmd',
-                    task: task
-                };
-                window.parent.postMessage({
-                    type: "streamlit:setComponentValue",
-                    value: JSON.stringify(data)
-                }, "*");
-            });
-        }
-    }
-    """)
-    
-    # 应用设置
-    grid_options = gb.build()
-    grid_options['onGridReady'] = js_event_handlers
-    
-    # 显示表格
-    response = AgGrid(
-        filtered_df_display,
-        gridOptions=grid_options,
-        height=500,
-        fit_columns_on_grid_load=True,
-        update_mode=GridUpdateMode.VALUE_CHANGED | GridUpdateMode.SELECTION_CHANGED,
-        allow_unsafe_jscode=True,
-        custom_css={
-            ".ag-cell-value": {"display": "flex", "align-items": "center"},
-            ".ag-header-cell-text": {"color": "#1D5077", "font-weight": "bold"}
-        },
-        key="task_grid"
-    )
-    
-    # 处理选中的行
-    selected_rows = response.get('selected_rows', [])
-    if len(selected_rows) > 0:
-        # 更新会话状态中的选择
-        selected_names = [row.get('name') for row in selected_rows]
-        st.session_state.selected_tasks = selected_names
-    
-    # 处理按钮事件
-    event_data = response.get('data_changed', None)
-    if not event_data:
-        custom_value = response.get('custom_value')
-        if custom_value:
-            try:
-                if isinstance(custom_value, str):
-                    custom_value = json.loads(custom_value)
-                
-                event_type = custom_value.get('type')
-                task_name = custom_value.get('task')
-                
-                if event_type == 'run_task' and task_name:
-                    with st.spinner(f"正在启动任务 {task_name}..."):
-                        result = run_task_via_cmd(task_name, current_taskfile)
-                    st.success(f"任务 {task_name} 已在新窗口启动")
-                
-                elif event_type == 'copy_cmd' and task_name:
-                    cmd = get_task_command(task_name, current_taskfile)
-                    copy_to_clipboard(cmd)
-                    st.success(f"已复制命令: {cmd}")
-                
-                elif event_type == 'open_files' and task_name:
-                    # 获取该任务目录中的文件
-                    task_dir = filtered_df[filtered_df['name'] == task_name]['directory'].values[0]
-                    if task_dir and os.path.exists(task_dir):
-                        files = get_directory_files(task_dir)
-                        if files:
-                            st.markdown(f"### {task_name} 文件")
-                            file_cols = st.columns(min(5, len(files)))
-                            for i, file in enumerate(files):
-                                with file_cols[i % len(file_cols)]:
-                                    file_path = os.path.join(task_dir, file)
-                                    if st.button(file, key=f"file_{task_name}_{i}"):
-                                        if open_file(file_path):
-                                            st.success(f"已打开: {file}")
-                        else:
-                            st.info(f"任务 {task_name} 目录中没有找到文件")
-            except Exception as e:
-                st.error(f"处理按钮事件时出错: {str(e)}")
+    """使用AgGrid渲染表格 - 保留但不使用"""
+    st.warning("AgGrid表格存在选择状态问题，已改为使用自定义表格。")
+    render_custom_table(filtered_df, current_taskfile)
+
+def render_edit_table(filtered_df, current_taskfile):
+    """标准表格实现 - 保留但重定向到自定义表格"""
+    # 由于data_editor的闪烁问题，重定向到自定义表格实现
+    render_custom_table(filtered_df, current_taskfile)
 
 def render_standard_table(filtered_df, current_taskfile):
-    """不使用AgGrid，使用标准Streamlit表格组件渲染表格 - 已弃用，保留代码仅供参考"""
-    # 显示命令列
-    filtered_df_copy = filtered_df.copy()
-    filtered_df_copy['tags_str'] = filtered_df_copy['tags'].apply(lambda x: ', '.join(x) if isinstance(x, list) else '')
-    
-    # 只显示需要的列
-    display_cols = ['name', 'emoji', 'description', 'tags_str', 'directory']
-    st.dataframe(filtered_df_copy[display_cols], height=400)
-    
-    # 添加交互式操作，允许选择任务
-    st.markdown("#### 选择任务")
-    
-    # 显示多选框
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        for i, (_, row) in enumerate(filtered_df.iloc[::2].iterrows()):
-            task_name = row['name']
-            task_selected = st.checkbox(
-                f"{row['emoji']} {task_name}", 
-                key=f"std_task_{task_name}"
-            )
-            if task_selected:
-                if 'selected_tasks' not in st.session_state:
-                    st.session_state.selected_tasks = []
-                if task_name not in st.session_state.selected_tasks:
-                    st.session_state.selected_tasks.append(task_name)
-            elif 'selected_tasks' in st.session_state and task_name in st.session_state.selected_tasks:
-                st.session_state.selected_tasks.remove(task_name)
-                
-    with col2:
-        for i, (_, row) in enumerate(filtered_df.iloc[1::2].iterrows()):
-            task_name = row['name']
-            task_selected = st.checkbox(
-                f"{row['emoji']} {task_name}", 
-                key=f"std_task_{task_name}"
-            )
-            if task_selected:
-                if 'selected_tasks' not in st.session_state:
-                    st.session_state.selected_tasks = []
-                if task_name not in st.session_state.selected_tasks:
-                    st.session_state.selected_tasks.append(task_name)
-            elif 'selected_tasks' in st.session_state and task_name in st.session_state.selected_tasks:
-                st.session_state.selected_tasks.remove(task_name)
-    
-    # 显示任务操作按钮
-    st.markdown("#### 任务操作")
-    cols = st.columns(3)
-    
-    # 选择单个任务进行操作
-    selected_task = st.selectbox(
-        "选择要操作的任务:", 
-        options=list(filtered_df['name']),
-        key="std_selected_task"
-    )
-    
-    if selected_task:
-        action_cols = st.columns(3)
-        with action_cols[0]:
-            if st.button("运行任务", key="std_run_btn"):
-                with st.spinner(f"正在启动任务 {selected_task}..."):
-                    result = run_task_via_cmd(selected_task, current_taskfile)
-                st.success(f"任务 {selected_task} 已在新窗口启动")
-        
-        with action_cols[1]:
-            if st.button("打开文件", key="std_file_btn"):
-                task_dir = filtered_df[filtered_df['name'] == selected_task]['directory'].values[0]
-                if task_dir and os.path.exists(task_dir):
-                    files = get_directory_files(task_dir)
-                    if files:
-                        st.markdown(f"### {selected_task} 文件")
-                        file_cols = st.columns(min(5, len(files)))
-                        for i, file in enumerate(files):
-                            with file_cols[i % len(file_cols)]:
-                                file_path = os.path.join(task_dir, file)
-                                if st.button(file, key=f"file_{selected_task}_{i}"):
-                                    if open_file(file_path):
-                                        st.success(f"已打开: {file}")
-                    else:
-                        st.info(f"任务 {selected_task} 目录中没有找到文件")
-        
-        with action_cols[2]:
-            if st.button("复制命令", key="std_copy_btn"):
-                cmd = get_task_command(selected_task, current_taskfile)
-                copy_to_clipboard(cmd)
-                st.success(f"已复制命令: {cmd}") 
+    """保留向后兼容的标准表格实现"""
+    # 由于我们现在使用自定义表格，这里重定向到新函数
+    render_custom_table(filtered_df, current_taskfile)
