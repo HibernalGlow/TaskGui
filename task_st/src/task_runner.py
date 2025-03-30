@@ -58,6 +58,9 @@ def run_multiple_tasks(task_names, taskfile_path=None, parallel=False):
     返回:
         result_msg: 任务运行结果信息
     """
+    if not task_names or len(task_names) == 0:
+        return "没有选择任务"
+        
     if parallel:
         # 并行运行
         threads = []

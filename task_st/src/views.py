@@ -2,6 +2,7 @@ import streamlit as st
 from .utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from .task_runner import run_task_via_cmd, run_multiple_tasks
 import os
+import pandas as pd
 
 try:
     from st_aggrid import AgGrid, GridOptionsBuilder, JsCode, GridUpdateMode
@@ -24,35 +25,36 @@ def render_table_view(filtered_df, current_taskfile):
         render_aggrid_table(filtered_df, current_taskfile)
     else:
         render_standard_table(filtered_df, current_taskfile)
-        
+    
+    # 批量操作部分 - 这部分对两种表格视图都适用
+    render_batch_operations(current_taskfile, view_key="table")
+
 def render_aggrid_table(filtered_df, current_taskfile):
     """使用AgGrid渲染表格"""
-    # 准备表格数据
+    # 准备表格数据 - 只保留显示需要的列
     table_df = filtered_df.copy()
-    table_df['tags_str'] = table_df['tags'].apply(lambda x: ', '.join(x) if x else '')
+    
+    # 确保标签字段是字符串
+    table_df['tags_str'] = table_df['tags'].apply(lambda x: ', '.join(x) if isinstance(x, list) else '')
+    
+    # 只保留需要显示的列
+    display_cols = ['emoji', 'name', 'description', 'tags_str', 'directory']
+    table_df = table_df[display_cols]
+    
+    # 添加操作列
+    table_df['操作'] = '运行'
     
     # 设置表格选项
-    gb = GridOptionsBuilder.from_dataframe(table_df[['emoji', 'name', 'description', 'tags_str', 'directory']])
+    gb = GridOptionsBuilder.from_dataframe(table_df)
     gb.configure_column('emoji', header_name="", width=70)
     gb.configure_column('name', header_name="任务名称", width=150)
     gb.configure_column('description', header_name="描述", width=300)
     gb.configure_column('tags_str', header_name="标签", width=150)
     gb.configure_column('directory', header_name="目录", width=200)
+    gb.configure_column('操作', header_name="操作", width=100)
     
-    # 添加运行按钮列
-    button_renderer = JsCode("""
-    function(params) {
-        return '<button style="background-color: #4CAF50; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">运行</button>';
-    }
-    """)
-    
-    gb.configure_column(
-        "actions", 
-        headerName="操作", 
-        cellRenderer=button_renderer,
-        width=100
-    )
-    
+    # 配置选择模式
+    gb.configure_selection(selection_mode='single', use_checkbox=True)
     gb.configure_default_column(sortable=True, filterable=True)
     
     grid_options = gb.build()
@@ -67,14 +69,22 @@ def render_aggrid_table(filtered_df, current_taskfile):
         allow_unsafe_jscode=True
     )
     
-    # 处理选中行
-    if grid_response['selected_rows']:
-        selected_task = grid_response['selected_rows'][0]
-        st.write(f"选中任务: {selected_task['name']}")
+    # 处理选中行 - 修复错误处理
+    selected_rows = grid_response.get('selected_rows', [])
+    if selected_rows and len(selected_rows) > 0:
+        selected_task = selected_rows[0]
+        st.write(f"选中任务: **{selected_task['name']}**")
         
         # 显示任务命令
         cmd = get_task_command(selected_task['name'], current_taskfile)
-        st.code(cmd, language="bash")
+        st.subheader("命令")
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.code(cmd, language="bash")
+        with col2:
+            if st.button("复制命令", key="copy_aggrid_cmd"):
+                copy_to_clipboard(cmd)
+                st.success("命令已复制")
         
         # 任务目录下的文件
         if selected_task['directory'] and os.path.exists(selected_task['directory']):
@@ -90,7 +100,7 @@ def render_aggrid_table(filtered_df, current_taskfile):
                                 st.success(f"已打开: {file}")
         
         # 运行按钮
-        if st.button(f"运行任务: {selected_task['name']}", type="primary"):
+        if st.button(f"运行任务: {selected_task['name']}", type="primary", key="run_aggrid_task"):
             with st.spinner(f"正在启动任务窗口 {selected_task['name']}..."):
                 result = run_task_via_cmd(selected_task['name'], current_taskfile)
             st.success("任务已在新窗口中启动")
@@ -231,17 +241,12 @@ def render_card_view(filtered_df, current_taskfile):
     for i, (_, row) in enumerate(filtered_df.iterrows()):
         with cols[i % 3]:
             with st.expander(f"{row['emoji']} {row['name']}", expanded=False):
-                # 添加复制命令按钮
+                # 添加命令显示
                 cmd = get_task_command(row['name'], current_taskfile)
-                st.markdown(f"""
-                <div>
-                    <code style="font-size:12px">{cmd}</code>
-                    <button class="copy-btn" 
-                        onclick="navigator.clipboard.writeText('{cmd}'); this.innerText='已复制';">
-                        复制
-                    </button>
-                </div>
-                """, unsafe_allow_html=True)
+                st.code(cmd, language="bash")
+                if st.button("复制命令", key=f"copy_card_{row['name']}"):
+                    copy_to_clipboard(cmd)
+                    st.success("命令已复制")
                 
                 # 添加勾选框
                 is_selected = row['name'] in st.session_state.selected_tasks
@@ -261,7 +266,24 @@ def render_card_view(filtered_df, current_taskfile):
                     
                 st.markdown(f"**目录**: `{row['directory']}`")
                 
-                if st.button(f"运行", key=f"run_{row['name']}"):
+                # 添加文件打开功能
+                if row['directory'] and os.path.exists(row['directory']):
+                    files = get_directory_files(row['directory'])
+                    if files:
+                        selected_file = st.selectbox(
+                            "文件",
+                            options=["选择文件..."] + files,
+                            key=f"card_file_{row['name']}"
+                        )
+                        
+                        if selected_file != "选择文件...":
+                            file_path = os.path.join(row['directory'], selected_file)
+                            if st.button("打开文件", key=f"card_open_{row['name']}"):
+                                if open_file(file_path):
+                                    st.success(f"已打开文件: {file_path}")
+                
+                # 运行按钮
+                if st.button(f"运行任务", key=f"run_{row['name']}", type="primary"):
                     with st.spinner(f"正在启动任务窗口 {row['name']}..."):
                         result = run_task_via_cmd(row['name'], current_taskfile)
                     st.success("任务已在新窗口中启动")
@@ -280,8 +302,9 @@ def render_group_view(filtered_df, current_taskfile):
     # 按标签分组
     if not filtered_df.empty:
         # 获取第一个标签作为主标签
+        filtered_df = filtered_df.copy()
         filtered_df['primary_tag'] = filtered_df['tags'].apply(
-            lambda x: x[0] if x and len(x) > 0 else "未分类"
+            lambda x: x[0] if isinstance(x, list) and len(x) > 0 else "未分类"
         )
         
         # 按主标签分组
@@ -295,17 +318,12 @@ def render_group_view(filtered_df, current_taskfile):
                 with cols[i % 3]:
                     st.markdown(f"**{row['emoji']} {row['name']}**")
                     
-                    # 添加复制命令按钮
+                    # 添加命令显示
                     cmd = get_task_command(row['name'], current_taskfile)
-                    st.markdown(f"""
-                    <div>
-                        <code style="font-size:11px">{cmd}</code>
-                        <button class="copy-btn" 
-                            onclick="navigator.clipboard.writeText('{cmd}'); this.innerText='已复制';">
-                            复制
-                        </button>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.code(cmd, language="bash")
+                    if st.button("复制", key=f"copy_group_{row['name']}"):
+                        copy_to_clipboard(cmd)
+                        st.success("命令已复制")
                     
                     # 添加勾选框
                     is_selected = row['name'] in st.session_state.selected_tasks
@@ -317,7 +335,23 @@ def render_group_view(filtered_df, current_taskfile):
                     
                     st.markdown(f"{row['description']}")
                     
-                    if st.button(f"运行", key=f"group_run_{row['name']}"):
+                    # 添加文件打开功能
+                    if row['directory'] and os.path.exists(row['directory']):
+                        files = get_directory_files(row['directory'])
+                        if files:
+                            selected_file = st.selectbox(
+                                "文件",
+                                options=["选择文件..."] + files,
+                                key=f"group_file_{row['name']}"
+                            )
+                            
+                            if selected_file != "选择文件...":
+                                file_path = os.path.join(row['directory'], selected_file)
+                                if st.button("打开文件", key=f"group_open_{row['name']}"):
+                                    if open_file(file_path):
+                                        st.success(f"已打开文件: {file_path}")
+                    
+                    if st.button(f"运行", key=f"group_run_{row['name']}", type="primary"):
                         with st.spinner(f"正在启动任务窗口 {row['name']}..."):
                             result = run_task_via_cmd(row['name'], current_taskfile)
                         st.success("任务已在新窗口中启动")
@@ -335,7 +369,7 @@ def render_batch_operations(current_taskfile, view_key=""):
         current_taskfile: 当前Taskfile路径
         view_key: 视图类型，用于生成唯一键值
     """
-    if st.session_state.selected_tasks:
+    if st.session_state.selected_tasks and len(st.session_state.selected_tasks) > 0:
         st.markdown("---")
         st.markdown("### 批量操作")
         
@@ -374,10 +408,7 @@ def render_sidebar(current_taskfile):
         current_taskfile: 当前Taskfile路径
         
     返回:
-        manual_path: 用户输入的Taskfile路径
-        selected_tags: 选择的标签
-        search_term: 搜索词
-        view_type: 视图类型
+        sidebar_data: 包含侧边栏选项的字典
     """
     st.sidebar.subheader("Taskfile 设置")
     
@@ -417,10 +448,21 @@ def render_sidebar(current_taskfile):
         st.rerun()
     
     # 并行模式
-    st.session_state.parallel_mode = st.sidebar.checkbox(
+    parallel_mode = st.sidebar.checkbox(
         "并行执行任务",
         value=st.session_state.parallel_mode,
         help="启用后，批量任务将同时运行，而不是等待前一个完成"
+    )
+    # 更新会话状态
+    st.session_state.parallel_mode = parallel_mode
+    
+    # 高级过滤部分
+    st.sidebar.subheader("高级过滤")
+    
+    # 视图选择
+    view_type = st.sidebar.radio(
+        "视图类型",
+        options=["表格视图", "卡片视图", "分组视图"]
     )
     
     # 处理批量操作
@@ -430,12 +472,12 @@ def render_sidebar(current_taskfile):
         
         col1, col2 = st.sidebar.columns(2)
         with col1:
-            if st.button("清空选择", key="clear_selection_sidebar"):
+            if st.sidebar.button("清空选择", key="clear_selection_sidebar"):
                 st.session_state.selected_tasks = []
                 st.rerun()
         
         with col2:
-            if st.button("运行所有选中", key="run_all_sidebar", type="primary"):
+            if st.sidebar.button("运行所有选中", key="run_all_sidebar", type="primary"):
                 with st.spinner("正在启动任务..."):
                     result = run_multiple_tasks(
                         st.session_state.selected_tasks, 
@@ -449,15 +491,6 @@ def render_sidebar(current_taskfile):
             commands = [get_task_command(task, current_taskfile) for task in st.session_state.selected_tasks]
             copy_to_clipboard("\n".join(commands))
             st.sidebar.success("所有命令已复制到剪贴板")
-    
-    # 高级过滤部分
-    st.sidebar.subheader("高级过滤")
-    
-    # 视图选择
-    view_type = st.sidebar.radio(
-        "视图类型",
-        options=["表格视图", "卡片视图", "分组视图"]
-    )
     
     return {
         'manual_path': manual_path,
