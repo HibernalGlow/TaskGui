@@ -1,5 +1,6 @@
 import streamlit as st
 import json
+import yaml
 from datetime import datetime
 
 # 全局内存缓存
@@ -552,38 +553,21 @@ def force_save_state():
 
 # 兼容旧方法 - 为了保持接口一致而保留，但改为内存操作
 def export_yaml_state():
-    """导出全局状态 (兼容旧接口)"""
-    return export_state_as_dict()
+    """导出全局状态为YAML格式的字符串"""
+    global_state = get_global_state()
+    return yaml.dump(global_state, sort_keys=False, allow_unicode=True, indent=2)
 
 def export_global_state_yaml():
-    """导出全局状态为YAML字符串"""
-    try:
-        import yaml
-        state_dict = get_global_state()
-        # 使用dump而不是dumps，并设置正确的格式化选项
-        yaml_str = yaml.dump(
-            state_dict,
-            default_flow_style=False,  # 使用块样式而不是流样式
-            sort_keys=False,  # 保持键的顺序
-            allow_unicode=True,  # 允许Unicode字符
-            width=80,  # 设置行宽
-            indent=2,  # 设置缩进
-            line_break='\n'  # 使用换行符
-        )
-        return yaml_str
-    except Exception as e:
-        print(f"导出状态失败: {str(e)}")
-        return ""
+    """导出全局状态为YAML格式的字符串"""
+    global_state = get_global_state()
+    return yaml.dump(global_state, sort_keys=False, allow_unicode=True, indent=2)
 
 def import_global_state_yaml(yaml_str, rerun=True):
-    """从YAML导入全局状态 (兼容旧接口)"""
-    # 由于现在不使用yaml，这个函数简化为接受一个字典并导入
+    """从YAML导入全局状态"""
     try:
         if isinstance(yaml_str, dict):
             state_dict = yaml_str
         else:
-            # 为兼容性保留，但不鼓励使用
-            import yaml
             state_dict = yaml.safe_load(yaml_str)
         
         update_global_state(state_dict)
@@ -629,17 +613,17 @@ def update_user_preferences(preferences):
     global_state["user_preferences"].update(preferences)
     update_global_state(global_state)
 
-# 兼容旧方法 - 保留以确保兼容性
+# 导出全局状态为字典 - 提供接口以备需要
 def export_global_state_json():
     """
-    导出全局状态为JSON字符串 (兼容旧版本)
+    导出全局状态为JSON字符串
     """
     global_state = get_global_state()
     return json.dumps(global_state, indent=2, ensure_ascii=False)
 
 def import_global_state_json(json_str, rerun=True):
     """
-    从JSON字符串导入全局状态 (兼容旧版本)
+    从JSON字符串导入全局状态
     """
     try:
         state_dict = json.loads(json_str)
@@ -650,3 +634,14 @@ def import_global_state_json(json_str, rerun=True):
     except Exception as e:
         print(f"导入状态失败: {str(e)}")
         return False
+
+# 添加辅助函数用于在UI中显示YAML
+def display_yaml_in_ui(yaml_str):
+    """
+    在UI中显示YAML字符串为格式化的代码块
+    
+    参数:
+        yaml_str: YAML格式的字符串
+    """
+    markdown_yaml = f"```yaml\n{yaml_str}\n```"
+    st.markdown(markdown_yaml)
