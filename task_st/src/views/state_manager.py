@@ -8,7 +8,7 @@ from src.utils.selection_utils import (
     export_yaml_state as export_global_state_yaml, 
     import_global_state_yaml,
     validate_yaml, update_task_runtime, record_task_run,
-    load_local_config
+    load_local_config, save_user_preferences
 )
 
 def render_state_manager():
@@ -369,9 +369,8 @@ def render_state_manager():
                 user_prefs['default_view'] = default_view
                 user_prefs['ui_settings']['theme'] = theme
                 
-                # 更新全局状态
-                global_state['user_preferences'] = user_prefs
-                update_global_state(global_state)
+                # 保存到本地配置
+                save_user_preferences(user_prefs)
                 st.success("用户偏好已更新")
                 st.rerun()
         else:

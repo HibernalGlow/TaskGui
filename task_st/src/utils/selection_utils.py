@@ -156,6 +156,10 @@ def load_local_data():
     if "favorite_tags" in local_config:
         global_state["local"]["favorite_tags"] = local_config["favorite_tags"]
     
+    # 更新用户偏好
+    if "user_preferences" in local_config:
+        global_state["user_preferences"] = local_config["user_preferences"]
+    
     # 确保会话状态中有常用标签
     if 'favorite_tags' not in st.session_state:
         st.session_state.favorite_tags = global_state["local"]["favorite_tags"].copy()
@@ -163,24 +167,38 @@ def load_local_data():
 # 保存常用标签到本地
 def save_favorite_tags(tags):
     """保存常用标签到本地配置"""
-    global_state = get_global_state()
+    # 加载现有配置
+    config = load_local_config()
     
-    # 确保结构完整
-    ensure_state_structure(global_state)
+    # 更新常用标签
+    config["favorite_tags"] = tags
     
-    # 更新全局状态中的常用标签
-    global_state["local"]["favorite_tags"] = tags
-    
-    # 更新会话状态
-    st.session_state.favorite_tags = tags.copy()
+    # 保存配置
+    save_local_config(config)
     
     # 更新全局状态
+    global_state = get_global_state()
+    if "local" not in global_state:
+        global_state["local"] = {}
+    global_state["local"]["favorite_tags"] = tags
     update_global_state(global_state)
+
+# 保存用户偏好设置到本地
+def save_user_preferences(preferences):
+    """保存用户偏好设置到本地配置"""
+    # 加载现有配置
+    config = load_local_config()
     
-    # 保存到本地文件
-    local_config = load_local_config()
-    local_config["favorite_tags"] = tags
-    save_local_config(local_config)
+    # 更新用户偏好
+    config["user_preferences"] = preferences
+    
+    # 保存配置
+    save_local_config(config)
+    
+    # 更新全局状态
+    global_state = get_global_state()
+    global_state["user_preferences"] = preferences
+    update_global_state(global_state)
 
 def sync_session_state():
     """同步全局状态与会话状态的兼容层"""

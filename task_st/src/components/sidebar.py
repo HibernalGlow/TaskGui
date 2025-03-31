@@ -102,17 +102,17 @@ def render_sidebar(current_taskfile):
         widget_key = f"tags_selector_{st.session_state.tags_widget_key}"
         
         # 这个组件允许用户通过文本输入和下拉菜单选择标签
-        selected_tags = st_tags(
-            label="",  # 移除标签文本，避免重复
-            text="输入或选择标签...",
-            value=st.session_state.tags_filter,  # 使用当前选中的标签作为默认值
-            suggestions=sorted(all_tags),  # 所有可用标签作为建议
-            maxtags=10,  # 最多可以选择的标签数
-            key=widget_key
-        )
+        # selected_tags = st_tags(
+        #     label="",  # 移除标签文本，避免重复
+        #     text="输入或选择标签...",
+        #     value=st.session_state.tags_filter,  # 使用当前选中的标签作为默认值
+        #     suggestions=sorted(all_tags),  # 所有可用标签作为建议
+        #     maxtags=10,  # 最多可以选择的标签数
+        #     key=widget_key
+        # )
         
-        # 将selected_tags的结果同步到session_state
-        st.session_state.tags_filter = selected_tags
+        # # 将selected_tags的结果同步到session_state
+        # st.session_state.tags_filter = selected_tags
         
         # 常用标签管理
         with st.expander("管理常用标签", expanded=False):
