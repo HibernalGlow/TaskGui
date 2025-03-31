@@ -278,11 +278,13 @@ def render_aggrid_table(filtered_df, current_taskfile):
     gb.configure_column('显示名称', 
                        header_name="任务名称", 
                        editable=enable_editing,
+                       enableRowGroup=True,  # 启用行分组
                        width=150)
     
     gb.configure_column('描述', 
                        header_name="任务描述", 
                        editable=enable_editing,
+                       enableRowGroup=True,  # 启用行分组
                        autoHeight=True,
                        wrapText=True)
     
@@ -290,11 +292,13 @@ def render_aggrid_table(filtered_df, current_taskfile):
     gb.configure_column('标签', 
                        header_name="标签", 
                        editable=enable_editing,
+                       enableRowGroup=True,  # 启用行分组
                        filter=True)
     
     gb.configure_column('目录', 
                        header_name="任务目录", 
                        editable=enable_editing,
+                       enableRowGroup=True,  # 启用行分组
                        filter=True)
     
     # 启用排序和过滤功能
@@ -305,38 +309,30 @@ def render_aggrid_table(filtered_df, current_taskfile):
     )
 
     # 配置分组功能
-    if 'enable_row_group' in locals() and enable_row_group and 'group_by_columns' in locals():
-        # 设置可分组的列
-        for col in group_by_columns:
-            gb.configure_column(col, rowGroup=True, enableRowGroup=True)
+    if 'enable_row_group' in locals() and enable_row_group:
+        # 如果有预设的分组列，则设置
+        if 'group_by_columns' in locals() and group_by_columns:
+            for col in group_by_columns:
+                gb.configure_column(col, rowGroup=True)
         
-        # 配置分组选项
-        gb.configure_grid_options(
-            # 启用行分组
-            groupSelectsChildren=True,
-            groupDefaultExpanded=1,  # 默认展开第一级
-            autoGroupColumnDef={
+        # 分组专用选项
+        group_options = {
+            # 自动分组列定义
+            'autoGroupColumnDef': {
                 "headerName": "分组",
                 "minWidth": 200,
                 "cellRendererParams": {
                     "suppressCount": False,  # 显示每组的计数
                 }
             }
-        )
+        }
         
-        if 'auto_group_column' in locals() and auto_group_column:
-            gb.configure_grid_options(
-                autoGroupColumnDef={
-                    "headerName": "分组",
-                    "minWidth": 200,
-                    "cellRendererParams": {
-                        "suppressCount": False,
-                    }
-                }
-            )
-            
+        # 隐藏已展开的父级配置（可选）
         if 'group_hide_open_parents' in locals() and group_hide_open_parents:
-            gb.configure_grid_options(groupHideOpenParents=True)
+            group_options['groupHideOpenParents'] = True
+            
+        # 应用分组配置
+        gb.configure_grid_options(**group_options)
     
     # 配置多行选择
     if 'enable_multi_select' in locals() and enable_multi_select:
@@ -525,19 +521,38 @@ def render_aggrid_table(filtered_df, current_taskfile):
     }
     """)
     
-    gb.configure_grid_options(
-        getRowStyle=js_code,
-        # 添加拖拽功能
-        rowDragManaged=True,
-        animateRows=True,
-        # 添加事件监听器 - 用于触发器
-        onCellValueChanged=custom_js if enable_trigger else None,
-        onFilterChanged=custom_js if enable_trigger else None,
-        onSortChanged=custom_js if enable_trigger else None
-    )
+    # 基础网格选项配置（适用于所有模式）
+    base_grid_options = {
+        # 启用行分组面板
+        'rowGroupPanelShow': 'always',  # 始终显示分组面板
+        'suppressDragLeaveHidesColumns': False,  # 允许拖拽列到分组面板
+        # 行分组基本配置
+        'groupSelectsChildren': True,
+        'groupDefaultExpanded': 1,  # 默认展开第一级
+        # 拖拽配置
+        'rowDragManaged': True,
+        'animateRows': True,
+        # 样式和事件
+        'getRowStyle': js_code
+    }
+    
+    # 添加事件监听器（仅在启用触发器时）
+    if enable_trigger:
+        base_grid_options.update({
+            'onCellValueChanged': custom_js,
+            'onFilterChanged': custom_js,
+            'onSortChanged': custom_js
+        })
+    
+    # 应用基础配置
+    gb.configure_grid_options(**base_grid_options)
     
     # 构建最终选项
     grid_options = gb.build()
+    
+    # 添加使用提示
+    if 'enable_row_group' in locals() and enable_row_group:
+        st.info("拖拽列标题到上方\"Drag here to set row groups\"区域可以按该列分组数据")
     
     # # 在表格上方添加操作按钮
     # col1, col2, col3 = st.columns([1, 1, 2])
