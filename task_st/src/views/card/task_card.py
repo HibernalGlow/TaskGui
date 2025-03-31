@@ -1,8 +1,8 @@
 import streamlit as st
 import os
-from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
-from ..services.task_runner import run_task_via_cmd
-from ..utils.selection_utils import update_task_selection, get_task_selection_state, record_task_run, get_task_runtime
+from src.utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
+from src.services.task_runner import run_task_via_cmd
+from src.utils.selection_utils import update_task_selection, get_task_selection_state, record_task_run, get_task_runtime
 
 def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_checkbox=False):
     """通用的任务卡片渲染函数，可在不同视图中复用
@@ -97,4 +97,4 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
             st.markdown(f"**最后状态**: {runtime.get('last_status', 'N/A')}")
     
     # 添加分隔线
-    st.markdown("---") 
+    st.markdown("---")

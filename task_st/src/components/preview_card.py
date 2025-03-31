@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
 import os
-from ..utils.file_utils import get_task_command, copy_to_clipboard
-from ..services.task_runner import run_task_via_cmd, run_tasks_via_cmd
-from ..utils.selection_utils import get_selected_tasks, clear_all_selections, get_global_state, record_task_run, get_task_runtime
-from .task_card import render_task_card
+from src.utils.file_utils import get_task_command, copy_to_clipboard
+from src.services.task_runner import run_task_via_cmd, run_multiple_tasks as run_tasks_via_cmd
+from src.utils.selection_utils import get_selected_tasks, clear_all_selections, get_global_state, record_task_run, get_task_runtime
+from src.views.card.task_card import render_task_card
 
 def render_shared_preview(filtered_df, current_taskfile):
     """渲染共享任务预览区域

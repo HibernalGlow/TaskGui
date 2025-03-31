@@ -1,6 +1,6 @@
 import streamlit as st
-from ..utils.file_utils import get_task_command, copy_to_clipboard
-from ..services.task_runner import run_multiple_tasks
+from src.utils.file_utils import get_task_command, copy_to_clipboard
+from src.services.task_runner import run_multiple_tasks
 
 def render_batch_operations(current_taskfile, view_key="default"):
     """
@@ -74,4 +74,4 @@ def render_batch_operations(current_taskfile, view_key="default"):
         if 'selected' in st.session_state:
             for task in st.session_state.selected:
                 st.session_state.selected[task] = False
-        st.experimental_rerun() 
+        st.experimental_rerun()

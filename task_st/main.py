@@ -4,25 +4,18 @@ import os
 import sys
 import traceback
 from code_editor import code_editor
-from src import (
-    init_session_state, 
-    setup_css,
-    load_taskfile, 
-    prepare_dataframe, 
-    get_all_tags, 
-    filter_tasks,
-    render_table_view,
-    render_card_view,
-    render_sidebar,
-    render_tag_filters,
-    find_taskfiles,
-    get_nearest_taskfile
-)
-from src.services.taskfile import read_taskfile
-from src.utils.file_utils import open_file, get_directory_files
-from src.views.styles import apply_custom_styles
+from src.utils.session_utils import init_session_state, setup_css
+from src.services.taskfile import load_taskfile, read_taskfile
+from src.services.dataframe import prepare_dataframe, filter_tasks
+from src.components.tag_filters import get_all_tags, render_tag_filters
+from src.views.table.table_view import render_table_view
+from src.views.card.card_view import render_card_view
+from src.components.sidebar import render_sidebar
+from src.utils.file_utils import open_file, get_directory_files, find_taskfiles, get_nearest_taskfile, copy_to_clipboard, get_task_command
+from src.services.task_runner import run_task_via_cmd, run_multiple_tasks
+from src.components.styles import apply_custom_styles
 from src.components.preview_card import render_shared_preview
-from src.views.state_manager import render_state_manager
+from src.manage.state_manager import render_state_manager
 from src.utils.selection_utils import (
     get_global_state, update_global_state, 
     export_yaml_state as export_global_state_yaml, 

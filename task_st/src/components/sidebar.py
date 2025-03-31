@@ -1,7 +1,7 @@
 import streamlit as st
-from ..services.taskfile import read_taskfile
+from src.services.taskfile import read_taskfile
 from streamlit_tags import st_tags
-from ..utils.selection_utils import save_favorite_tags
+from src.utils.selection_utils import save_favorite_tags
 
 def render_sidebar(current_taskfile):
     """渲染侧边栏控件"""
