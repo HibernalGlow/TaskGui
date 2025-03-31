@@ -10,14 +10,12 @@ except ImportError:
     st.error("未安装st-aggrid。请使用 `pip install streamlit-aggrid` 安装")
 
 # 导入选择状态更新函数
-from ..utils.selection_utils import update_task_selection, init_selection_state, get_task_selection_state, init_global_state
+from ..utils.selection_utils import update_task_selection, get_task_selection_state, init_global_state, force_save_state, update_memory_cache, get_selected_tasks
 
 def render_aggrid_table(filtered_df, current_taskfile):
-    """使用AgGrid渲染表格 - 优化勾选状态获取并增加分组功能"""
+    """使用AgGrid渲染表格 - 使用内存状态管理"""
     if not HAS_AGGRID:
         st.warning("未安装st-aggrid。请使用 `pip install streamlit-aggrid` 安装")
-        from .standard_table import render_edit_table
-        render_edit_table(filtered_df, current_taskfile)
         return
     
     # 确保全局状态已初始化
@@ -27,9 +25,6 @@ def render_aggrid_table(filtered_df, current_taskfile):
     filtered_df_copy = filtered_df.copy()
     filtered_df_copy['tags_str'] = filtered_df_copy['tags'].apply(lambda x: ', '.join(x) if isinstance(x, list) else '')
     filtered_df_copy['显示名称'] = filtered_df_copy.apply(lambda x: f"{x['emoji']} {x['name']}", axis=1)
-    
-    # 初始化会话状态 - 使用集中管理的选择状态
-    init_selection_state(filtered_df_copy['name'].tolist())
     
     # AgGrid分组设置状态
     if 'aggrid_group_by' not in st.session_state:
@@ -245,11 +240,37 @@ def render_aggrid_table(filtered_df, current_taskfile):
     # 构建最终选项
     grid_options = gb.build()
     
+    # 在表格上方添加操作按钮
+    col1, col2, col3 = st.columns([1, 1, 2])
+    with col1:
+        if st.button("全部选择", key="select_all_btn"):
+            # 更新所有可见行的选择状态为选中
+            for idx, row in filtered_df_copy.iterrows():
+                task_name = row['name']
+                if not get_task_selection_state(task_name):
+                    update_task_selection(task_name, True, rerun=False)
+            
+            # 更新内存缓存
+            update_memory_cache()
+            st.rerun()
+    
+    with col2:
+        if st.button("清除选择", key="clear_selection_btn"):
+            # 更新所有可见行的选择状态为未选中
+            for idx, row in filtered_df_copy.iterrows():
+                task_name = row['name']
+                if get_task_selection_state(task_name):
+                    update_task_selection(task_name, False, rerun=False)
+            
+            # 更新内存缓存
+            update_memory_cache()
+            st.rerun()
+    
     # 渲染 AgGrid
     grid_return = AgGrid(
         display_df,
         gridOptions=grid_options,
-        update_mode=GridUpdateMode.MODEL_CHANGED if not enable_trigger else GridUpdateMode.VALUE_CHANGED,
+        update_mode=GridUpdateMode.MODEL_CHANGED,  # 始终使用MODEL_CHANGED模式避免刷新问题
         fit_columns_on_grid_load=True,
         enable_enterprise_modules=enable_enterprise,
         height=500,
@@ -266,27 +287,33 @@ def render_aggrid_table(filtered_df, current_taskfile):
         
         # 记录状态是否有变化
         has_changes = False
-        changed_tasks = []
         
-        # 检查每个任务的选择状态是否发生变化
+        # 检查每个任务的选择状态与全局状态是否一致
         for idx, row in updated_df.iterrows():
             task_name = row['name']
             if task_name and pd.notna(task_name):  # 确保任务名有效
                 current_selection = bool(row['选择'])
                 previous_selection = get_task_selection_state(task_name)
                 
-                # 如果状态有变化，记录下来
+                # 如果状态有变化，更新全局状态
                 if current_selection != previous_selection:
                     has_changes = True
-                    changed_tasks.append((task_name, current_selection))
+                    update_task_selection(task_name, current_selection, rerun=False)
         
-        # 如果有状态变化，批量更新全局状态
+        # 如果有状态变化，强制更新内存缓存但不刷新页面
         if has_changes:
-            # 更新除最后一个之外的所有任务，不刷新页面
-            for task_name, is_selected in changed_tasks[:-1]:
-                update_task_selection(task_name, is_selected, rerun=False)
+            # 更新内存缓存
+            force_save_state()
             
-            # 更新最后一个任务并刷新页面
-            if changed_tasks:
-                last_task, last_selection = changed_tasks[-1]
-                update_task_selection(last_task, last_selection, rerun=True)
+            # 更新会话状态中的选中任务列表，确保预览卡能正确显示
+            if 'selected_tasks' not in st.session_state:
+                st.session_state.selected_tasks = []
+            
+            # 重新构建选中任务列表
+            st.session_state.selected_tasks = list(updated_df[updated_df['选择'] == True]['name'].values)
+    
+    # 表格下方添加状态信息
+    selected_tasks = get_selected_tasks()
+    st.write(f"当前选中: {len(selected_tasks)} 个任务")
+    
+    return grid_return

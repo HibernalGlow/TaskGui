@@ -4,7 +4,7 @@ vars:
   ROOT_DIR: D:\1VSCODE\GlowToolBox
 tasks:
   artbook_dedup:
-    desc: 🔧 🖼️ 艺术书去重工具 - 删除重复的艺术书图片
+    desc:  🖼️ 艺术书去重工具 - 删除重复的艺术书图片
     dir: '{{.ROOT_DIR}}'
     tags:
     - filter
