@@ -30,25 +30,25 @@ def render_sidebar(current_taskfile):
             st.session_state.tags_widget_key = 0
             
         # 显示快速标签过滤按钮
-        st.markdown("### ⚡ 快速选择")
+        # st.markdown("### ⚡ 快速选择")
         
-        # 添加操作按钮
-        quick_cols = st.columns(2)
-        with quick_cols[0]:
-            if st.button("🔍 全部", key="show_all_tags"):
-                # 清空筛选标签
-                st.session_state.tags_filter = []
-                # 增加key值以强制刷新st_tags组件
-                st.session_state.tags_widget_key += 1
-                st.rerun()
+        # # 添加操作按钮
+        # quick_cols = st.columns(2)
+        # with quick_cols[0]:
+        #     if st.button("🔍 全部", key="show_all_tags"):
+        #         # 清空筛选标签
+        #         st.session_state.tags_filter = []
+        #         # 增加key值以强制刷新st_tags组件
+        #         st.session_state.tags_widget_key += 1
+        #         st.rerun()
                 
-        with quick_cols[1]:
-            if st.button("❌ 清除", key="clear_tag_filters"):
-                # 清空筛选标签
-                st.session_state.tags_filter = []
-                # 增加key值以强制刷新st_tags组件
-                st.session_state.tags_widget_key += 1
-                st.rerun()
+        # with quick_cols[1]:
+        #     if st.button("❌ 清除", key="clear_tag_filters"):
+        #         # 清空筛选标签
+        #         st.session_state.tags_filter = []
+        #         # 增加key值以强制刷新st_tags组件
+        #         st.session_state.tags_widget_key += 1
+        #         st.rerun()
         
         # 显示收藏标签作为快速过滤器按钮
         if st.session_state.favorite_tags:
