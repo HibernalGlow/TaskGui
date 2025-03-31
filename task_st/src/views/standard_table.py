@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from ..utils.selection_utils import update_task_selection
 
 def render_edit_table(filtered_df, current_taskfile):
     """标准表格实现 - 使用Streamlit原生data_editor"""
@@ -39,25 +40,20 @@ def render_edit_table(filtered_df, current_taskfile):
         'directory': '目录'
     })
     
-    # 定义编辑器回调函数，减少页面刷新
+    # 定义编辑器回调函数，确保选中和取消选中时都立即更新
     def on_change():
         if "edited_rows" in st.session_state.task_editor:
-            has_changes = False
             for idx, changes in st.session_state.task_editor["edited_rows"].items():
                 if "选择" in changes:
                     idx = int(idx)
                     if idx < len(filtered_df_copy):
                         task_name = filtered_df_copy.iloc[idx]['name']
-                        if st.session_state.selected.get(task_name) != changes["选择"]:
-                            st.session_state.selected[task_name] = changes["选择"]
-                            has_changes = True
+                        is_selected = changes["选择"]
+                        # 使用统一的更新函数
+                        update_task_selection(task_name, is_selected, rerun=False)
             
-            # 只有当有变化时才更新选中的任务列表
-            if has_changes:
-                st.session_state.selected_tasks = [
-                    task for task, is_selected in st.session_state.selected.items() 
-                    if is_selected
-                ]
+            # 批量更新后统一重新加载页面
+            st.rerun()
     
     # 使用标准data_editor显示表格，使用on_change回调减少刷新
     edited_df = st.data_editor(

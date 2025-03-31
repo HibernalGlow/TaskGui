@@ -2,6 +2,7 @@ import streamlit as st
 import os
 from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from ..services.task_runner import run_task_via_cmd
+from ..utils.selection_utils import update_task_selection
 
 def render_shared_preview(filtered_df, current_taskfile):
     """
@@ -31,13 +32,12 @@ def render_shared_preview(filtered_df, current_taskfile):
         with col1:
             st.markdown(f"### 已选择 {len(selected_tasks)} 个任务")
         
-        # 清除选择按钮
+        # 清除选择按钮 - 使用统一的方式清除选择
         with col2:
             if st.button("🗑️ 清除选择", key="clear_preview_selection"):
-                st.session_state.selected_tasks = []
-                if 'selected' in st.session_state:
-                    for task in st.session_state.selected:
-                        st.session_state.selected[task] = False
+                # 使用统一的更新函数来清除
+                for task_name in selected_tasks.copy():
+                    update_task_selection(task_name, False, rerun=False)
                 st.rerun()
         
         # 复制所有命令按钮

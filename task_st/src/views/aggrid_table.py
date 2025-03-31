@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from ..utils.selection_utils import update_task_selection
 
 # 尝试导入AgGrid
 try:
@@ -159,7 +160,7 @@ def render_aggrid_table(filtered_df, current_taskfile):
     }
     """)
     
-    # 添加自定义触发器 JavaScript 代码
+    # 添加自定义触发器 JavaScript 代码 - 修改为即时更新选中状态
     custom_js = JsCode("""
     function(e) {
         let api = e.api;
@@ -176,13 +177,16 @@ def render_aggrid_table(filtered_df, current_taskfile):
             }
         });
         
-        // 当用户点击选择框时，发送数据到Streamlit
+        // 当用户点击选择框时，立即发送选中状态更新
         if (e.type === 'cellValueChanged' && e.column && e.column.colId === '选择') {
-            // 这里将选中状态数据传回Streamlit
             let targetData = {
                 event_type: 'selection_changed',
                 rowData: rowData,
-                selectedData: selectedData
+                selectedData: selectedData,
+                changedCell: {
+                    task: e.data.name,
+                    selected: e.value
+                }
             };
             
             // 发送数据到Streamlit组件
@@ -263,27 +267,15 @@ def render_aggrid_table(filtered_df, current_taskfile):
         theme=theme_option,
     )
     
-    # 处理 AgGrid 触发器返回的数据
-    if enable_trigger and grid_return.get('selected_rows') and 'data' in grid_return:
-        # 这里处理通过触发器获取的数据
-        if isinstance(grid_return.get('selected_rows'), list):
-            # 从触发器返回的已选择行更新选择状态
-            selected_names = [row.get('name') for row in grid_return['selected_rows'] if row.get('name')]
-            
-            # 更新选择状态
-            has_changes = False
-            for task, is_selected in st.session_state.selected.items():
-                new_selection = task in selected_names
-                if is_selected != new_selection:
-                    st.session_state.selected[task] = new_selection
-                    has_changes = True
-            
-            # 只有当有变化时才更新选中的任务列表
-            if has_changes:
-                st.session_state.selected_tasks = [
-                    task for task, is_selected in st.session_state.selected.items() 
-                    if is_selected
-                ]
+    # 处理 AgGrid 触发器返回的数据 - 即时更新选中状态
+    if enable_trigger and 'data' in grid_return:
+        selection_data = grid_return.get('data', {})
+        if isinstance(selection_data, dict) and 'changedCell' in selection_data:
+            task_name = selection_data['changedCell'].get('task')
+            is_selected = selection_data['changedCell'].get('selected')
+            if task_name and is_selected is not None:
+                # 使用统一的更新函数
+                update_task_selection(task_name, is_selected)
     # 标准数据处理 (无触发器或触发器未启用时)
     elif grid_return and 'data' in grid_return:
         updated_df = pd.DataFrame(grid_return['data'])
@@ -298,12 +290,10 @@ def render_aggrid_table(filtered_df, current_taskfile):
                 # 确保布尔值类型一致
                 current_selection = bool(row['选择'])
                 if st.session_state.selected.get(task_name) != current_selection:
-                    st.session_state.selected[task_name] = current_selection
+                    # 使用统一的更新函数，但先不执行rerun
+                    update_task_selection(task_name, current_selection, rerun=False)
                     has_changes = True
         
-        # 只有当有变化时才更新选中的任务列表
+        # 如果有变化，统一重新运行
         if has_changes:
-            st.session_state.selected_tasks = [
-                task for task, is_selected in st.session_state.selected.items() 
-                if is_selected
-            ]
+            st.rerun()

@@ -3,6 +3,7 @@ import os
 from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from ..services.task_runner import run_task_via_cmd
 from ..components.batch_operations import render_batch_operations
+from ..utils.selection_utils import update_task_selection
 
 def render_group_view(filtered_df, current_taskfile):
     """渲染分组视图"""
@@ -34,15 +35,15 @@ def render_group_view(filtered_df, current_taskfile):
                     with col1:
                         st.markdown(f"### {task['emoji']} {task['name']}")
                     with col2:
-                        # 选择框
+                        # 选择框 - 使用统一的更新函数
                         is_selected = task['name'] in st.session_state.selected_tasks if 'selected_tasks' in st.session_state else False
                         if st.checkbox("选择", value=is_selected, key=f"group_{task['name']}"):
-                            if 'selected_tasks' not in st.session_state:
-                                st.session_state.selected_tasks = []
-                            if task['name'] not in st.session_state.selected_tasks:
-                                st.session_state.selected_tasks.append(task['name'])
-                        elif 'selected_tasks' in st.session_state and task['name'] in st.session_state.selected_tasks:
-                            st.session_state.selected_tasks.remove(task['name'])
+                            if not is_selected:
+                                # 只在状态变化时更新
+                                update_task_selection(task['name'], True)
+                        elif is_selected:
+                            # 只在状态变化时更新
+                            update_task_selection(task['name'], False)
                     
                     # 任务信息
                     st.markdown(f"**描述**: {task['description']}")
@@ -90,4 +91,4 @@ def render_group_view(filtered_df, current_taskfile):
                     st.markdown("---")
     
     # 批量操作部分
-    render_batch_operations(current_taskfile, view_key="group") 
+    render_batch_operations(current_taskfile, view_key="group")
