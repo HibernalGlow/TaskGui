@@ -216,7 +216,7 @@ def main():
         # 渲染侧边栏
         render_sidebar(default_taskfile)
         
-        # 渲染标签过滤器
+        # 渲染标签过滤器 - 代码已移至侧边栏，仅保留调用以保持兼容性
         render_tag_filters(all_tags)
         
         # 过滤任务
@@ -278,28 +278,6 @@ def main():
     except Exception as e:
         st.error(f"发生错误: {str(e)}")
         st.code(traceback.format_exc())
-
-def filter_tasks(tasks_df):
-    """根据过滤条件过滤任务"""
-    filtered_df = tasks_df.copy()
-    
-    # 应用搜索过滤
-    if 'search_task' in st.session_state and st.session_state.search_task:
-        search_term = st.session_state.search_task.lower()
-        # 过滤名称或描述包含搜索词的任务
-        mask = filtered_df['name'].str.lower().str.contains(search_term, na=False) | \
-               filtered_df['description'].str.lower().str.contains(search_term, na=False)
-        filtered_df = filtered_df[mask]
-    
-    # 应用标签过滤
-    if 'tags_filter' in st.session_state and st.session_state.tags_filter:
-        tags_to_filter = st.session_state.tags_filter
-        # 过滤包含所选标签的任务
-        filtered_df = filtered_df[filtered_df['tags'].apply(
-            lambda x: any(tag in x for tag in tags_to_filter) if isinstance(x, list) else False
-        )]
-    
-    return filtered_df
 
 if __name__ == "__main__":
     main()

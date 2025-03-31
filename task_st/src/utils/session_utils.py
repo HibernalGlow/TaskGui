@@ -2,21 +2,25 @@ import streamlit as st
 
 # 初始化会话状态
 def init_session_state():
-    """初始化Streamlit会话状态变量"""
+    """初始化会话状态变量"""
+    # 初始化会话状态变量
+    if 'selected' not in st.session_state:
+        st.session_state.selected = {}
+    
     if 'selected_tasks' not in st.session_state:
         st.session_state.selected_tasks = []
-    if 'last_taskfile_path' not in st.session_state:
-        st.session_state.last_taskfile_path = None
-    if 'taskfile_history' not in st.session_state:
-        st.session_state.taskfile_history = []
+    
+    if 'search_task' not in st.session_state:
+        st.session_state.search_task = ""
+    
+    if 'tags_filter' not in st.session_state:
+        st.session_state.tags_filter = []
+        
     if 'favorite_tags' not in st.session_state:
         st.session_state.favorite_tags = []
-    if 'parallel_mode' not in st.session_state:
-        st.session_state.parallel_mode = False
-    if 'sort_by' not in st.session_state:
-        st.session_state.sort_by = '名称'
-    if 'sort_order' not in st.session_state:
-        st.session_state.sort_order = '升序'
+    
+    if 'run_parallel' not in st.session_state:
+        st.session_state.run_parallel = False
 
 # 定义CSS样式
 def setup_css():

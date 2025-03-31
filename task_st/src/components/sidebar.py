@@ -6,18 +6,90 @@ def render_sidebar(current_taskfile):
     with st.sidebar:
         st.title("任务管理器")
         
-        # 移除视图选择部分
-        
         # 添加任务过滤
         st.markdown("## 过滤任务")
         
         # 按名称搜索
         search_term = st.text_input("搜索任务名称:", key="search_task")
         
-        # 按标签过滤
-        tags_filter = st.multiselect(
+        # 获取所有标签
+        all_tags = get_all_tags(current_taskfile)
+        
+        # 初始化常用标签和筛选状态
+        if 'favorite_tags' not in st.session_state:
+            st.session_state.favorite_tags = []
+            
+        # 确保tags_filter存在于session_state中
+        if 'tags_filter' not in st.session_state:
+            st.session_state.tags_filter = []
+            
+        # 快速标签过滤器
+        st.markdown("### 🏷️ 快速标签筛选")
+        
+        # 常用标签管理
+        with st.expander("管理常用标签", expanded=False):
+            # 创建一个5列布局，用于显示所有标签的checkbox
+            if all_tags:
+                all_tag_cols = st.columns(3)
+                for i, tag in enumerate(sorted(all_tags)):
+                    with all_tag_cols[i % 3]:
+                        # 创建checkbox来添加/移除收藏标签
+                        if st.checkbox(tag, value=tag in st.session_state.favorite_tags, key=f"fav_{tag}"):
+                            if tag not in st.session_state.favorite_tags:
+                                st.session_state.favorite_tags.append(tag)
+                        else:
+                            if tag in st.session_state.favorite_tags:
+                                st.session_state.favorite_tags.remove(tag)
+            else:
+                st.info("没有找到标签")
+        
+        # 显示快速标签过滤按钮
+        active_tags = []
+        
+        # 添加操作按钮
+        quick_cols = st.columns(2)
+        with quick_cols[0]:
+            if st.button("🔍 全部", key="show_all_tags"):
+                # 清空筛选标签
+                st.session_state.tags_filter = []
+                st.rerun()
+                
+        with quick_cols[1]:
+            if st.button("❌ 清除", key="clear_tag_filters"):
+                # 清空筛选标签
+                st.session_state.tags_filter = []
+                st.rerun()
+        
+        # 显示收藏标签作为快速过滤器按钮
+        if st.session_state.favorite_tags:
+            st.markdown("#### 常用标签")
+            fav_tag_cols = st.columns(2)
+            for i, tag in enumerate(sorted(st.session_state.favorite_tags)):
+                with fav_tag_cols[i % 2]:
+                    # 创建按钮，点击时添加或移除该标签的过滤
+                    is_active = tag in st.session_state.tags_filter
+                    btn_label = f"✓ #{tag}" if is_active else f"#{tag}"
+                    btn_type = "primary" if is_active else "secondary"
+                    
+                    if st.button(btn_label, key=f"quick_{tag}", type=btn_type):
+                        # 切换标签的状态
+                        if tag in st.session_state.tags_filter:
+                            # 移除标签
+                            st.session_state.tags_filter.remove(tag)
+                        else:
+                            # 添加标签
+                            st.session_state.tags_filter.append(tag)
+                        st.rerun()
+        
+        # 使用多选进行更复杂的标签过滤
+        st.markdown("#### 标签多选")
+        
+        # 使用multiselect组件进行标签选择，使用当前选中的标签作为默认值
+        # 注意：此处不使用st.session_state.tags_filter作为default参数，而是将值设为session_state
+        selected_tags = st.multiselect(
             "按标签过滤:",
-            options=get_all_tags(current_taskfile),
+            options=sorted(all_tags),
+            default=list(st.session_state.tags_filter),  # 使用list()复制避免引用问题
             key="tags_filter"
         )
         
