@@ -38,7 +38,7 @@ def render_aggrid_table(filtered_df, current_taskfile):
         'enable_sorting': True,
         'enable_trigger': True,
         'enable_row_group': True,
-        'enable_multiselect': True,
+        'enable_multiselect': True,  # 使用自定义勾选列进行多选，原生勾选框被隐藏
         'enable_editing': False,
         'enable_enterprise': True,
         'theme': 'streamlit',
@@ -115,7 +115,8 @@ def render_aggrid_table(filtered_df, current_taskfile):
                 "启用多行选择", 
                 value=st.session_state.aggrid_settings['enable_multiselect'], 
                 key="aggrid_enable_multiselect",
-                on_change=lambda: update_aggrid_setting('enable_multiselect', st.session_state.aggrid_enable_multiselect)
+                on_change=lambda: update_aggrid_setting('enable_multiselect', st.session_state.aggrid_enable_multiselect),
+                help="使用自定义勾选框实现多行选择，原生勾选框已隐藏"
             )
         
         with col2:
@@ -320,9 +321,15 @@ def render_aggrid_table(filtered_df, current_taskfile):
     if 'enable_multi_select' in locals() and enable_multi_select:
         gb.configure_selection(
             selection_mode='multiple',
-            use_checkbox=True,
+            use_checkbox=False,  # 不使用原生勾选框
             groupSelectsChildren=True,
             groupSelectsFiltered=True
+        )
+        
+        # 添加隐藏原生选择框的设置
+        gb.configure_grid_options(
+            suppressRowClickSelection=True,  # 阻止点击行时自动选择
+            suppressCellSelection=False,     # 允许单元格选择
         )
     
     # 配置行固定
