@@ -10,10 +10,10 @@ except ImportError:
     st.error("未安装st-aggrid。请使用 `pip install streamlit-aggrid` 安装")
 
 # 导入选择状态更新函数
-from ..utils.selection_utils import update_task_selection, get_task_selection_state, init_global_state, force_save_state
+from ..utils.selection_utils import update_task_selection, get_task_selection_state, init_global_state, force_save_state, update_memory_cache, get_selected_tasks
 
 def render_aggrid_table(filtered_df, current_taskfile):
-    """使用AgGrid渲染表格 - 优化勾选状态获取并增加分组功能"""
+    """使用AgGrid渲染表格 - 使用内存状态管理"""
     if not HAS_AGGRID:
         st.warning("未安装st-aggrid。请使用 `pip install streamlit-aggrid` 安装")
         return
@@ -240,6 +240,32 @@ def render_aggrid_table(filtered_df, current_taskfile):
     # 构建最终选项
     grid_options = gb.build()
     
+    # 在表格上方添加操作按钮
+    col1, col2, col3 = st.columns([1, 1, 2])
+    with col1:
+        if st.button("全部选择", key="select_all_btn"):
+            # 更新所有可见行的选择状态为选中
+            for idx, row in filtered_df_copy.iterrows():
+                task_name = row['name']
+                if not get_task_selection_state(task_name):
+                    update_task_selection(task_name, True, rerun=False)
+            
+            # 更新内存缓存
+            update_memory_cache()
+            st.rerun()
+    
+    with col2:
+        if st.button("清除选择", key="clear_selection_btn"):
+            # 更新所有可见行的选择状态为未选中
+            for idx, row in filtered_df_copy.iterrows():
+                task_name = row['name']
+                if get_task_selection_state(task_name):
+                    update_task_selection(task_name, False, rerun=False)
+            
+            # 更新内存缓存
+            update_memory_cache()
+            st.rerun()
+    
     # 渲染 AgGrid
     grid_return = AgGrid(
         display_df,
@@ -274,8 +300,9 @@ def render_aggrid_table(filtered_df, current_taskfile):
                     has_changes = True
                     update_task_selection(task_name, current_selection, rerun=False)
         
-        # 如果有状态变化，强制保存全局状态但不刷新页面
+        # 如果有状态变化，强制更新内存缓存但不刷新页面
         if has_changes:
+            # 更新内存缓存
             force_save_state()
             
             # 更新会话状态中的选中任务列表，确保预览卡能正确显示
@@ -284,5 +311,9 @@ def render_aggrid_table(filtered_df, current_taskfile):
             
             # 重新构建选中任务列表
             st.session_state.selected_tasks = list(updated_df[updated_df['选择'] == True]['name'].values)
+    
+    # 表格下方添加状态信息
+    selected_tasks = get_selected_tasks()
+    st.write(f"当前选中: {len(selected_tasks)} 个任务")
     
     return grid_return

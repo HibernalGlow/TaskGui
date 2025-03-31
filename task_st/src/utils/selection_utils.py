@@ -1,40 +1,24 @@
 import streamlit as st
 import json
-import yaml
 from datetime import datetime
-import os
 
-# 全局状态文件路径
-GLOBAL_STATE_FILE = "task_state.yaml"
+# 全局内存缓存
 _MEMORY_CACHE = None  # 内存缓存
-_LAST_SAVE_TIME = None  # 上次保存时间
 
 # 初始化全局任务状态
 def init_global_state():
     """
-    初始化全局任务状态YAML
+    初始化全局任务状态 - 仅使用内存
     """
-    global _MEMORY_CACHE, _LAST_SAVE_TIME
+    global _MEMORY_CACHE
     
     if 'global_task_state' not in st.session_state:
         # 优先从内存缓存加载
         if _MEMORY_CACHE is not None:
             st.session_state.global_task_state = _MEMORY_CACHE
             return
-            
-        # 尝试从文件加载状态
-        if os.path.exists(GLOBAL_STATE_FILE):
-            try:
-                with open(GLOBAL_STATE_FILE, 'r', encoding='utf-8') as f:
-                    st.session_state.global_task_state = yaml.safe_load(f)
-                # 确保基本结构存在
-                ensure_state_structure(st.session_state.global_task_state)
-                # 更新内存缓存
-                _MEMORY_CACHE = st.session_state.global_task_state.copy()
-            except Exception as e:
-                print(f"加载全局状态失败: {str(e)}")
-                create_default_state()
         else:
+            # 如果内存缓存为空，创建默认状态
             create_default_state()
     
     # 兼容旧的会话状态
@@ -49,6 +33,7 @@ def create_default_state():
         "last_updated": current_time,
         "task_files": {},
         "tasks": {},  # 保留tasks键但只存储基本信息
+        "select": {},  # 新增select键，用于存储所有任务的选中状态
         "user_preferences": {
             "default_view": "aggrid",
             "last_filter": {
@@ -79,6 +64,9 @@ def ensure_state_structure(state):
     if "tasks" not in state:
         state["tasks"] = {}
     
+    if "select" not in state:
+        state["select"] = {}
+    
     if "user_preferences" not in state:
         state["user_preferences"] = {
             "default_view": "aggrid",
@@ -99,14 +87,11 @@ def sync_session_state():
     selected = {}
     selected_tasks = []
     
-    # 从新的存储位置获取选中状态
-    for file_path, file_info in st.session_state.global_task_state.get("task_files", {}).items():
-        if "task_state" in file_info:
-            for task_name, task_state in file_info["task_state"].items():
-                is_selected = task_state.get("selected", False)
-                selected[task_name] = is_selected
-                if is_selected:
-                    selected_tasks.append(task_name)
+    # 从新的select键获取选中状态
+    for task_name, is_selected in st.session_state.global_task_state.get("select", {}).items():
+        selected[task_name] = is_selected
+        if is_selected:
+            selected_tasks.append(task_name)
     
     # 更新会话状态
     st.session_state.selected = selected
@@ -120,38 +105,21 @@ def get_global_state():
     init_global_state()
     return st.session_state.global_task_state
 
-# 保存全局状态到文件
-def save_global_state(force=False):
-    """保存全局状态到YAML文件"""
-    global _MEMORY_CACHE, _LAST_SAVE_TIME
-    current_time = datetime.now()
-    
-    # 更新内存缓存
-    _MEMORY_CACHE = st.session_state.global_task_state.copy()
-    
-    # 如果距离上次保存小于5秒且不是强制保存，则跳过
-    if not force and _LAST_SAVE_TIME is not None:
-        time_diff = (current_time - _LAST_SAVE_TIME).total_seconds()
-        if time_diff < 5:  # 5秒节流
-            return True
-    
-    try:
-        with open(GLOBAL_STATE_FILE, 'w', encoding='utf-8') as f:
-            yaml.dump(st.session_state.global_task_state, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-        _LAST_SAVE_TIME = current_time
-        return True
-    except Exception as e:
-        print(f"保存全局状态失败: {str(e)}")
-        return False
+# 更新内存缓存
+def update_memory_cache():
+    """更新内存缓存"""
+    global _MEMORY_CACHE
+    if 'global_task_state' in st.session_state:
+        _MEMORY_CACHE = st.session_state.global_task_state.copy()
 
 # 更新全局状态
-def update_global_state(state_dict, save_to_file=True):
+def update_global_state(state_dict, save_to_file=False):
     """
     直接更新全局状态
     
     参数:
         state_dict: 新的状态字典
-        save_to_file: 是否保存到文件
+        save_to_file: 此参数已废弃，保留参数签名以兼容旧代码
     """
     global _MEMORY_CACHE
     init_global_state()
@@ -164,11 +132,7 @@ def update_global_state(state_dict, save_to_file=True):
     sync_session_state()
     
     # 更新内存缓存
-    _MEMORY_CACHE = st.session_state.global_task_state.copy()
-    
-    # 保存到文件
-    if save_to_file:
-        save_global_state()
+    update_memory_cache()
 
 def register_task_file(file_path, meta=None):
     """
@@ -202,7 +166,7 @@ def register_task_file(file_path, meta=None):
         if "task_state" not in global_state["task_files"][file_path]:
             global_state["task_files"][file_path]["task_state"] = {}
     
-    update_global_state(global_state, save_to_file=False)  # 不立即保存文件，提高性能
+    update_global_state(global_state)  # 更新内存状态
 
 def register_tasks_from_df(tasks_df, source_file):
     """
@@ -217,8 +181,8 @@ def register_tasks_from_df(tasks_df, source_file):
         task_data = row.to_dict()
         register_task(task_name, task_data, source_file)
     
-    # 批量操作后一次性保存
-    save_global_state(force=True)
+    # 更新内存缓存
+    update_memory_cache()
 
 def register_task(task_name, task_data, source_file, runtime_data=None):
     """
@@ -279,7 +243,12 @@ def register_task(task_name, task_data, source_file, runtime_data=None):
         "runtime": task_runtime
     }
     
-    update_global_state(global_state, save_to_file=False)  # 不立即保存文件，提高性能
+    # 同步选中状态到select键
+    if "select" not in global_state:
+        global_state["select"] = {}
+    global_state["select"][task_name] = selected
+    
+    update_global_state(global_state)  # 更新内存状态
 
 def update_task_selection(task_name, is_selected, rerun=True):
     """
@@ -321,16 +290,21 @@ def update_task_selection(task_name, is_selected, rerun=True):
         if is_selected:
             global_state["task_files"][source_file]["task_state"][task_name]["last_selected"] = datetime.now().isoformat()
         
+        # 同步选中状态到select键
+        if "select" not in global_state:
+            global_state["select"] = {}
+        global_state["select"][task_name] = is_selected
+        
         # 更新全局状态
-        update_global_state(global_state, save_to_file=False)  # 不立即保存，提高性能
+        update_global_state(global_state)
         
         # 同步会话状态
         sync_session_state()
         
         # 根据需要重新运行应用
         if rerun:
-            # 保存状态以确保数据持久化
-            save_global_state(force=True)
+            # 更新内存缓存
+            update_memory_cache()
             st.rerun()
 
 def toggle_task_selection(task_name, rerun=True):
@@ -371,7 +345,11 @@ def get_task_selection_state(task_name, task_file=None):
     # 方法3: 从全局状态获取
     global_state = st.session_state.global_task_state
     
-    # 如果指定了任务文件，则只检查该文件
+    # 优先从select键获取选中状态
+    if "select" in global_state and task_name in global_state["select"]:
+        return global_state["select"][task_name]
+    
+    # 如果select键中没有，则从task_state中获取
     if task_file and task_file in global_state.get("task_files", {}):
         file_state = global_state["task_files"][task_file]
         if "task_state" in file_state and task_name in file_state["task_state"]:
@@ -401,13 +379,16 @@ def clear_all_selections(rerun=True):
                 # 设置选中状态为False
                 global_state["task_files"][file_path]["task_state"][task_name]["selected"] = False
     
+    # 清空select键
+    global_state["select"] = {}
+    
     # 更新全局状态
-    update_global_state(global_state, save_to_file=False)
+    update_global_state(global_state)
     
     # 根据需要重新运行应用
     if rerun:
-        # 保存状态以确保数据持久化
-        save_global_state(force=True)
+        # 更新内存缓存
+        update_memory_cache()
         st.rerun()
 
 def update_task_runtime(task_name, runtime_data):
@@ -455,7 +436,7 @@ def update_task_runtime(task_name, runtime_data):
         global_state["task_files"][source_file]["task_state"][task_name]["runtime"].update(runtime_data)
         
         # 更新全局状态
-        update_global_state(global_state, save_to_file=False)
+        update_global_state(global_state)
         return True
     
     return False
@@ -507,9 +488,7 @@ def record_task_run(task_name, status="success"):
         runtime["run_count"] = runtime.get("run_count", 0) + 1
         runtime["last_status"] = status
         
-        update_global_state(global_state, save_to_file=False)
-        # 延迟保存，提高响应速度
-        save_global_state()
+        update_global_state(global_state)
 
 def get_task_runtime(task_name):
     """
@@ -542,23 +521,16 @@ def get_task_runtime(task_name):
         "custom_flags": {}
     }
 
-def export_yaml_state():
-    """
-    导出全局状态为YAML字符串
-    """
-    global_state = get_global_state()
-    return yaml.dump(global_state, default_flow_style=False, allow_unicode=True, sort_keys=False)
+# 导出全局状态为字典 - 提供接口以备需要
+def export_state_as_dict():
+    """导出全局状态为字典"""
+    return get_global_state().copy()
 
-# 提供与main.py中使用的名称一致的别名
-export_global_state_yaml = export_yaml_state
-
-def import_global_state_yaml(yaml_str, rerun=True):
-    """
-    从YAML字符串导入全局状态
-    """
+# 导入字典作为全局状态 - 提供接口以备需要
+def import_state_from_dict(state_dict, rerun=True):
+    """从字典导入全局状态"""
     try:
-        state_dict = yaml.safe_load(yaml_str)
-        update_global_state(state_dict, save_to_file=True)
+        update_global_state(state_dict)
         if rerun:
             st.rerun()
         return True
@@ -566,18 +538,61 @@ def import_global_state_yaml(yaml_str, rerun=True):
         print(f"导入状态失败: {str(e)}")
         return False
 
+# 强制保存当前状态到内存
+def force_save_state():
+    """强制保存当前状态到内存"""
+    init_global_state()
+    
+    # 同步会话状态兼容层
+    sync_session_state()
+    
+    # 更新内存缓存
+    update_memory_cache()
+    return True
+
+# 兼容旧方法 - 为了保持接口一致而保留，但改为内存操作
+def export_yaml_state():
+    """导出全局状态 (兼容旧接口)"""
+    return export_state_as_dict()
+
+def export_global_state_yaml():
+    """导出全局状态 (兼容旧接口)"""
+    return export_state_as_dict()
+
+def import_global_state_yaml(yaml_str, rerun=True):
+    """从YAML导入全局状态 (兼容旧接口)"""
+    # 由于现在不使用yaml，这个函数简化为接受一个字典并导入
+    try:
+        if isinstance(yaml_str, dict):
+            state_dict = yaml_str
+        else:
+            # 为兼容性保留，但不鼓励使用
+            import yaml
+            state_dict = yaml.safe_load(yaml_str)
+        
+        update_global_state(state_dict)
+        if rerun:
+            st.rerun()
+        return True
+    except Exception as e:
+        print(f"导入状态失败: {str(e)}")
+        return False
+
+def save_global_state(force=False):
+    """仅更新内存缓存 (兼容旧接口)"""
+    update_memory_cache()
+    return True
+
 # 获取选中的任务列表
 def get_selected_tasks():
     """获取选中的任务列表"""
     global_state = get_global_state()
     selected_tasks = []
     
-    # 从新的存储位置获取选中状态
-    for file_path, file_info in global_state.get("task_files", {}).items():
-        if "task_state" in file_info:
-            for task_name, task_state in file_info["task_state"].items():
-                if task_state.get("selected", False):
-                    selected_tasks.append(task_name)
+    # 从新的select键获取选中状态
+    for task_name, is_selected in global_state.get("select", {}).items():
+        if is_selected:
+            selected_tasks.append(task_name)
     
     return selected_tasks
 
@@ -597,17 +612,6 @@ def update_user_preferences(preferences):
     
     global_state["user_preferences"].update(preferences)
     update_global_state(global_state)
-
-# 强制保存当前状态到文件
-def force_save_state():
-    """强制保存当前状态到文件"""
-    init_global_state()
-    
-    # 同步会话状态兼容层
-    sync_session_state()
-    
-    # 保存状态到文件
-    return save_global_state(force=True)
 
 # 兼容旧方法 - 保留以确保兼容性
 def export_global_state_json():
