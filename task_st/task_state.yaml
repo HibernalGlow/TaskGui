@@ -1,8 +1,8 @@
 version: '1.0'
-last_updated: '2025-03-31T14:09:32.011829'
+last_updated: '2025-03-31T14:12:32.183098'
 task_files:
   D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml:
-    last_loaded: '2025-03-31T14:09:32.006316'
+    last_loaded: '2025-03-31T14:12:32.127389'
     meta:
       description: 任务文件
       created_at: 1743247683.472555
@@ -11,7 +11,7 @@ task_files:
     task_state:
       artbook_dedup:
         selected: false
-        last_selected: '2025-03-31T14:05:46.234915'
+        last_selected: '2025-03-31T14:12:28.818284'
         runtime:
           last_run: null
           run_count: 0

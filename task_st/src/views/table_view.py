@@ -2,7 +2,6 @@ import streamlit as st
 import os
 import pandas as pd
 from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
-from .standard_table import render_edit_table
 from .aggrid_table import render_aggrid_table
 from ..components.preview_card import render_shared_preview
 from ..components.batch_operations import render_batch_operations
@@ -35,22 +34,11 @@ def render_table_view(filtered_df, current_taskfile, show_sidebar=True):
             st.session_state._force_refresh_aggrid = True
             st.rerun()
     
-    # 使用标签页选择不同的表格视图
-    tab1, tab2 = st.tabs(["高级表格(AgGrid)", "标准表格"])
+    # 使用AgGrid渲染表格
+    st.info("提示: 在表格中选中行后，可以在下方预览卡片中查看详情。点击'保存变更'按钮应用更改。")
     
-    with tab1:
-        st.info("提示: 选中表格行后可编辑数据，编辑完成后点击'保存变更'按钮应用更改。")
-        
-        # 使用AgGrid渲染表格
-        result = render_aggrid_table(filtered_df, current_taskfile)
-        
-        # 添加警告信息
-        if '_aggrid_selection_state' in st.session_state and len(st.session_state._aggrid_selection_state) > 0:
-            st.info("✅ 表格选中状态已临时保存，点击'保存变更'按钮或'刷新表格'按钮以应用到全局状态。")
-    
-    with tab2:
-        # 使用标准表格渲染
-        render_edit_table(filtered_df, current_taskfile)
+    # 渲染AgGrid表格
+    result = render_aggrid_table(filtered_df, current_taskfile)
     
     # 检查是否有选中的任务
     has_selected_tasks = len(st.session_state.selected_tasks) > 0 if 'selected_tasks' in st.session_state else False

@@ -16,8 +16,6 @@ def render_aggrid_table(filtered_df, current_taskfile):
     """使用AgGrid渲染表格 - 优化勾选状态获取并增加分组功能"""
     if not HAS_AGGRID:
         st.warning("未安装st-aggrid。请使用 `pip install streamlit-aggrid` 安装")
-        from .standard_table import render_edit_table
-        render_edit_table(filtered_df, current_taskfile)
         return
     
     # 确保全局状态已初始化
@@ -246,80 +244,48 @@ def render_aggrid_table(filtered_df, current_taskfile):
     grid_return = AgGrid(
         display_df,
         gridOptions=grid_options,
-        update_mode=GridUpdateMode.MODEL_CHANGED if enable_trigger else GridUpdateMode.SELECTION_CHANGED,
+        update_mode=GridUpdateMode.MODEL_CHANGED if not enable_trigger else GridUpdateMode.VALUE_CHANGED,
+        fit_columns_on_grid_load=True,
+        enable_enterprise_modules=enable_enterprise,
+        height=500,
+        width='100%',
+        key='aggrid_table',
+        reload_data=False,
         allow_unsafe_jscode=True,
         theme=theme_option,
-        height=600,
-        width="100%",
-        reload_data=False,
-        fit_columns_on_grid_load=True,
-        key=f"aggrid_{id(filtered_df)}"
     )
     
-    # 处理AgGrid组件的特殊返回值 - 用于处理自定义事件
-    previous_data = {}
-    if '_aggrid_selection_state' in st.session_state:
-        previous_data = st.session_state._aggrid_selection_state
-    
-    data = grid_return.get('data', None)
-    if data is not None and len(data) > 0:
-        # 保存当前状态到会话状态，用于比较
-        current_data = {}
+    # 处理表格勾选状态变化
+    if 'data' in grid_return:
+        updated_df = pd.DataFrame(grid_return['data'])
         
-        for i, row in enumerate(data):
-            # 确保row是字典类型
-            if isinstance(row, dict):
-                # 获取任务名称和选择状态
-                task_name = row.get('name', None)
-                is_selected = row.get('选择', False)
-                
-                if task_name:
-                    current_data[task_name] = is_selected
-            elif hasattr(row, 'name') and hasattr(row, '选择'):
-                # 如果是Pandas Series或其他类似对象
-                task_name = row.name
-                is_selected = row.选择
-                
-                if task_name:
-                    current_data[task_name] = is_selected
-        
-        # 检查是否有变化
+        # 记录状态是否有变化
         has_changes = False
-        if previous_data:
-            for task_name, is_selected in current_data.items():
-                if task_name in previous_data and previous_data[task_name] != is_selected:
-                    # 检查状态是否变化
-                    if get_task_selection_state(task_name) != is_selected:
-                        # 更新选择状态，但不触发rerun
-                        update_task_selection(task_name, is_selected, rerun=False)
-                        has_changes = True
-        else:
-            # 首次运行，检查与全局状态的差异
-            for task_name, is_selected in current_data.items():
-                if get_task_selection_state(task_name) != is_selected:
-                    update_task_selection(task_name, is_selected, rerun=False)
+        changed_tasks = []
+        
+        # 检查每个任务的选择状态是否发生变化
+        for idx, row in updated_df.iterrows():
+            task_name = row['name']
+            if task_name and pd.notna(task_name):  # 确保任务名有效
+                current_selection = bool(row['选择'])
+                previous_selection = get_task_selection_state(task_name)
+                
+                # 如果状态有变化，记录下来
+                if current_selection != previous_selection:
                     has_changes = True
+                    changed_tasks.append((task_name, current_selection))
         
-        # 保存当前状态用于下次比较
-        st.session_state._aggrid_selection_state = current_data
-        
-        # 只有在发生实际改变且有强制刷新请求时才刷新页面
-        if has_changes and '_force_refresh_aggrid' in st.session_state and st.session_state._force_refresh_aggrid:
-            # 清除刷新标志，以避免循环刷新
-            st.session_state._force_refresh_aggrid = False
-            # 强制保存但不刷新
-            force_save_state()
-
-    # 处理选中行处理
-    if grid_return and grid_return.get('selected_rows'):
-        selected_row = grid_return['selected_rows'][0]
-        if isinstance(selected_row, dict) and 'name' in selected_row:
-            task_name = selected_row['name']
+        # 如果有状态变化，批量更新全局状态
+        if has_changes:
+            # 更新除最后一个之外的所有任务，不刷新页面
+            for task_name, is_selected in changed_tasks[:-1]:
+                update_task_selection(task_name, is_selected, rerun=False)
             
-            # 如果点击选中了未选中的行，更新状态
-            if task_name and not get_task_selection_state(task_name):
-                update_task_selection(task_name, True, rerun=False)
-                # 设置刷新标志，但不立即刷新
-                st.session_state._force_refresh_aggrid = True
-
+            # 更新最后一个任务并刷新页面
+            if changed_tasks:
+                last_task, last_selection = changed_tasks[-1]
+                update_task_selection(last_task, last_selection, rerun=False)
+                # 不rerun，让用户手动保存和刷新
+                force_save_state()
+    
     return grid_return
