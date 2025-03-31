@@ -14,7 +14,7 @@ from src.components.sidebar import render_sidebar
 from src.utils.file_utils import open_file, get_directory_files, find_taskfiles, get_nearest_taskfile, copy_to_clipboard, get_task_command
 from src.services.task_runner import run_task_via_cmd, run_multiple_tasks
 from src.components.styles import apply_custom_styles
-from src.components.preview_card import render_shared_preview
+from src.components.preview_card import render_preview_tab_content, render_action_buttons
 from src.manage.state_manager import render_state_manager
 from src.utils.selection_utils import (
     get_global_state, update_global_state, 
@@ -22,7 +22,7 @@ from src.utils.selection_utils import (
     import_global_state_yaml,
     save_global_state, register_task_file, register_tasks_from_df,
     update_task_runtime, record_task_run, init_global_state,
-    display_yaml_in_ui, validate_yaml
+    display_yaml_in_ui, validate_yaml, get_selected_tasks
 )
 
 # 添加当前目录到路径
@@ -215,13 +215,20 @@ def main():
         # 过滤任务
         filtered_df = filter_tasks(tasks_df)
         
-        # 共享预览区域 - 放在页签上方
-        preview_expander = st.expander("📌 选中任务预览", expanded=True)
+        # 共享预览区域 - 放在页签上方，仅显示操作按钮
+        preview_expander = st.expander("📌 选中任务操作", expanded=True)
         with preview_expander:
-            render_shared_preview(filtered_df, default_taskfile)
+            # 从全局状态获取选中的任务
+            selected_tasks = get_selected_tasks()
+            st.markdown(f"### **已选择 {len(selected_tasks)} 个任务**")
+            # if selected_tasks:
+            render_action_buttons(selected_tasks, default_taskfile, key_prefix="main_preview")
+            render_action_buttons(selected_tasks, default_taskfile, key_prefix="sidebar", is_sidebar=True)
+            # else:
+            #     st.info("没有选中的任务。请从表格中选择要操作的任务。")
         
         # 使用字典存储页签标题和索引的映射，便于动态管理
-        tab_names = ["📊 表格", "🗂️ 卡片", "📈 仪表盘", "⚙️ 设置", "🔍 状态"]
+        tab_names = ["📊 表格", "🗂️ 卡片", "🔍 预览", "📈 仪表盘", "⚙️ 设置", "🔧 状态"]
         tab_indices = {name: idx for idx, name in enumerate(tab_names)}
         
         # 创建页签
@@ -234,6 +241,10 @@ def main():
         # 卡片视图
         with tabs[tab_indices["🗂️ 卡片"]]:
             render_card_view(filtered_df, default_taskfile)
+        
+        # 预览页签
+        with tabs[tab_indices["🔍 预览"]]:
+            render_preview_tab_content(filtered_df, default_taskfile)
         
         # 仪表盘页签
         with tabs[tab_indices["📈 仪表盘"]]:
@@ -265,7 +276,7 @@ def main():
             st.radio("默认运行模式", options=["顺序执行", "并行执行"], index=0, disabled=True)
         
         # 状态管理页签
-        with tabs[tab_indices["🔍 状态"]]:
+        with tabs[tab_indices["🔧 状态"]]:
             render_state_manager()
             
     except Exception as e:

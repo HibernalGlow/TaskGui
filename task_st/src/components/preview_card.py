@@ -25,7 +25,7 @@ def render_action_buttons(selected_tasks, current_taskfile, key_prefix="preview"
     
     with container:
         with st.container():
-            st.markdown("### 任务操作")
+            # st.markdown("### 任务操作")
             
             # 使用响应式布局，在宽屏幕上单行显示，在窄屏上自适应折行
             cols = st.columns([1, 1, 1, 1])
@@ -75,18 +75,18 @@ def render_preview_tab_content(filtered_df, current_taskfile):
     selected_tasks = get_selected_tasks()
     
     # 如果没有选中任务，显示提示信息
-    if not selected_tasks:
-        st.info("没有选中的任务。请从表格中选择要操作的任务。")
-        return
+    # if not selected_tasks:
+    #     st.info("没有选中的任务。请从表格中选择要操作的任务。")
+    #     return
     
     # 显示选中的任务数量
-    st.markdown(f"**已选择 {len(selected_tasks)} 个任务**")
+    # st.markdown(f"**已选择 {len(selected_tasks)} 个任务**")
     
     # 获取选中任务的详细信息
     selected_df = filtered_df[filtered_df['name'].isin(selected_tasks)].copy()
     
-    # 渲染操作按钮卡片
-    render_action_buttons(selected_tasks, current_taskfile)
+    # 渲染操作按钮卡片 - 使用不同的key前缀避免冲突
+    # render_action_buttons(selected_tasks, current_taskfile, key_prefix="preview_tab")
     
     # 创建任务页签列表
     task_names = selected_df['name'].tolist()
