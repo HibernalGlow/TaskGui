@@ -347,28 +347,42 @@ def toggle_task_selection(task_name, rerun=True):
     # 更新为相反状态
     update_task_selection(task_name, not current_state, rerun)
 
-def get_task_selection_state(task_name):
+def get_task_selection_state(task_name, task_file=None):
     """
-    获取任务的选中状态
+    获取任务的选择状态
     
     参数:
         task_name: 任务名称
+        task_file: 任务文件路径（如果为None，则搜索所有任务文件）
+    
     返回:
         bool: 任务是否被选中
     """
-    global_state = get_global_state()
+    init_global_state()
     
-    # 查找任务所属的文件
-    source_file = None
-    if "tasks" in global_state and task_name in global_state["tasks"]:
-        source_file = global_state["tasks"][task_name].get("source_file")
+    # 兼容旧的选择状态(方法1: 直接从selected字典获取)
+    if 'selected' in st.session_state and task_name in st.session_state.selected:
+        return st.session_state.selected[task_name]
     
-    if source_file and source_file in global_state["task_files"]:
-        # 获取选中状态
-        if "task_state" in global_state["task_files"][source_file] and \
-           task_name in global_state["task_files"][source_file]["task_state"]:
-            return global_state["task_files"][source_file]["task_state"][task_name].get("selected", False)
+    # 方法2: 从选中任务列表获取
+    if 'selected_tasks' in st.session_state and task_name in st.session_state.selected_tasks:
+        return True
     
+    # 方法3: 从全局状态获取
+    global_state = st.session_state.global_task_state
+    
+    # 如果指定了任务文件，则只检查该文件
+    if task_file and task_file in global_state.get("task_files", {}):
+        file_state = global_state["task_files"][task_file]
+        if "task_state" in file_state and task_name in file_state["task_state"]:
+            return file_state["task_state"][task_name].get("selected", False)
+    else:
+        # 遍历所有任务文件查找任务状态
+        for file_path, file_info in global_state.get("task_files", {}).items():
+            if "task_state" in file_info and task_name in file_info["task_state"]:
+                return file_info["task_state"][task_name].get("selected", False)
+    
+    # 如果找不到任务，默认为未选中
     return False
 
 def clear_all_selections(rerun=True):
@@ -584,9 +598,15 @@ def update_user_preferences(preferences):
     global_state["user_preferences"].update(preferences)
     update_global_state(global_state)
 
-# 强制将内存中的状态保存到文件
+# 强制保存当前状态到文件
 def force_save_state():
-    """强制将内存中的状态保存到文件"""
+    """强制保存当前状态到文件"""
+    init_global_state()
+    
+    # 同步会话状态兼容层
+    sync_session_state()
+    
+    # 保存状态到文件
     return save_global_state(force=True)
 
 # 兼容旧方法 - 保留以确保兼容性

@@ -244,7 +244,7 @@ def render_aggrid_table(filtered_df, current_taskfile):
     grid_return = AgGrid(
         display_df,
         gridOptions=grid_options,
-        update_mode=GridUpdateMode.MODEL_CHANGED if not enable_trigger else GridUpdateMode.VALUE_CHANGED,
+        update_mode=GridUpdateMode.MODEL_CHANGED,  # 始终使用MODEL_CHANGED模式避免刷新问题
         fit_columns_on_grid_load=True,
         enable_enterprise_modules=enable_enterprise,
         height=500,
@@ -261,31 +261,28 @@ def render_aggrid_table(filtered_df, current_taskfile):
         
         # 记录状态是否有变化
         has_changes = False
-        changed_tasks = []
         
-        # 检查每个任务的选择状态是否发生变化
+        # 检查每个任务的选择状态与全局状态是否一致
         for idx, row in updated_df.iterrows():
             task_name = row['name']
             if task_name and pd.notna(task_name):  # 确保任务名有效
                 current_selection = bool(row['选择'])
                 previous_selection = get_task_selection_state(task_name)
                 
-                # 如果状态有变化，记录下来
+                # 如果状态有变化，更新全局状态
                 if current_selection != previous_selection:
                     has_changes = True
-                    changed_tasks.append((task_name, current_selection))
+                    update_task_selection(task_name, current_selection, rerun=False)
         
-        # 如果有状态变化，批量更新全局状态
+        # 如果有状态变化，强制保存全局状态但不刷新页面
         if has_changes:
-            # 更新除最后一个之外的所有任务，不刷新页面
-            for task_name, is_selected in changed_tasks[:-1]:
-                update_task_selection(task_name, is_selected, rerun=False)
+            force_save_state()
             
-            # 更新最后一个任务并刷新页面
-            if changed_tasks:
-                last_task, last_selection = changed_tasks[-1]
-                update_task_selection(last_task, last_selection, rerun=False)
-                # 不rerun，让用户手动保存和刷新
-                force_save_state()
+            # 更新会话状态中的选中任务列表，确保预览卡能正确显示
+            if 'selected_tasks' not in st.session_state:
+                st.session_state.selected_tasks = []
+            
+            # 重新构建选中任务列表
+            st.session_state.selected_tasks = list(updated_df[updated_df['选择'] == True]['name'].values)
     
     return grid_return
