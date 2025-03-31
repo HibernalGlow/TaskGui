@@ -34,7 +34,7 @@ def render_table_view(filtered_df, current_taskfile, show_sidebar=True):
             st.rerun()
     
     # 使用AgGrid渲染表格
-    st.info("提示: 在表格中选中行后，可以在上方预览卡片中查看详情。点击'保存变更'按钮应用更改。")
+    # st.info("提示: 在表格中选中行后，可以在上方预览卡片中查看详情。点击'保存变更'按钮应用更改。")
     
     # 渲染AgGrid表格
     result = render_aggrid_table(filtered_df, current_taskfile)

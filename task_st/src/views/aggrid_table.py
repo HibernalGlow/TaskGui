@@ -196,31 +196,31 @@ def render_aggrid_table(filtered_df, current_taskfile):
     # 构建最终选项
     grid_options = gb.build()
     
-    # 在表格上方添加操作按钮
-    col1, col2, col3 = st.columns([1, 1, 2])
-    with col1:
-        if st.button("全部选择", key="select_all_btn"):
-            # 更新所有可见行的选择状态为选中
-            for idx, row in filtered_df_copy.iterrows():
-                task_name = row['name']
-                if not get_task_selection_state(task_name):
-                    update_task_selection(task_name, True, rerun=False)
+    # # 在表格上方添加操作按钮
+    # col1, col2, col3 = st.columns([1, 1, 2])
+    # with col1:
+    #     if st.button("全部选择", key="select_all_btn"):
+    #         # 更新所有可见行的选择状态为选中
+    #         for idx, row in filtered_df_copy.iterrows():
+    #             task_name = row['name']
+    #             if not get_task_selection_state(task_name):
+    #                 update_task_selection(task_name, True, rerun=False)
             
-            # 更新内存缓存
-            update_memory_cache()
-            st.rerun()
+    #         # 更新内存缓存
+    #         update_memory_cache()
+    #         st.rerun()
     
-    with col2:
-        if st.button("清除选择", key="clear_selection_btn"):
-            # 更新所有可见行的选择状态为未选中
-            for idx, row in filtered_df_copy.iterrows():
-                task_name = row['name']
-                if get_task_selection_state(task_name):
-                    update_task_selection(task_name, False, rerun=False)
+    # with col2:
+    #     if st.button("清除选择", key="clear_selection_btn"):
+    #         # 更新所有可见行的选择状态为未选中
+    #         for idx, row in filtered_df_copy.iterrows():
+    #             task_name = row['name']
+    #             if get_task_selection_state(task_name):
+    #                 update_task_selection(task_name, False, rerun=False)
             
-            # 更新内存缓存
-            update_memory_cache()
-            st.rerun()
+    #         # 更新内存缓存
+    #         update_memory_cache()
+    #         st.rerun()
     
     # 渲染 AgGrid
     grid_return = AgGrid(
