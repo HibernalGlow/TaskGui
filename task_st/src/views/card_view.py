@@ -3,7 +3,7 @@ import os
 from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from ..services.task_runner import run_task_via_cmd
 from ..components.batch_operations import render_batch_operations
-from ..utils.selection_utils import update_task_selection, get_task_selection_state, init_global_state
+from ..utils.selection_utils import update_task_selection, get_task_selection_state, init_global_state, record_task_run
 
 def render_card_view(filtered_df, current_taskfile):
     """渲染卡片视图"""
@@ -58,6 +58,8 @@ def render_card_view(filtered_df, current_taskfile):
                         if st.button("运行", key=f"run_card_{task['name']}"):
                             with st.spinner(f"正在启动任务 {task['name']}..."):
                                 result = run_task_via_cmd(task['name'], current_taskfile)
+                                # 记录任务运行
+                                record_task_run(task['name'], status="started")
                             st.success(f"任务 {task['name']} 已在新窗口启动")
                     
                     with col2:

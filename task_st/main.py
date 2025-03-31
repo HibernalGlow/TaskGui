@@ -22,7 +22,13 @@ from src.services.taskfile import read_taskfile
 from src.utils.file_utils import open_file, get_directory_files
 from src.views.styles import apply_custom_styles
 from src.components.preview_card import render_shared_preview
-from src.utils.selection_utils import get_global_state, update_global_state, export_global_state_json, import_global_state_json
+from src.utils.selection_utils import (
+    get_global_state, update_global_state, 
+    export_yaml_state as export_global_state_yaml, 
+    import_global_state_yaml,
+    save_global_state, register_task_file, register_tasks_from_df,
+    update_task_runtime, record_task_run, init_global_state
+)
 
 # 添加当前目录到路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -81,6 +87,9 @@ st.markdown("""
 def main():
     """主函数"""
     try:
+        # 初始化全局状态
+        init_global_state()
+        
         # 初始化会话状态
         if 'selected_tasks' not in st.session_state:
             st.session_state.selected_tasks = []
@@ -102,6 +111,16 @@ def main():
         
         # 读取任务文件
         tasks_df = read_taskfile(default_taskfile)
+        
+        # 注册任务文件和任务到全局状态
+        if not tasks_df.empty:
+            register_task_file(default_taskfile, {
+                "description": "任务文件",
+                "created_at": os.path.getctime(default_taskfile),
+                "modified_at": os.path.getmtime(default_taskfile),
+                "task_count": len(tasks_df)
+            })
+            register_tasks_from_df(tasks_df, default_taskfile)
         
         # 渲染侧边栏
         render_sidebar(default_taskfile)
@@ -176,7 +195,7 @@ def main():
         
     except Exception as e:
         st.error(f"发生错误: {str(e)}")
-        st.error("如果错误与st-aggrid相关，请确保已安装: `pip install streamlit-aggrid`")
+        # st.error("如果错误与st-aggrid相关，请确保已安装: `pip install streamlit-aggrid`")
         st.code(traceback.format_exc())
 
 def filter_tasks(tasks_df):
@@ -209,63 +228,182 @@ def render_state_manager():
     # 获取当前状态
     global_state = get_global_state()
     
-    # 创建两列布局
-    col1, col2 = st.columns([3, 2])
+    # 基本状态信息
+    st.write(f"版本: {global_state.get('version', 'N/A')}")
+    st.write(f"最后更新: {global_state.get('last_updated', 'N/A')}")
+    st.write(f"任务文件数: {len(global_state.get('task_files', {}))}")
+    st.write(f"任务总数: {len(global_state.get('tasks', {}))}")
+    st.write(f"选中任务数: {len([t for t, info in global_state.get('tasks', {}).items() if info.get('selected', False)])}")
     
-    with col1:
-        st.subheader("当前状态")
+    # 创建标签页
+    tabs = st.tabs(["YAML编辑器", "任务文件", "选中任务", "任务运行时", "用户偏好"])
+    
+    # YAML编辑器标签页
+    with tabs[0]:
+        st.subheader("YAML编辑器")
         
-        # 显示基本状态信息
-        st.write(f"版本: {global_state.get('version', 'N/A')}")
-        st.write(f"最后更新: {global_state.get('last_updated', 'N/A')}")
-        st.write(f"选中任务数: {len(global_state.get('selected_tasks', []))}")
-        
-        # 导出为JSON字符串
-        json_str = export_global_state_json()
+        # 导出为YAML字符串
+        yaml_str = export_global_state_yaml()
         
         # 添加编辑区域
-        edited_json = st.text_area("编辑状态JSON", json_str, height=400)
+        edited_yaml = st.text_area("编辑状态YAML", yaml_str, height=400)
         
         # 保存修改按钮
-        if st.button("保存修改"):
-            if import_global_state_json(edited_json):
+        if st.button("应用修改", key="apply_yaml_changes"):
+            if import_global_state_yaml(edited_yaml):
                 st.success("状态已更新")
             else:
-                st.error("无法更新状态，JSON格式可能有误")
+                st.error("无法更新状态，YAML格式可能有误")
     
-    with col2:
-        st.subheader("选中任务列表")
+    # 任务文件标签页
+    with tabs[1]:
+        st.subheader("任务文件")
+        
+        # 显示任务文件
+        task_files = global_state.get('task_files', {})
+        if task_files:
+            for file_path, file_info in task_files.items():
+                with st.expander(f"📄 {os.path.basename(file_path)}", expanded=False):
+                    st.write(f"路径: {file_path}")
+                    st.write(f"最后加载: {file_info.get('last_loaded', 'N/A')}")
+                    
+                    # 显示元数据
+                    meta = file_info.get('meta', {})
+                    if meta:
+                        st.write("元数据:")
+                        for key, value in meta.items():
+                            st.write(f"- {key}: {value}")
+        else:
+            st.info("没有任务文件信息")
+    
+    # 选中任务标签页
+    with tabs[2]:
+        st.subheader("选中任务")
         
         # 显示选中的任务
-        selected_tasks = global_state.get('selected_tasks', [])
+        selected_tasks = [name for name, info in global_state.get('tasks', {}).items() 
+                         if info.get('selected', False)]
+        
         if selected_tasks:
-            for i, task in enumerate(selected_tasks):
-                st.write(f"{i+1}. {task}")
-                # 添加移除按钮
-                if st.button("移除", key=f"remove_{i}"):
-                    if task in global_state['selected']:
-                        global_state['selected'][task] = False
-                    global_state['selected_tasks'].remove(task)
-                    update_global_state(global_state)
-                    st.rerun()
+            for i, task_name in enumerate(selected_tasks):
+                task_info = global_state.get('tasks', {}).get(task_name, {})
+                with st.expander(f"{i+1}. {task_name}", expanded=False):
+                    st.write(f"选中时间: {task_info.get('last_selected', 'N/A')}")
+                    st.write(f"来源文件: {task_info.get('source_file', 'N/A')}")
+                    
+                    # 显示任务数据
+                    task_data = task_info.get('data', {})
+                    if task_data:
+                        st.write("任务数据:")
+                        for key, value in task_data.items():
+                            st.write(f"- {key}: {value}")
+                    
+                    # 取消选择按钮
+                    if st.button("取消选择", key=f"unselect_{task_name}"):
+                        task_info['selected'] = False
+                        update_global_state(global_state)
+                        st.rerun()
         else:
             st.info("没有选中的任务")
+    
+    # 任务运行时标签页
+    with tabs[3]:
+        st.subheader("任务运行时数据")
         
-        st.subheader("选择状态")
+        # 创建任务运行时数据表格
+        runtime_data = []
+        for task_name, task_info in global_state.get('tasks', {}).items():
+            runtime = task_info.get('runtime', {})
+            runtime_data.append({
+                "任务名称": task_name,
+                "运行次数": runtime.get('run_count', 0),
+                "最后运行": runtime.get('last_run', 'N/A'),
+                "最后状态": runtime.get('last_status', 'N/A'),
+                "自定义标志": len(runtime.get('custom_flags', {}))
+            })
         
-        # 显示所有任务的选择状态
-        st.write("任务选择状态预览:")
-        
-        # 创建表格展示所有任务的状态
-        task_states = []
-        for task, is_selected in global_state.get('selected', {}).items():
-            task_states.append({"任务名称": task, "已选中": is_selected})
-        
-        if task_states:
-            tasks_df = pd.DataFrame(task_states)
-            st.dataframe(tasks_df, use_container_width=True)
+        if runtime_data:
+            runtime_df = pd.DataFrame(runtime_data)
+            st.dataframe(runtime_df, use_container_width=True)
+            
+            # 任务运行时详情
+            st.subheader("任务运行时详情")
+            task_options = [task["任务名称"] for task in runtime_data]
+            selected_task = st.selectbox("选择任务查看详情", task_options)
+            
+            if selected_task:
+                task_runtime = global_state.get('tasks', {}).get(selected_task, {}).get('runtime', {})
+                st.json(task_runtime)
+                
+                # 模拟运行按钮
+                if st.button("模拟运行", key=f"simulate_run_{selected_task}"):
+                    record_task_run(selected_task, status="simulated")
+                    st.success(f"已记录 {selected_task} 的模拟运行")
+                    st.rerun()
+                
+                # 添加自定义标志
+                st.subheader("添加自定义标志")
+                col1, col2 = st.columns(2)
+                with col1:
+                    flag_key = st.text_input("标志名称", key="flag_key")
+                with col2:
+                    flag_value = st.text_input("标志值", key="flag_value")
+                
+                if st.button("添加标志", key="add_flag") and flag_key:
+                    if "custom_flags" not in task_runtime:
+                        task_runtime["custom_flags"] = {}
+                    
+                    task_runtime["custom_flags"][flag_key] = flag_value
+                    update_task_runtime(selected_task, {"custom_flags": task_runtime["custom_flags"]})
+                    st.success(f"已添加标志 {flag_key}")
+                    st.rerun()
         else:
-            st.info("没有任务状态信息")
+            st.info("没有任务运行时数据")
+    
+    # 用户偏好标签页
+    with tabs[4]:
+        st.subheader("用户偏好设置")
+        
+        user_prefs = global_state.get('user_preferences', {})
+        if user_prefs:
+            # 显示当前偏好
+            st.json(user_prefs)
+            
+            # 简单编辑
+            st.subheader("编辑常用设置")
+            
+            # 默认视图
+            view_options = ["aggrid", "card", "group"]
+            default_view = st.selectbox(
+                "默认视图", 
+                options=view_options,
+                index=view_options.index(user_prefs.get('default_view', 'aggrid')) if user_prefs.get('default_view') in view_options else 0
+            )
+            
+            # 主题
+            theme_options = ["light", "dark", "blue"]
+            theme = st.selectbox(
+                "主题", 
+                options=theme_options,
+                index=theme_options.index(user_prefs.get('ui_settings', {}).get('theme', 'light')) if user_prefs.get('ui_settings', {}).get('theme') in theme_options else 0
+            )
+            
+            # 应用按钮
+            if st.button("应用设置", key="apply_user_prefs"):
+                # 更新用户偏好
+                if 'ui_settings' not in user_prefs:
+                    user_prefs['ui_settings'] = {}
+                
+                user_prefs['default_view'] = default_view
+                user_prefs['ui_settings']['theme'] = theme
+                
+                # 更新全局状态
+                global_state['user_preferences'] = user_prefs
+                update_global_state(global_state)
+                st.success("用户偏好已更新")
+                st.rerun()
+        else:
+            st.info("没有用户偏好数据")
 
 if __name__ == "__main__":
     main()

@@ -10,7 +10,7 @@ except ImportError:
     st.error("未安装st-aggrid。请使用 `pip install streamlit-aggrid` 安装")
 
 # 导入选择状态更新函数
-from ..utils.selection_utils import update_task_selection, init_selection_state, get_task_selection_state, init_global_state
+from ..utils.selection_utils import update_task_selection, get_task_selection_state, init_global_state
 
 def render_aggrid_table(filtered_df, current_taskfile):
     """使用AgGrid渲染表格 - 优化勾选状态获取并增加分组功能"""
@@ -27,9 +27,6 @@ def render_aggrid_table(filtered_df, current_taskfile):
     filtered_df_copy = filtered_df.copy()
     filtered_df_copy['tags_str'] = filtered_df_copy['tags'].apply(lambda x: ', '.join(x) if isinstance(x, list) else '')
     filtered_df_copy['显示名称'] = filtered_df_copy.apply(lambda x: f"{x['emoji']} {x['name']}", axis=1)
-    
-    # 初始化会话状态 - 使用集中管理的选择状态
-    init_selection_state(filtered_df_copy['name'].tolist())
     
     # AgGrid分组设置状态
     if 'aggrid_group_by' not in st.session_state:
@@ -249,44 +246,44 @@ def render_aggrid_table(filtered_df, current_taskfile):
     grid_return = AgGrid(
         display_df,
         gridOptions=grid_options,
-        update_mode=GridUpdateMode.MODEL_CHANGED if not enable_trigger else GridUpdateMode.VALUE_CHANGED,
-        fit_columns_on_grid_load=True,
-        enable_enterprise_modules=enable_enterprise,
-        height=500,
-        width='100%',
-        key='aggrid_table',
-        reload_data=False,
+        update_mode=GridUpdateMode.MODEL_CHANGED if enable_trigger else GridUpdateMode.SELECTION_CHANGED,
         allow_unsafe_jscode=True,
         theme=theme_option,
+        height=600,
+        width="100%",
+        reload_data=False,
+        fit_columns_on_grid_load=True,
+        key=f"aggrid_{id(filtered_df)}"
     )
     
-    # 处理表格勾选状态变化
-    if 'data' in grid_return:
-        updated_df = pd.DataFrame(grid_return['data'])
-        
-        # 记录状态是否有变化
-        has_changes = False
-        changed_tasks = []
-        
-        # 检查每个任务的选择状态是否发生变化
-        for idx, row in updated_df.iterrows():
-            task_name = row['name']
-            if task_name and pd.notna(task_name):  # 确保任务名有效
-                current_selection = bool(row['选择'])
-                previous_selection = get_task_selection_state(task_name)
+    # 处理返回的数据
+    if grid_return and grid_return.get('selected_rows'):
+        # 如果有选中的行，显示预览
+        selected_row = grid_return['selected_rows'][0]
+        st.write(f"选中的任务: {selected_row.get('显示名称', '')}")
+    
+    # 处理AgGrid组件的特殊返回值 - 用于处理自定义事件
+    data = grid_return.get('data', None)
+    if data is not None and len(data) > 0:
+        for i, row in enumerate(data):
+            # 确保row是字典类型
+            if isinstance(row, dict):
+                # 获取任务名称和选择状态
+                task_name = row.get('name', None)
+                is_selected = row.get('选择', False)
                 
-                # 如果状态有变化，记录下来
-                if current_selection != previous_selection:
-                    has_changes = True
-                    changed_tasks.append((task_name, current_selection))
-        
-        # 如果有状态变化，批量更新全局状态
-        if has_changes:
-            # 更新除最后一个之外的所有任务，不刷新页面
-            for task_name, is_selected in changed_tasks[:-1]:
-                update_task_selection(task_name, is_selected, rerun=False)
-            
-            # 更新最后一个任务并刷新页面
-            if changed_tasks:
-                last_task, last_selection = changed_tasks[-1]
-                update_task_selection(last_task, last_selection, rerun=True)
+                # 检查状态是否变化
+                if task_name and get_task_selection_state(task_name) != is_selected:
+                    # 更新选择状态，但不触发rerun
+                    update_task_selection(task_name, is_selected, rerun=False)
+            elif hasattr(row, 'name') and hasattr(row, '选择'):
+                # 如果是Pandas Series或其他类似对象
+                task_name = row.name
+                is_selected = row.选择
+                
+                # 检查状态是否变化
+                if task_name and get_task_selection_state(task_name) != is_selected:
+                    # 更新选择状态，但不触发rerun
+                    update_task_selection(task_name, is_selected, rerun=False)
+
+    return grid_return
