@@ -26,7 +26,8 @@ from src.utils.selection_utils import (
     export_yaml_state as export_global_state_yaml, 
     import_global_state_yaml,
     save_global_state, register_task_file, register_tasks_from_df,
-    update_task_runtime, record_task_run, init_global_state
+    update_task_runtime, record_task_run, init_global_state,
+    display_yaml_in_ui, validate_yaml
 )
 
 # 添加当前目录到路径
@@ -80,7 +81,93 @@ st.markdown("""
         margin-top: 20px;
         border: 1px solid #e6e6e6;
     }
+    
+    /* YAML编辑器样式 */
+    .yaml-editor {
+        font-family: monospace;
+        border-radius: 4px;
+        background-color: #282c34;
+        color: #e6e6e6;
+        padding: 16px;
+        border: 1px solid #444;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    
+    /* 自定义文本区域样式，使其看起来像代码编辑器 */
+    .stTextArea textarea {
+        font-family: 'Courier New', Courier, monospace !important;
+        font-size: 14px !important;
+        line-height: 1.5 !important;
+        padding: 12px !important;
+        background-color: #1e1e1e !important;
+        color: #d4d4d4 !important;
+        border: 1px solid #3e3e3e !important;
+        border-radius: 4px !important;
+    }
+    
+    /* 字段标签隐藏 */
+    .hide-label .stTextArea label {
+        display: none;
+    }
+    
+    /* 语法高亮区域 */
+    .yaml-preview {
+        background-color: #282c34;
+        border-radius: 5px;
+        padding: 10px;
+        margin-top: 10px;
+        border: 1px solid #444;
+        overflow-x: auto;
+    }
+    
+    /* 复制按钮样式 */
+    .copy-button {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        padding: 5px 10px;
+        background-color: #4a4a4a;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .copy-button:hover {
+        background-color: #616161;
+    }
+    
+    /* markdown代码块样式增强 */
+    pre {
+        position: relative;
+        background-color: #282c34 !important;
+        padding: 15px !important;
+        border-radius: 5px !important;
+        margin-bottom: 15px !important;
+    }
+    
+    code {
+        font-family: 'Courier New', Courier, monospace !important;
+        color: #d4d4d4 !important;
+    }
 </style>
+""", unsafe_allow_html=True)
+
+# 添加复制到剪贴板的JavaScript函数
+st.markdown("""
+<script>
+function copyToClipboard(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    alert('已复制到剪贴板!');
+}
+</script>
 """, unsafe_allow_html=True)
 
 def main():
@@ -237,19 +324,71 @@ def render_state_manager():
         # 导出为YAML字符串
         yaml_str = export_global_state_yaml()
         
-        # 使用markdown代码块显示YAML（只读视图）
-        st.markdown("### 当前状态 (只读视图)")
-        st.markdown(f"```yaml\n{yaml_str}\n```")
+        # 分为两栏：编辑区和预览区
+        col_edit, col_preview = st.columns([3, 2])
         
-        # 添加编辑区域
-        edited_yaml = st.text_area("编辑状态YAML", yaml_str, height=400)
+        # 左侧编辑区
+        with col_edit:
+            st.markdown("<h3 style='margin-bottom: 5px;'>编辑YAML</h3>", unsafe_allow_html=True)
+            
+            # 使用CSS类隐藏标签，使界面更干净
+            st.markdown('<div class="hide-label">', unsafe_allow_html=True)
+            edited_yaml = st.text_area("", yaml_str, height=600, key="yaml_editor")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # 操作按钮
+            col_a, col_b, col_c = st.columns([1, 1, 2])
+            with col_a:
+                # 保存修改按钮
+                if st.button("应用修改", key="apply_yaml_changes"):
+                    try:
+                        # 使用验证函数检查YAML格式
+                        valid_yaml, error_msg = validate_yaml(edited_yaml)
+                        
+                        if valid_yaml and import_global_state_yaml(edited_yaml):
+                            st.success("状态已更新")
+                        else:
+                            if error_msg:
+                                st.error(f"YAML格式有误: {error_msg}")
+                            else:
+                                st.error("无法更新状态")
+                    except Exception as e:
+                        st.error(f"更新失败: {str(e)}")
+            
+            with col_b:
+                # 重置按钮
+                if st.button("重置", key="reset_yaml"):
+                    st.session_state.yaml_editor = yaml_str
+                    st.rerun()
+            
+            with col_c:
+                # 复制按钮
+                if st.button("复制到剪贴板", key="copy_yaml"):
+                    # 由于直接的JavaScript交互有限制，这里使用一个变通方法
+                    st.success("复制功能已激活，请从编辑器中选择全部内容(Ctrl+A)并复制(Ctrl+C)")
         
-        # 保存修改按钮
-        if st.button("应用修改", key="apply_yaml_changes"):
-            if import_global_state_yaml(edited_yaml):
-                st.success("状态已更新")
-            else:
-                st.error("无法更新状态，YAML格式可能有误")
+        # 右侧预览区
+        with col_preview:
+            st.markdown("<h3 style='margin-bottom: 5px;'>YAML预览</h3>", unsafe_allow_html=True)
+            
+            # 导入yaml库
+            import yaml
+            
+            try:
+                # 尝试解析编辑中的YAML
+                valid_yaml, error_msg = validate_yaml(edited_yaml)
+                
+                if valid_yaml:
+                    # 将解析后的YAML重新格式化为字符串以显示
+                    parsed_yaml = yaml.safe_load(edited_yaml)
+                    formatted_yaml = yaml.dump(parsed_yaml, sort_keys=False, allow_unicode=True, indent=2)
+                    # 使用函数显示格式化的YAML
+                    display_yaml_in_ui(formatted_yaml)
+                else:
+                    st.error(f"YAML格式有误: {error_msg}")
+                    st.markdown(f"```\n{edited_yaml}\n```")
+            except Exception as e:
+                st.error(f"预览错误: {str(e)}")
     
     # 任务文件标签页
     with tabs[1]:

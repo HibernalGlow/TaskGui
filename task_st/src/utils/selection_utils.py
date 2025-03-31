@@ -635,6 +635,23 @@ def import_global_state_json(json_str, rerun=True):
         print(f"导入状态失败: {str(e)}")
         return False
 
+# 添加辅助函数用于验证YAML格式
+def validate_yaml(yaml_str):
+    """
+    验证YAML字符串的格式是否正确
+    
+    参数:
+        yaml_str: 要验证的YAML字符串
+    
+    返回:
+        tuple: (是否有效, 错误信息)
+    """
+    try:
+        yaml.safe_load(yaml_str)
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
 # 添加辅助函数用于在UI中显示YAML
 def display_yaml_in_ui(yaml_str):
     """
@@ -643,5 +660,8 @@ def display_yaml_in_ui(yaml_str):
     参数:
         yaml_str: YAML格式的字符串
     """
+    # 构建markdown代码块
     markdown_yaml = f"```yaml\n{yaml_str}\n```"
+    
+    # 添加到UI
     st.markdown(markdown_yaml)
