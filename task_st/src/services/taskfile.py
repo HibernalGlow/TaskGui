@@ -34,7 +34,7 @@ def read_taskfile(file_path):
                 'name': task_name,
                 'description': task_info.get('desc', ''),
                 'directory': task_info.get('dir', ''),
-                'emoji': task_info.get('emoji', '🔧'),
+                'emoji': task_info.get('emoji', ''),
                 'tags': task_info.get('tags', []),
                 'group': task_info.get('group', '默认'),
                 'priority': task_info.get('priority', 5),

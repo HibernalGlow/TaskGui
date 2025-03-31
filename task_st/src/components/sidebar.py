@@ -147,18 +147,18 @@ def render_sidebar(current_taskfile):
                 st.success("常用标签已保存")
         
         # 添加并行执行模式选项
-        st.markdown("## 执行设置")
+        # st.markdown("## 执行设置")
         
-        if 'run_parallel' not in st.session_state:
-            st.session_state.run_parallel = False
+        # if 'run_parallel' not in st.session_state:
+        #     st.session_state.run_parallel = False
             
-        parallel_mode = st.checkbox(
-            "并行执行任务", 
-            value=st.session_state.run_parallel,
-            help="选中时，多个任务将同时启动"
-        )
+        # parallel_mode = st.checkbox(
+        #     "并行执行任务", 
+        #     value=st.session_state.run_parallel,
+        #     help="选中时，多个任务将同时启动"
+        # )
         
-        st.session_state.run_parallel = parallel_mode
+        # st.session_state.run_parallel = parallel_mode
         
         # 显示已选任务数量
         if 'selected_tasks' in st.session_state and st.session_state.selected_tasks:
