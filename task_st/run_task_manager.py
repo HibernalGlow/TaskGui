@@ -22,6 +22,8 @@ def main():
         "--server.headless=false", 
         "--browser.serverAddress=localhost", 
         "--server.runOnSave=false"
+        "--server.runOnSave=false",
+        "--server.port=2042"
     ]
     
     # 添加任何传递给此脚本的附加参数
