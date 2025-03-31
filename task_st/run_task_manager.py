@@ -20,8 +20,8 @@ def main():
         "run", 
         main_script, 
         "--server.headless=false", 
-        "--browser.serverAddress=localhost", 
-        "--server.runOnSave=false"
+        "--browser.serverAddress=localhost" ,
+        "--server.runOnSave=false",
         "--server.port=2042"
     ]
     

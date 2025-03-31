@@ -21,6 +21,7 @@ from src import (
 from src.services.taskfile import read_taskfile
 from src.utils.file_utils import open_file, get_directory_files
 from src.views.styles import apply_custom_styles
+from src.components.preview_card import render_shared_preview
 
 # 添加当前目录到路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -47,6 +48,32 @@ st.markdown("""
     .stButton>button {
         width: 100%;
     }
+    
+    /* 添加页签样式 */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 5px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        height: 40px;
+        white-space: pre-wrap;
+        border-radius: 4px 4px 0 0;
+    }
+    
+    /* 主要页签样式 */
+    .main-tabs [data-baseweb="tab"] {
+        background-color: #f0f2f6;
+        font-weight: bold;
+    }
+    
+    /* 预览区域样式 */
+    .preview-card {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 20px;
+        border: 1px solid #e6e6e6;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -56,9 +83,6 @@ def main():
         # 初始化会话状态
         if 'selected_tasks' not in st.session_state:
             st.session_state.selected_tasks = []
-        
-        if 'current_view' not in st.session_state:
-            st.session_state.current_view = "表格视图"
         
         if 'run_parallel' not in st.session_state:
             st.session_state.run_parallel = False
@@ -96,15 +120,54 @@ def main():
         # 应用过滤器
         filtered_df = filter_tasks(tasks_df)
         
-        # 显示任务
-        current_view = st.session_state.current_view
+        # 共享预览区域 - 放在页签上方
+        preview_expander = st.expander("📌 选中任务预览", expanded=True)
+        with preview_expander:
+            render_shared_preview(filtered_df, default_taskfile)
         
-        if current_view == "表格视图":
-            render_table_view(filtered_df, default_taskfile)
-        elif current_view == "卡片视图":
+        # 使用单层页签 - 将所有页签放在一排
+        tabs = st.tabs(["📊 表格视图", "🗂️ 卡片视图", "📁 分组视图", "📈 仪表盘", "⚙️ 设置"])
+        
+        # 表格视图
+        with tabs[0]:
+            render_table_view(filtered_df, default_taskfile, show_sidebar=False)  # 关闭右侧预览
+        
+        # 卡片视图
+        with tabs[1]:
             render_card_view(filtered_df, default_taskfile)
-        elif current_view == "分组视图":
+        
+        # 分组视图
+        with tabs[2]:
             render_group_view(filtered_df, default_taskfile)
+        
+        # 仪表盘页签
+        with tabs[3]:
+            st.markdown("## 📊 任务仪表盘")
+            st.info("仪表盘功能正在开发中...")
+            
+            # 占位内容
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("总任务数", len(tasks_df))
+            with col2:
+                st.metric("选中任务", len(st.session_state.selected_tasks))
+            
+            # 示例图表
+            st.subheader("标签分布")
+            st.write("此处将显示任务标签的分布统计")
+        
+        # 设置页签
+        with tabs[4]:
+            st.markdown("## ⚙️ 系统设置")
+            st.info("设置功能正在开发中...")
+            
+            # 示例设置选项
+            st.subheader("界面设置")
+            st.checkbox("启用深色模式", value=False, disabled=True)
+            st.checkbox("自动加载最近的任务文件", value=True, disabled=True)
+            
+            st.subheader("任务执行")
+            st.radio("默认运行模式", options=["顺序执行", "并行执行"], index=0, disabled=True)
             
     except Exception as e:
         st.error(f"发生错误: {str(e)}")

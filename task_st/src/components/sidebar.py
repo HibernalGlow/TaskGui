@@ -6,21 +6,7 @@ def render_sidebar(current_taskfile):
     with st.sidebar:
         st.title("任务管理器")
         
-        # 视图选择
-        st.markdown("## 视图设置")
-        view_options = ["表格视图", "卡片视图", "分组视图"]
-        
-        if 'current_view' not in st.session_state:
-            st.session_state.current_view = "表格视图"
-        
-        selected_view = st.radio(
-            "选择视图",
-            options=view_options,
-            index=view_options.index(st.session_state.current_view),
-            key="view_selector"
-        )
-        
-        st.session_state.current_view = selected_view
+        # 移除视图选择部分
         
         # 添加任务过滤
         st.markdown("## 过滤任务")
@@ -82,4 +68,4 @@ def get_all_tags(taskfile_path):
                 all_tags.extend(tags)
         return sorted(list(set(all_tags)))
     except Exception as e:
-        return [] 
+        return []
