@@ -13,7 +13,6 @@ from src.views.card.card_view import render_card_view
 from src.components.sidebar import render_sidebar
 from src.utils.file_utils import open_file, get_directory_files, find_taskfiles, get_nearest_taskfile, copy_to_clipboard, get_task_command
 from src.services.task_runner import run_task_via_cmd, run_multiple_tasks
-from src.components.styles import apply_custom_styles
 from src.components.preview_card import render_action_buttons
 from src.manage.state_manager import render_state_manager
 from src.tabs.dashboard import render_dashboard
