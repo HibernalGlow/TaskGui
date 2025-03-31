@@ -22,10 +22,9 @@ def render_edit_table(filtered_df, current_taskfile):
         if task not in st.session_state.selected:
             st.session_state.selected[task] = False
     
-    # 设置已选择的任务状态
-    for task in st.session_state.selected_tasks:
-        if task in st.session_state.selected:
-            st.session_state.selected[task] = True
+    # 设置已选择的任务状态 - 强制同步
+    for task in st.session_state.selected:
+        st.session_state.selected[task] = task in st.session_state.selected_tasks
     
     # 创建勾选框列
     filtered_df_copy['选择'] = filtered_df_copy['name'].apply(
@@ -40,22 +39,32 @@ def render_edit_table(filtered_df, current_taskfile):
         'directory': '目录'
     })
     
-    # 定义编辑器回调函数，确保选中和取消选中时都立即更新
-    def on_change():
-        if "edited_rows" in st.session_state.task_editor:
-            for idx, changes in st.session_state.task_editor["edited_rows"].items():
+    # 简化的选择处理回调函数
+    def process_selection_changes():
+        # 从编辑器获取变更
+        editor_state = st.session_state.task_editor
+        
+        if "edited_rows" in editor_state:
+            for idx, changes in editor_state["edited_rows"].items():
                 if "选择" in changes:
                     idx = int(idx)
                     if idx < len(filtered_df_copy):
                         task_name = filtered_df_copy.iloc[idx]['name']
                         is_selected = changes["选择"]
-                        # 使用统一的更新函数
-                        update_task_selection(task_name, is_selected, rerun=False)
-            
-            # 批量更新后统一重新加载页面
-            st.rerun()
+                        
+                        # 检查状态是否确实改变
+                        if st.session_state.selected.get(task_name) != is_selected:
+                            # 直接更新选中状态
+                            if is_selected and task_name not in st.session_state.selected_tasks:
+                                st.session_state.selected_tasks.append(task_name)
+                            elif not is_selected and task_name in st.session_state.selected_tasks:
+                                st.session_state.selected_tasks.remove(task_name)
+                            
+                            st.session_state.selected[task_name] = is_selected
+                            # 强制刷新页面
+                            st.rerun()
     
-    # 使用标准data_editor显示表格，使用on_change回调减少刷新
+    # 使用改进的data_editor回调
     edited_df = st.data_editor(
         display_df,
         column_config={
@@ -90,5 +99,5 @@ def render_edit_table(filtered_df, current_taskfile):
         use_container_width=True,
         disabled=["显示名称", "描述", "标签", "目录"],  # 只允许编辑勾选框
         key="task_editor",
-        on_change=on_change
+        on_change=process_selection_changes
     )
