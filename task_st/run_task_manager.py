@@ -19,7 +19,7 @@ def main():
         "streamlit", 
         "run", 
         main_script, 
-        "--server.headless=false", 
+        "--server.headless=true", 
         "--browser.serverAddress=localhost" ,
         "--server.runOnSave=false",
         "--server.port=2042"
