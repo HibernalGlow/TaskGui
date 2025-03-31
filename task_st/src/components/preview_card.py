@@ -4,6 +4,7 @@ import os
 from ..utils.file_utils import get_task_command, copy_to_clipboard
 from ..services.task_runner import run_task_via_cmd, run_tasks_via_cmd
 from ..utils.selection_utils import get_selected_tasks, clear_all_selections, get_global_state, record_task_run, get_task_runtime
+from .task_card import render_task_card
 
 def render_shared_preview(filtered_df, current_taskfile):
     """渲染共享任务预览区域
@@ -87,107 +88,13 @@ def render_task_preview_in_tab(task, current_taskfile, idx=0):
         current_taskfile: 当前任务文件路径
         idx: 任务索引，用于生成唯一key
     """
-    # 任务标题和描述
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.markdown(f"**描述**: {task['description']}")
-    
-    with col2:
-        # 添加操作按钮
-        run_key = f"preview_run_{idx}_{task['name']}"
-        if st.button("运行", key=run_key):
-            with st.spinner(f"正在启动任务 {task['name']}..."):
-                result = run_task_via_cmd(task['name'], current_taskfile)
-                # 记录任务运行
-                record_task_run(task['name'], status="started")
-            st.success(f"任务 {task['name']} 已在新窗口启动")
-        
-        # 复制命令按钮
-        copy_key = f"preview_copy_{idx}_{task['name']}"
-        if st.button("复制命令", key=copy_key):
-            cmd = get_task_command(task['name'], current_taskfile)
-            copy_to_clipboard(cmd)
-            st.success("命令已复制到剪贴板")
-    
-    # 显示标签
-    if isinstance(task['tags'], list) and task['tags']:
-        st.markdown("**标签**: " + " ".join([f"<span class='tag'>#{tag}</span>" for tag in task['tags']]), unsafe_allow_html=True)
-    
-    # 显示目录
-    st.markdown(f"**目录**: `{task['directory']}`")
-    
-    # 显示命令
-    cmd = get_task_command(task['name'], current_taskfile)
-    st.code(cmd, language="bash")
-    
-    # 获取任务运行时数据
-    runtime = get_task_runtime(task['name'])
-    
-    # 如果有运行记录，显示运行信息
-    if runtime.get("run_count", 0) > 0:
-        col_a, col_b, col_c = st.columns(3)
-        with col_a:
-            st.markdown(f"**运行次数**: {runtime.get('run_count', 0)}")
-        with col_b:
-            st.markdown(f"**最后运行**: {runtime.get('last_run', 'N/A')}")
-        with col_c:
-            st.markdown(f"**最后状态**: {runtime.get('last_status', 'N/A')}")
+    # 使用通用任务卡片渲染函数
+    render_task_card(
+        task=task, 
+        current_taskfile=current_taskfile, 
+        idx=idx, 
+        view_type="preview", 
+        show_checkbox=False
+    )
 
 
-# 保留原始的render_task_preview函数，以便在其他地方可能的调用
-def render_task_preview(task, current_taskfile, idx=0):
-    """渲染单个任务的预览卡片
-    
-    参数:
-        task: 任务数据
-        current_taskfile: 当前任务文件路径
-        idx: 任务索引，用于生成唯一key
-    """
-    # 创建一个带边框的容器
-    with st.container():
-        st.markdown("---")
-        
-        # 任务标题和描述
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.markdown(f"#### {task['emoji']} {task['name']}")
-            st.markdown(f"**描述**: {task['description']}")
-        
-        with col2:
-            # 添加操作按钮
-            run_key = f"preview_run_{idx}_{task['name']}"
-            if st.button("运行", key=run_key):
-                with st.spinner(f"正在启动任务 {task['name']}..."):
-                    result = run_task_via_cmd(task['name'], current_taskfile)
-                    # 记录任务运行
-                    record_task_run(task['name'], status="started")
-                st.success(f"任务 {task['name']} 已在新窗口启动")
-            
-            # 复制命令按钮
-            copy_key = f"preview_copy_{idx}_{task['name']}"
-            if st.button("复制命令", key=copy_key):
-                cmd = get_task_command(task['name'], current_taskfile)
-                copy_to_clipboard(cmd)
-                st.success("命令已复制到剪贴板")
-        
-        # 显示标签
-        if isinstance(task['tags'], list) and task['tags']:
-            st.markdown("**标签**: " + " ".join([f"<span class='tag'>#{tag}</span>" for tag in task['tags']]), unsafe_allow_html=True)
-        
-        # 显示目录
-        st.markdown(f"**目录**: `{task['directory']}`")
-        
-        # 显示命令
-        cmd = get_task_command(task['name'], current_taskfile)
-        st.code(cmd, language="bash")
-        
-        # 获取任务运行时数据
-        runtime = get_task_runtime(task['name'])
-        
-        # 如果有运行记录，显示运行信息
-        if runtime.get("run_count", 0) > 0:
-            st.markdown(f"**运行次数**: {runtime.get('run_count', 0)}")
-            st.markdown(f"**最后运行**: {runtime.get('last_run', 'N/A')}")
-            st.markdown(f"**最后状态**: {runtime.get('last_status', 'N/A')}")
-        
-        st.markdown("---")
