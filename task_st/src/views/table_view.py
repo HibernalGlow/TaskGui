@@ -3,7 +3,6 @@ import os
 import pandas as pd
 from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from .aggrid_table import render_aggrid_table
-from ..components.preview_card import render_shared_preview
 from ..components.batch_operations import render_batch_operations
 from ..utils.selection_utils import force_save_state
 
@@ -35,18 +34,13 @@ def render_table_view(filtered_df, current_taskfile, show_sidebar=True):
             st.rerun()
     
     # 使用AgGrid渲染表格
-    st.info("提示: 在表格中选中行后，可以在下方预览卡片中查看详情。点击'保存变更'按钮应用更改。")
+    st.info("提示: 在表格中选中行后，可以在上方预览卡片中查看详情。点击'保存变更'按钮应用更改。")
     
     # 渲染AgGrid表格
     result = render_aggrid_table(filtered_df, current_taskfile)
     
     # 检查是否有选中的任务
     has_selected_tasks = len(st.session_state.selected_tasks) > 0 if 'selected_tasks' in st.session_state else False
-    
-    # 任务预览卡片 - 使用可折叠卡片
-    preview_expander = st.expander("选中任务预览", expanded=has_selected_tasks)
-    with preview_expander:
-        render_shared_preview(filtered_df, current_taskfile)
     
     # 批量操作 - 使用可折叠卡片
     batch_expander = st.expander("批量操作", expanded=has_selected_tasks)

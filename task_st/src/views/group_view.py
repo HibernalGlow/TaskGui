@@ -22,73 +22,84 @@ def render_group_view(filtered_df, current_taskfile):
     # 获取所有主标签
     primary_tags = sorted(filtered_df['primary_tag'].unique())
     
-    # 为每个标签创建一个部分
+    # 为每个主标签创建一个分组
     for tag in primary_tags:
-        with st.expander(f"📂 {tag} ({len(filtered_df[filtered_df['primary_tag'] == tag])})", expanded=True):
-            tag_tasks = filtered_df[filtered_df['primary_tag'] == tag]
+        # 获取当前标签的任务
+        tag_tasks = filtered_df[filtered_df['primary_tag'] == tag]
+        
+        # 创建分组标题
+        st.markdown(f"#### {tag}")
+        
+        # 每行显示的卡片数量
+        cards_per_row = 3
+        
+        # 创建行
+        for i in range(0, len(tag_tasks), cards_per_row):
+            cols = st.columns(cards_per_row)
+            # 获取当前行的任务
+            row_tasks = tag_tasks.iloc[i:min(i+cards_per_row, len(tag_tasks))]
             
-            # 为该标签下的每个任务创建一个容器
-            for _, task in tag_tasks.iterrows():
-                with st.container():
-                    # 标题行
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
+            # 为每个列填充卡片
+            for col_idx, (_, task) in enumerate(row_tasks.iterrows()):
+                with cols[col_idx]:
+                    with st.container():
+                        # 卡片标题
                         st.markdown(f"### {task['emoji']} {task['name']}")
-                    with col2:
-                        # 选择框 - 使用统一的更新函数
-                        is_selected = task['name'] in st.session_state.selected_tasks if 'selected_tasks' in st.session_state else False
-                        if st.checkbox("选择", value=is_selected, key=f"group_{task['name']}"):
-                            if not is_selected:
-                                # 只在状态变化时更新
-                                update_task_selection(task['name'], True)
-                        elif is_selected:
-                            # 只在状态变化时更新
-                            update_task_selection(task['name'], False)
-                    
-                    # 任务信息
-                    st.markdown(f"**描述**: {task['description']}")
-                    
-                    # 显示所有标签
-                    tags_str = ', '.join([f"#{t}" for t in task['tags']]) if isinstance(task['tags'], list) else ''
-                    st.markdown(f"**标签**: {tags_str}")
-                    
-                    # 目录
-                    st.markdown(f"**目录**: `{task['directory']}`")
-                    
-                    # 命令
-                    cmd = get_task_command(task['name'], current_taskfile)
-                    st.code(cmd, language="bash")
-                    
-                    # 操作按钮
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        if st.button("运行", key=f"run_group_{task['name']}"):
-                            with st.spinner(f"正在启动任务 {task['name']}..."):
-                                result = run_task_via_cmd(task['name'], current_taskfile)
-                            st.success(f"任务 {task['name']} 已在新窗口启动")
-                    
-                    with col2:
-                        # 文件按钮
-                        if st.button("文件", key=f"file_group_{task['name']}"):
-                            if task['directory'] and os.path.exists(task['directory']):
-                                files = get_directory_files(task['directory'])
-                                if files:
-                                    st.markdown("##### 文件列表")
-                                    for i, file in enumerate(files):
-                                        file_path = os.path.join(task['directory'], file)
-                                        if st.button(file, key=f"file_group_{task['name']}_{i}"):
-                                            if open_file(file_path):
-                                                st.success(f"已打开: {file}")
-                                else:
-                                    st.info("没有找到文件")
-                    
-                    with col3:
-                        # 复制命令按钮
-                        if st.button("复制", key=f"copy_group_{task['name']}"):
-                            copy_to_clipboard(cmd)
-                            st.success("命令已复制")
-                    
-                    st.markdown("---")
+                        
+                        # 描述
+                        st.markdown(f"**描述**: {task['description']}")
+                        
+                        # 标签
+                        tags_str = ', '.join([f"#{tag}" for tag in task['tags']]) if isinstance(task['tags'], list) else ''
+                        st.markdown(f"**标签**: {tags_str}")
+                        
+                        # 目录
+                        st.markdown(f"**目录**: `{task['directory']}`")
+                        
+                        # 命令
+                        cmd = get_task_command(task['name'], current_taskfile)
+                        st.code(cmd, language="bash")
+                        
+                        # 获取当前选择状态
+                        is_selected = get_task_selection_state(task['name'])
+                        
+                        # 渲染勾选框
+                        checkbox_value = st.checkbox("选择此任务", value=is_selected, key=f"group_{task['name']}")
+                        
+                        # 如果勾选状态与记录的状态不同，更新状态
+                        if checkbox_value != is_selected:
+                            update_task_selection(task['name'], checkbox_value)
+                        
+                        # 操作按钮
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            if st.button("运行", key=f"run_group_{task['name']}"):
+                                with st.spinner(f"正在启动任务 {task['name']}..."):
+                                    result = run_task_via_cmd(task['name'], current_taskfile)
+                                st.success(f"任务 {task['name']} 已在新窗口启动")
+                        
+                        with col2:
+                            # 文件按钮
+                            if st.button("文件", key=f"file_group_{task['name']}"):
+                                if task['directory'] and os.path.exists(task['directory']):
+                                    files = get_directory_files(task['directory'])
+                                    if files:
+                                        st.markdown("##### 文件列表")
+                                        for i, file in enumerate(files):
+                                            file_path = os.path.join(task['directory'], file)
+                                            if st.button(file, key=f"file_group_{task['name']}_{i}"):
+                                                if open_file(file_path):
+                                                    st.success(f"已打开: {file}")
+                                    else:
+                                        st.info("没有找到文件")
+                        
+                        with col3:
+                            # 复制命令按钮
+                            if st.button("复制", key=f"copy_group_{task['name']}"):
+                                copy_to_clipboard(cmd)
+                                st.success("命令已复制")
+                        
+                        st.markdown("---")
     
     # 批量操作部分
     render_batch_operations(current_taskfile, view_key="group")

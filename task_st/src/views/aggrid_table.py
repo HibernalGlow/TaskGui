@@ -26,10 +26,6 @@ def render_aggrid_table(filtered_df, current_taskfile):
     filtered_df_copy['tags_str'] = filtered_df_copy['tags'].apply(lambda x: ', '.join(x) if isinstance(x, list) else '')
     filtered_df_copy['显示名称'] = filtered_df_copy.apply(lambda x: f"{x['emoji']} {x['name']}", axis=1)
     
-    # AgGrid分组设置状态
-    if 'aggrid_group_by' not in st.session_state:
-        st.session_state.aggrid_group_by = []
-    
     # 创建勾选列，从集中状态管理获取
     filtered_df_copy['选择'] = filtered_df_copy['name'].apply(
         lambda x: get_task_selection_state(x)
@@ -45,28 +41,7 @@ def render_aggrid_table(filtered_df, current_taskfile):
     
     # AgGrid高级设置UI
     with st.expander("AgGrid高级设置", expanded=False):
-        st.write("表格分组与过滤设置")
-        
-        # 分组设置
-        group_options = ["无分组", "标签", "目录"]
-        selected_group = st.selectbox(
-            "按列分组显示", 
-            options=group_options,
-            index=0,
-            key="aggrid_group_select"
-        )
-        
-        # 将选择转换为实际的列名
-        group_mapping = {
-            "标签": "标签",
-            "目录": "目录"
-        }
-        
-        # 更新分组状态
-        if selected_group != "无分组" and selected_group in group_mapping:
-            st.session_state.aggrid_group_by = [group_mapping[selected_group]]
-        else:
-            st.session_state.aggrid_group_by = []
+        st.write("表格过滤设置")
         
         # 其他AgGrid功能选项
         col1, col2 = st.columns(2)
@@ -99,40 +74,27 @@ def render_aggrid_table(filtered_df, current_taskfile):
     gb.configure_column('显示名称', 
                        header_name="任务名称", 
                        editable=enable_editing,
-                       enableRowGroup=True,
                        width=150)
     
     gb.configure_column('描述', 
                        header_name="任务描述", 
                        editable=enable_editing,
-                       enableRowGroup=True,
                        autoHeight=True,
                        wrapText=True)
     
-    # 为每列单独配置分组属性
-    for col in display_df.columns:
-        if col in st.session_state.aggrid_group_by:
-            # 对需要分组的列特殊处理
-            gb.configure_column(col, 
-                               rowGroup=True,  # 设置为分组列
-                               hide=True,     # 隐藏原始列
-                               enableRowGroup=True)
-        elif col == '标签':
-            gb.configure_column(col, 
-                               header_name="标签", 
-                               editable=enable_editing,
-                               enableRowGroup=True,
-                               filter=True)
-        elif col == '目录':
-            gb.configure_column(col, 
-                               header_name="任务目录", 
-                               editable=enable_editing,
-                               enableRowGroup=True,
-                               filter=True)
+    # 配置标签和目录列
+    gb.configure_column('标签', 
+                       header_name="标签", 
+                       editable=enable_editing,
+                       filter=True)
     
-    # 启用分组、排序和过滤功能
+    gb.configure_column('目录', 
+                       header_name="任务目录", 
+                       editable=enable_editing,
+                       filter=True)
+    
+    # 启用排序和过滤功能
     gb.configure_default_column(
-        groupable=True,
         filterable=enable_filter,
         sorteable=enable_sorting,
         editable=enable_editing,
@@ -184,8 +146,8 @@ def render_aggrid_table(filtered_df, current_taskfile):
             }, '*');
         }
         
-        // 当用户进行筛选、排序或分组等操作时
-        if (e.type === 'filterChanged' || e.type === 'sortChanged' || e.type === 'columnRowGroupChanged') {
+        // 当用户进行筛选、排序等操作时
+        if (e.type === 'filterChanged' || e.type === 'sortChanged') {
             let targetData = {
                 event_type: e.type,
                 rowData: rowData
@@ -222,19 +184,13 @@ def render_aggrid_table(filtered_df, current_taskfile):
     
     gb.configure_grid_options(
         getRowStyle=js_code,
-        # 启用分组功能
-        groupDisplayType="groupRows",
-        rowGroupPanelShow="always" if st.session_state.aggrid_group_by else "never",
-        # 根据用户选择设置默认分组
-        groupDefaultExpanded=-1,  # 全部展开
         # 添加拖拽功能
         rowDragManaged=True,
         animateRows=True,
         # 添加事件监听器 - 用于触发器
         onCellValueChanged=custom_js if enable_trigger else None,
         onFilterChanged=custom_js if enable_trigger else None,
-        onSortChanged=custom_js if enable_trigger else None,
-        onColumnRowGroupChanged=custom_js if enable_trigger else None
+        onSortChanged=custom_js if enable_trigger else None
     )
     
     # 构建最终选项

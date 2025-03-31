@@ -87,57 +87,51 @@ st.markdown("""
 def main():
     """主函数"""
     try:
+        # 初始化会话状态
+        init_session_state()
+        
+        # 设置CSS样式
+        setup_css()
+        
         # 初始化全局状态
         init_global_state()
         
-        # 初始化会话状态
-        if 'selected_tasks' not in st.session_state:
-            st.session_state.selected_tasks = []
+        # 获取任务文件列表
+        taskfiles = find_taskfiles()
+        if not taskfiles:
+            st.error("未找到任务文件。请确保当前目录下有Taskfile.yml文件。")
+            return
         
-        if 'run_parallel' not in st.session_state:
-            st.session_state.run_parallel = False
+        # 获取默认任务文件
+        default_taskfile = get_nearest_taskfile()
+        if not default_taskfile:
+            default_taskfile = taskfiles[0]
+        
+        # 注册任务文件
+        register_task_file(default_taskfile)
         
         # 加载任务文件
-        default_taskfile = get_nearest_taskfile()
+        tasks_df = load_taskfile(default_taskfile)
+        if tasks_df is None or tasks_df.empty:
+            st.error("无法加载任务文件或任务文件为空。")
+            return
         
-        # 检查任务文件是否存在
-        if not os.path.exists(default_taskfile):
-            taskfiles = find_taskfiles(os.path.dirname(os.path.abspath(__file__)))
-            if taskfiles:
-                default_taskfile = taskfiles[0]
-            else:
-                st.error("找不到任务文件，请创建一个任务文件或指定正确的路径")
-                return
+        # 注册所有任务
+        register_tasks_from_df(tasks_df, default_taskfile)
         
-        # 读取任务文件
-        tasks_df = read_taskfile(default_taskfile)
+        # 准备数据框
+        tasks_df = prepare_dataframe(tasks_df)
         
-        # 注册任务文件和任务到全局状态
-        if not tasks_df.empty:
-            register_task_file(default_taskfile, {
-                "description": "任务文件",
-                "created_at": os.path.getctime(default_taskfile),
-                "modified_at": os.path.getmtime(default_taskfile),
-                "task_count": len(tasks_df)
-            })
-            register_tasks_from_df(tasks_df, default_taskfile)
+        # 获取所有标签
+        all_tags = get_all_tags(tasks_df)
         
         # 渲染侧边栏
         render_sidebar(default_taskfile)
         
-        # 应用自定义样式 - 在st.title之前添加
-        apply_custom_styles()
+        # 渲染标签过滤器
+        render_tag_filters(all_tags)
         
-        # 主内容区
-        st.title("任务管理器")
-        st.write(f"当前任务文件: `{default_taskfile}`")
-        
-        # 检查数据帧是否为空
-        if tasks_df.empty:
-            st.warning("任务文件中没有找到任务。请确保任务文件格式正确。")
-            return
-        
-        # 应用过滤器
+        # 过滤任务
         filtered_df = filter_tasks(tasks_df)
         
         # 共享预览区域 - 放在页签上方
@@ -192,10 +186,9 @@ def main():
         # 状态管理页签
         with tabs[5]:
             render_state_manager()
-        
+            
     except Exception as e:
         st.error(f"发生错误: {str(e)}")
-        # st.error("如果错误与st-aggrid相关，请确保已安装: `pip install streamlit-aggrid`")
         st.code(traceback.format_exc())
 
 def filter_tasks(tasks_df):
