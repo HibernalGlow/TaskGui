@@ -44,5 +44,5 @@ def render_table_view(filtered_df, current_taskfile, show_sidebar=True):
     
     # 批量操作 - 使用可折叠卡片
     batch_expander = st.expander("批量操作", expanded=has_selected_tasks)
-    with batch_expander:
-        render_batch_operations(current_taskfile, view_key="table")
+    # with batch_expander:
+    #     render_batch_operations(current_taskfile, view_key="table")
