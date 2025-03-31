@@ -23,43 +23,11 @@ def render_sidebar(current_taskfile):
         # 确保tags_filter存在于session_state中
         if 'tags_filter' not in st.session_state:
             st.session_state.tags_filter = []
+        
+        # 确保tags_widget_key存在，用于控制st_tags组件的刷新
+        if 'tags_widget_key' not in st.session_state:
+            st.session_state.tags_widget_key = 0
             
-        # 快速标签过滤器
-        st.markdown("### 🏷️ 标签筛选")
-        
-        # 使用streamlit-tags组件进行标签选择
-        # 这个组件允许用户通过文本输入和下拉菜单选择标签
-        selected_tags = st_tags(
-            label="选择标签过滤:",
-            text="输入或选择标签...",
-            value=st.session_state.tags_filter,  # 使用当前选中的标签作为默认值
-            suggestions=sorted(all_tags),  # 所有可用标签作为建议
-            maxtags=10,  # 最多可以选择的标签数
-            key="tags_selector"
-        )
-        
-        # 将selected_tags的结果同步到session_state
-        st.session_state.tags_filter = selected_tags
-        
-        # 常用标签管理
-        with st.expander("管理常用标签", expanded=False):
-            st.markdown("选择要保存为常用标签的标签:")
-            
-            # 创建一个多列布局，用于显示所有标签的checkbox
-            if all_tags:
-                all_tag_cols = st.columns(3)
-                for i, tag in enumerate(sorted(all_tags)):
-                    with all_tag_cols[i % 3]:
-                        # 创建checkbox来添加/移除收藏标签
-                        if st.checkbox(tag, value=tag in st.session_state.favorite_tags, key=f"fav_{tag}"):
-                            if tag not in st.session_state.favorite_tags:
-                                st.session_state.favorite_tags.append(tag)
-                        else:
-                            if tag in st.session_state.favorite_tags:
-                                st.session_state.favorite_tags.remove(tag)
-            else:
-                st.info("没有找到标签")
-        
         # 显示快速标签过滤按钮
         st.markdown("### ⚡ 快速选择")
         
@@ -69,12 +37,16 @@ def render_sidebar(current_taskfile):
             if st.button("🔍 全部", key="show_all_tags"):
                 # 清空筛选标签
                 st.session_state.tags_filter = []
+                # 增加key值以强制刷新st_tags组件
+                st.session_state.tags_widget_key += 1
                 st.rerun()
                 
         with quick_cols[1]:
             if st.button("❌ 清除", key="clear_tag_filters"):
                 # 清空筛选标签
                 st.session_state.tags_filter = []
+                # 增加key值以强制刷新st_tags组件
+                st.session_state.tags_widget_key += 1
                 st.rerun()
         
         # 显示收藏标签作为快速过滤器按钮
@@ -101,7 +73,64 @@ def render_sidebar(current_taskfile):
                                 else:
                                     # 添加标签
                                     st.session_state.tags_filter.append(tag)
+                                # 增加key值以强制刷新st_tags组件
+                                st.session_state.tags_widget_key += 1
                                 st.rerun()
+            
+        # 快速标签过滤器
+        st.markdown("### 🏷️ 标签筛选")
+        
+        # 添加一个下拉框，用于快速选择标签
+        if all_tags:
+            tag_dropdown = st.selectbox(
+                "从列表选择标签:",
+                options=[""] + sorted(all_tags),  # 添加空选项作为默认值
+                index=0,  # 默认选择第一个（空选项）
+                key="tag_dropdown"
+            )
+            
+            # 如果用户从下拉框选择了一个非空标签，添加到标签过滤器中
+            if tag_dropdown and tag_dropdown not in st.session_state.tags_filter:
+                st.session_state.tags_filter.append(tag_dropdown)
+                # 增加key值以强制刷新st_tags组件
+                st.session_state.tags_widget_key += 1
+                st.rerun()
+        
+        # 使用streamlit-tags组件进行标签选择
+        # 通过动态key值确保组件刷新
+        widget_key = f"tags_selector_{st.session_state.tags_widget_key}"
+        
+        # 这个组件允许用户通过文本输入和下拉菜单选择标签
+        selected_tags = st_tags(
+            label="选择标签过滤:",
+            text="输入或选择标签...",
+            value=st.session_state.tags_filter,  # 使用当前选中的标签作为默认值
+            suggestions=sorted(all_tags),  # 所有可用标签作为建议
+            maxtags=10,  # 最多可以选择的标签数
+            key=widget_key
+        )
+        
+        # 将selected_tags的结果同步到session_state
+        st.session_state.tags_filter = selected_tags
+        
+        # 常用标签管理
+        with st.expander("管理常用标签", expanded=False):
+            st.markdown("选择要保存为常用标签的标签:")
+            
+            # 创建一个多列布局，用于显示所有标签的checkbox
+            if all_tags:
+                all_tag_cols = st.columns(3)
+                for i, tag in enumerate(sorted(all_tags)):
+                    with all_tag_cols[i % 3]:
+                        # 创建checkbox来添加/移除收藏标签
+                        if st.checkbox(tag, value=tag in st.session_state.favorite_tags, key=f"fav_{tag}"):
+                            if tag not in st.session_state.favorite_tags:
+                                st.session_state.favorite_tags.append(tag)
+                        else:
+                            if tag in st.session_state.favorite_tags:
+                                st.session_state.favorite_tags.remove(tag)
+            else:
+                st.info("没有找到标签")
         
         # 添加并行执行模式选项
         st.markdown("## 执行设置")

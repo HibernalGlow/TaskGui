@@ -62,7 +62,7 @@ def setup_css():
     
     /* streamlit-tags自定义样式 */
     .stTags {
-        margin-bottom: 20px;
+        margin-bottom: 10px !important;
     }
     
     .stTags > div {
@@ -91,6 +91,35 @@ def setup_css():
     .stTags input {
         border-radius: 20px !important;
         padding: 8px 12px !important;
+    }
+    
+    /* 添加下拉框样式 */
+    .stSelectbox div[data-baseweb="select"] {
+        border-radius: 20px !important;
+    }
+    
+    .stSelectbox div[data-baseweb="select"] div {
+        background-color: #f7f7f7 !important;
+        border-radius: 20px !important;
+    }
+    
+    .stSelectbox div[data-baseweb="select"]:hover {
+        border-color: #4361ee !important;
+    }
+    
+    /* 标签选择部分的标题样式 */
+    .stMarkdown h3 {
+        font-size: 1.2rem !important;
+        margin-top: 20px !important;
+        margin-bottom: 10px !important;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .stMarkdown h4 {
+        font-size: 1rem !important;
+        margin-top: 15px !important;
+        margin-bottom: 8px !important;
     }
     
     /* 快速标签按钮样式 */
