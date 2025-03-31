@@ -14,7 +14,7 @@ from src.components.sidebar import render_sidebar
 from src.utils.file_utils import open_file, get_directory_files, find_taskfiles, get_nearest_taskfile, copy_to_clipboard, get_task_command
 from src.services.task_runner import run_task_via_cmd, run_multiple_tasks
 from src.components.styles import apply_custom_styles
-from src.components.preview_card import render_preview_tab_content, render_action_buttons
+from src.components.preview_card import render_action_buttons
 from src.manage.state_manager import render_state_manager
 from src.utils.selection_utils import (
     get_global_state, update_global_state, 
@@ -244,7 +244,16 @@ def main():
         
         # 预览页签
         with tabs[tab_indices["🔍 预览"]]:
-            render_preview_tab_content(filtered_df, default_taskfile)
+            # 获取选中的任务
+            selected_tasks = get_selected_tasks()
+            if not selected_tasks:
+                st.info("没有选中的任务。请从表格中选择要操作的任务。")
+            else:
+                # 筛选出选中的任务数据
+                selected_df = filtered_df[filtered_df['name'].isin(selected_tasks)].copy()
+                # 使用卡片视图函数显示
+                # st.markdown(f"## 已选择 {len(selected_tasks)} 个任务")
+                render_card_view(selected_df, default_taskfile, key_prefix="preview_view")
         
         # 仪表盘页签
         with tabs[tab_indices["📈 仪表盘"]]:

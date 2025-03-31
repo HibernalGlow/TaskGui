@@ -82,25 +82,34 @@ def render_preview_tab_content(filtered_df, current_taskfile):
     # 获取选中任务的详细信息
     selected_df = filtered_df[filtered_df['name'].isin(selected_tasks)].copy()
     
-    # 直接显示任务卡片，不创建子页签
-    # st.markdown("## 选中任务预览")
+    # 添加每行卡片数量的滑动条
+    cards_per_row = st.slider(
+        "每行显示卡片数量", 
+        min_value=1, 
+        max_value=4, 
+        value=2, 
+        step=1,
+        key="preview_view_cards_per_row"
+    )
     
-    # 添加任务操作按钮
-    # render_action_buttons(selected_tasks, current_taskfile, key_prefix="preview_tab")
-    
-    # 遍历所有选中的任务，直接渲染卡片
-    for idx, (_, task) in enumerate(selected_df.iterrows()):
-        st.markdown(f"### {task['emoji']} {task['name']}")
-        render_task_card(
-            task=task, 
-            current_taskfile=current_taskfile, 
-            idx=idx, 
-            view_type="preview", 
-            show_checkbox=False
-        )
-        # 添加分隔线
-        if idx < len(selected_df) - 1:
-            st.markdown("---")
+    # 使用网格布局显示卡片
+    for i in range(0, len(selected_df), cards_per_row):
+        cols = st.columns(cards_per_row)
+        # 获取当前行的任务
+        row_tasks = selected_df.iloc[i:min(i+cards_per_row, len(selected_df))]
+        
+        # 为每个列填充卡片
+        for col_idx, (_, task) in enumerate(row_tasks.iterrows()):
+            with cols[col_idx]:
+                with st.container():
+                    st.markdown(f"### {task['emoji']} {task['name']}")
+                    render_task_card(
+                        task=task,
+                        current_taskfile=current_taskfile,
+                        idx=i + col_idx,
+                        view_type="preview",
+                        show_checkbox=False
+                    )
 
 def render_shared_preview(filtered_df, current_taskfile):
     """渲染共享任务预览区域
