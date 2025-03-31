@@ -50,5 +50,30 @@ def setup_css():
         background-color: #4CAF50;
         color: white;
     }
+
+    /* 任务卡片页签样式 */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 1px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 10px 16px;
+        background-color: #f8f9fa;
+        border-radius: 4px 4px 0 0;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #e0f7fa;
+        border-bottom: 2px solid #2196F3;
+    }
+    .stTabs [role="tabpanel"] {
+        padding: 16px;
+        border: 1px solid #e0e0e0;
+        border-radius: 0 0 4px 4px;
+        border-top: none;
+        background-color: white;
+    }
     </style>
     """, unsafe_allow_html=True) 
