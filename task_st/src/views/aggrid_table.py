@@ -48,11 +48,13 @@ def render_aggrid_table(filtered_df, current_taskfile):
         'auto_group_column': True,
         'group_hide_open_parents': True,
         'enable_pagination': True,
-        'page_size': 20,
+        'page_size': 100,
         'enable_column_resize': True,
         'enable_side_bar': True,
         'enable_quick_filter': True,
         'quick_filter_text': '',
+        'enable_full_height': True,  # 默认显示全部内容，不使用滚动条
+        'fixed_height': 500,  # 默认固定高度值（当不使用全高度时）
     }
     
     # 初始化或更新默认设置
@@ -208,6 +210,25 @@ def render_aggrid_table(filtered_df, current_taskfile):
                 key="aggrid_enable_column_resize",
                 on_change=lambda: update_aggrid_setting('enable_column_resize', st.session_state.aggrid_enable_column_resize)
             )
+            
+            # 添加表格高度设置
+            enable_full_height = st.checkbox(
+                "显示全部内容（不滚动）", 
+                value=st.session_state.aggrid_settings['enable_full_height'], 
+                key="aggrid_enable_full_height",
+                on_change=lambda: update_aggrid_setting('enable_full_height', st.session_state.aggrid_enable_full_height),
+                help="启用后表格将显示所有行，不使用滚动条"
+            )
+            if not enable_full_height:
+                fixed_height = st.number_input(
+                    "表格固定高度(px)", 
+                    min_value=200, 
+                    max_value=2000, 
+                    value=st.session_state.aggrid_settings['fixed_height'], 
+                    step=50, 
+                    key="aggrid_fixed_height",
+                    on_change=lambda: update_aggrid_setting('fixed_height', st.session_state.aggrid_fixed_height)
+                )
         
         with col4:
             enable_side_bar = st.checkbox(
@@ -356,6 +377,17 @@ def render_aggrid_table(filtered_df, current_taskfile):
             enableColumnResizing=True,
             suppressColumnVirtualisation=True
         )
+        
+    # 配置全高度显示，禁用虚拟滚动
+    # if 'enable_full_height' in locals() and enable_full_height:
+    #     gb.configure_grid_options(
+    #         domLayout='normal',  # 使用普通布局而非自动高度
+    #         suppressRowVirtualisation=True,  # 禁用行虚拟化
+    #         suppressColumnVirtualisation=True,  # 禁用列虚拟化
+    #         suppressHorizontalScroll=False,  # 保留水平滚动
+    #         suppressScrollOnNewData=True,  # 阻止新数据加载时滚动
+    #         alwaysShowVerticalScroll=False  # 不总是显示垂直滚动条
+    #     )
     
     # 配置侧边栏
     if 'enable_side_bar' in locals() and enable_side_bar:
@@ -540,7 +572,7 @@ def render_aggrid_table(filtered_df, current_taskfile):
         update_mode=GridUpdateMode.MODEL_CHANGED,  # 始终使用MODEL_CHANGED模式避免刷新问题
         fit_columns_on_grid_load=True,
         enable_enterprise_modules=enable_enterprise,
-        height=500,
+        height=None if 'enable_full_height' in locals() and enable_full_height else (st.session_state.aggrid_settings['fixed_height'] if 'fixed_height' in locals() else 500),
         width='100%',
         key='aggrid_table',
         reload_data=False,
@@ -549,6 +581,8 @@ def render_aggrid_table(filtered_df, current_taskfile):
         # 添加新的高级功能支持
         enable_sidebar=enable_side_bar if 'enable_side_bar' in locals() else st.session_state.aggrid_settings['enable_side_bar'],
         columns_auto_size_mode='FIT_CONTENTS' if 'enable_column_resize' in locals() and enable_column_resize else 'FIT_ALL_COLUMNS_TO_VIEW',
+        # 全高度显示所需的额外配置
+        domLayout='normal' if 'enable_full_height' in locals() and enable_full_height else 'autoHeight'
     )
     
     # 处理表格勾选状态变化
