@@ -75,45 +75,32 @@ def render_preview_tab_content(filtered_df, current_taskfile):
     selected_tasks = get_selected_tasks()
     
     # 如果没有选中任务，显示提示信息
-    # if not selected_tasks:
-    #     st.info("没有选中的任务。请从表格中选择要操作的任务。")
-    #     return
-    
-    # 显示选中的任务数量
-    # st.markdown(f"**已选择 {len(selected_tasks)} 个任务**")
+    if not selected_tasks:
+        st.info("没有选中的任务。请从表格中选择要操作的任务。")
+        return
     
     # 获取选中任务的详细信息
     selected_df = filtered_df[filtered_df['name'].isin(selected_tasks)].copy()
     
-    # 渲染操作按钮卡片 - 使用不同的key前缀避免冲突
+    # 直接显示任务卡片，不创建子页签
+    # st.markdown("## 选中任务预览")
+    
+    # 添加任务操作按钮
     # render_action_buttons(selected_tasks, current_taskfile, key_prefix="preview_tab")
     
-    # 创建任务页签列表
-    task_names = selected_df['name'].tolist()
-    task_emojis = selected_df['emoji'].tolist()
-    
-    # 如果有安装pills组件，使用pills显示任务选择
-    if PILLS_AVAILABLE and task_names:
-        selected_task = pills("选择任务", task_names, task_emojis, key="preview_pills")
-        # 找到选中的任务数据
-        task = selected_df[selected_df['name'] == selected_task].iloc[0]
-        # 渲染选中的任务卡片
-        st.markdown("### 任务详情")
+    # 遍历所有选中的任务，直接渲染卡片
+    for idx, (_, task) in enumerate(selected_df.iterrows()):
+        st.markdown(f"### {task['emoji']} {task['name']}")
         render_task_card(
             task=task, 
             current_taskfile=current_taskfile, 
-            idx=0, 
+            idx=idx, 
             view_type="preview", 
             show_checkbox=False
         )
-    # 否则使用标准的tabs组件
-    elif task_names:
-        tabs = st.tabs([f"{task['emoji']} {task['name']}" for _, task in selected_df.iterrows()])
-        
-        # 在每个页签中渲染对应的任务卡片
-        for idx, ((_, task), tab) in enumerate(zip(selected_df.iterrows(), tabs)):
-            with tab:
-                render_task_preview_in_tab(task, current_taskfile, idx)
+        # 添加分隔线
+        if idx < len(selected_df) - 1:
+            st.markdown("---")
 
 def render_shared_preview(filtered_df, current_taskfile):
     """渲染共享任务预览区域
