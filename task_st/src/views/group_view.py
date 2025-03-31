@@ -3,7 +3,7 @@ import os
 from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from ..services.task_runner import run_task_via_cmd
 from ..components.batch_operations import render_batch_operations
-from ..utils.selection_utils import update_task_selection
+from ..utils.selection_utils import update_task_selection, get_task_selection_state
 
 def render_group_view(filtered_df, current_taskfile):
     """渲染分组视图"""
@@ -69,6 +69,7 @@ def render_group_view(filtered_df, current_taskfile):
                         # 如果勾选状态与记录的状态不同，更新状态
                         if checkbox_value != is_selected:
                             update_task_selection(task['name'], checkbox_value)
+                            st.rerun()  # 立即刷新以更新预览
                         
                         # 操作按钮
                         col1, col2, col3 = st.columns(3)

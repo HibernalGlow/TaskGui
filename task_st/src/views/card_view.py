@@ -51,6 +51,7 @@ def render_card_view(filtered_df, current_taskfile):
                     # 如果勾选状态与记录的状态不同，更新状态
                     if checkbox_value != is_selected:
                         update_task_selection(task['name'], checkbox_value)
+                        st.rerun()  # 立即刷新以更新预览
                     
                     # 操作按钮
                     col1, col2, col3 = st.columns(3)

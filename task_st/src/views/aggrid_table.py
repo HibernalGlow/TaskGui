@@ -256,7 +256,7 @@ def render_aggrid_table(filtered_df, current_taskfile):
                     has_changes = True
                     update_task_selection(task_name, current_selection, rerun=False)
         
-        # 如果有状态变化，强制更新内存缓存但不刷新页面
+        # 如果有状态变化，强制更新内存缓存并刷新页面
         if has_changes:
             # 更新内存缓存
             force_save_state()
@@ -267,6 +267,9 @@ def render_aggrid_table(filtered_df, current_taskfile):
             
             # 重新构建选中任务列表
             st.session_state.selected_tasks = list(updated_df[updated_df['选择'] == True]['name'].values)
+            
+            # 立即刷新页面以更新预览
+            st.rerun()
     
     # 表格下方添加状态信息
     selected_tasks = get_selected_tasks()
