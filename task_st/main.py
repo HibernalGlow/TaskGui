@@ -138,20 +138,23 @@ def main():
         with preview_expander:
             render_shared_preview(filtered_df, default_taskfile)
         
-        # 使用单层页签 - 将所有页签放在一排
-        tabs = st.tabs(["📊 表格视图", "🗂️ 卡片视图", "📈 仪表盘", "⚙️ 设置", "🔍 状态管理"])
+        # 使用字典存储页签标题和索引的映射，便于动态管理
+        tab_names = ["📊 表格视图", "🗂️ 卡片视图", "📈 仪表盘", "⚙️ 设置", "🔍 状态管理"]
+        tab_indices = {name: idx for idx, name in enumerate(tab_names)}
+        
+        # 创建页签
+        tabs = st.tabs(tab_names)
         
         # 表格视图
-        with tabs[0]:
+        with tabs[tab_indices["📊 表格视图"]]:
             render_table_view(filtered_df, default_taskfile, show_sidebar=False)  # 关闭右侧预览
         
         # 卡片视图
-        with tabs[1]:
+        with tabs[tab_indices["🗂️ 卡片视图"]]:
             render_card_view(filtered_df, default_taskfile)
         
-        
         # 仪表盘页签
-        with tabs[3]:
+        with tabs[tab_indices["📈 仪表盘"]]:
             st.markdown("## 📊 任务仪表盘")
             st.info("仪表盘功能正在开发中...")
             
@@ -167,7 +170,7 @@ def main():
             st.write("此处将显示任务标签的分布统计")
         
         # 设置页签
-        with tabs[4]:
+        with tabs[tab_indices["⚙️ 设置"]]:
             st.markdown("## ⚙️ 系统设置")
             st.info("设置功能正在开发中...")
             
@@ -180,7 +183,7 @@ def main():
             st.radio("默认运行模式", options=["顺序执行", "并行执行"], index=0, disabled=True)
         
         # 状态管理页签
-        with tabs[5]:
+        with tabs[tab_indices["🔍 状态管理"]]:
             render_state_manager()
             
     except Exception as e:
