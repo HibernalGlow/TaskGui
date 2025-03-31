@@ -55,10 +55,17 @@ def filter_tasks(df: pd.DataFrame) -> pd.DataFrame:
     # 应用标签过滤
     if 'tags_filter' in st.session_state and st.session_state.tags_filter:
         tags_to_filter = st.session_state.tags_filter
-        # 过滤包含所选标签的任务
-        filtered_df = filtered_df[filtered_df['tags'].apply(
-            lambda x: any(tag in x for tag in tags_to_filter) if isinstance(x, list) else False
-        )]
+        
+        # 确保tags_to_filter是列表
+        if not isinstance(tags_to_filter, list):
+            tags_to_filter = list(tags_to_filter)
+            
+        # 如果标签列表不为空，应用过滤
+        if tags_to_filter:
+            # 过滤包含所选标签的任务
+            filtered_df = filtered_df[filtered_df['tags'].apply(
+                lambda x: any(tag in x for tag in tags_to_filter) if isinstance(x, list) else False
+            )]
     
     return filtered_df
 

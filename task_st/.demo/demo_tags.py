@@ -355,11 +355,22 @@ with tab2:
         # 使用streamlit-extras的标签选择器
         if 'tagger_component' in globals():
             st.subheader("标签选择器")
+            # 修改这里 - 去掉不支持的default参数
+            # 检查当前选中的标签
+            current_selection = st.session_state.selected_tags.copy() if st.session_state.selected_tags else []
+            
+            # 使用正确的参数调用tagger_component
             selected_tags = tagger_component(
                 "选择标签筛选任务:",
-                all_tags,
-                default=st.session_state.selected_tags
+                all_tags
             )
+            
+            # 如果有已选择的标签，手动设置为选中状态
+            if current_selection and selected_tags != current_selection:
+                # 注意：这里没有直接方式预设选中的标签，所以我们只能显示已选择的标签
+                st.write("当前选中的标签:")
+                for tag in current_selection:
+                    st.markdown(f"<span class='tag-selected'>{tag}</span>", unsafe_allow_html=True)
             
             # 更新会话状态
             st.session_state.selected_tags = selected_tags

@@ -1,5 +1,6 @@
 import streamlit as st
 from ..services.taskfile import read_taskfile
+from streamlit_tags import st_tags
 
 def render_sidebar(current_taskfile):
     """渲染侧边栏控件"""
@@ -24,11 +25,27 @@ def render_sidebar(current_taskfile):
             st.session_state.tags_filter = []
             
         # 快速标签过滤器
-        st.markdown("### 🏷️ 快速标签筛选")
+        st.markdown("### 🏷️ 标签筛选")
+        
+        # 使用streamlit-tags组件进行标签选择
+        # 这个组件允许用户通过文本输入和下拉菜单选择标签
+        selected_tags = st_tags(
+            label="选择标签过滤:",
+            text="输入或选择标签...",
+            value=st.session_state.tags_filter,  # 使用当前选中的标签作为默认值
+            suggestions=sorted(all_tags),  # 所有可用标签作为建议
+            maxtags=10,  # 最多可以选择的标签数
+            key="tags_selector"
+        )
+        
+        # 将selected_tags的结果同步到session_state
+        st.session_state.tags_filter = selected_tags
         
         # 常用标签管理
         with st.expander("管理常用标签", expanded=False):
-            # 创建一个5列布局，用于显示所有标签的checkbox
+            st.markdown("选择要保存为常用标签的标签:")
+            
+            # 创建一个多列布局，用于显示所有标签的checkbox
             if all_tags:
                 all_tag_cols = st.columns(3)
                 for i, tag in enumerate(sorted(all_tags)):
@@ -44,7 +61,7 @@ def render_sidebar(current_taskfile):
                 st.info("没有找到标签")
         
         # 显示快速标签过滤按钮
-        active_tags = []
+        st.markdown("### ⚡ 快速选择")
         
         # 添加操作按钮
         quick_cols = st.columns(2)
@@ -63,35 +80,28 @@ def render_sidebar(current_taskfile):
         # 显示收藏标签作为快速过滤器按钮
         if st.session_state.favorite_tags:
             st.markdown("#### 常用标签")
-            fav_tag_cols = st.columns(2)
-            for i, tag in enumerate(sorted(st.session_state.favorite_tags)):
-                with fav_tag_cols[i % 2]:
-                    # 创建按钮，点击时添加或移除该标签的过滤
-                    is_active = tag in st.session_state.tags_filter
-                    btn_label = f"✓ #{tag}" if is_active else f"#{tag}"
-                    btn_type = "primary" if is_active else "secondary"
-                    
-                    if st.button(btn_label, key=f"quick_{tag}", type=btn_type):
-                        # 切换标签的状态
-                        if tag in st.session_state.tags_filter:
-                            # 移除标签
-                            st.session_state.tags_filter.remove(tag)
-                        else:
-                            # 添加标签
-                            st.session_state.tags_filter.append(tag)
-                        st.rerun()
-        
-        # 使用多选进行更复杂的标签过滤
-        st.markdown("#### 标签多选")
-        
-        # 使用multiselect组件进行标签选择，使用当前选中的标签作为默认值
-        # 注意：此处不使用st.session_state.tags_filter作为default参数，而是将值设为session_state
-        selected_tags = st.multiselect(
-            "按标签过滤:",
-            options=sorted(all_tags),
-            default=list(st.session_state.tags_filter),  # 使用list()复制避免引用问题
-            key="tags_filter"
-        )
+            # 使用更紧凑的布局显示常用标签
+            cols_per_row = 2
+            for i in range(0, len(st.session_state.favorite_tags), cols_per_row):
+                fav_tag_cols = st.columns(cols_per_row)
+                for j in range(cols_per_row):
+                    if i + j < len(st.session_state.favorite_tags):
+                        tag = sorted(st.session_state.favorite_tags)[i + j]
+                        with fav_tag_cols[j]:
+                            # 创建按钮，点击时添加或移除该标签的过滤
+                            is_active = tag in st.session_state.tags_filter
+                            btn_label = f"✓ #{tag}" if is_active else f"#{tag}"
+                            btn_type = "primary" if is_active else "secondary"
+                            
+                            if st.button(btn_label, key=f"quick_{tag}", type=btn_type):
+                                # 切换标签的状态
+                                if tag in st.session_state.tags_filter:
+                                    # 移除标签
+                                    st.session_state.tags_filter.remove(tag)
+                                else:
+                                    # 添加标签
+                                    st.session_state.tags_filter.append(tag)
+                                st.rerun()
         
         # 添加并行执行模式选项
         st.markdown("## 执行设置")
