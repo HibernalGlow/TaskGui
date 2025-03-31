@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import sys
 import traceback
+from code_editor import code_editor
 from src import (
     init_session_state, 
     setup_css,
@@ -324,71 +325,62 @@ def render_state_manager():
         # 导出为YAML字符串
         yaml_str = export_global_state_yaml()
         
-        # 分为两栏：编辑区和预览区
-        col_edit, col_preview = st.columns([3, 2])
+        # 使用CodeMirror编辑器
+        edited_yaml = code_editor(
+            yaml_str,
+            lang="yaml",
+            height=[600, 850],
+            theme="dark",
+            options={
+                "lineNumbers": True,
+                "lineWrapping": True,
+                "indentWithTabs": False,
+                "tabSize": 2,
+                "scrollbarStyle": "native",
+                "autoCloseBrackets": True,
+                "matchBrackets": True,
+                "autoRefresh": True,
+                "foldGutter": True,
+                "gutters": ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
+            },
+            key="yaml_editor"
+        )["text"]
         
-        # 左侧编辑区
-        with col_edit:
-            st.markdown("<h3 style='margin-bottom: 5px;'>编辑YAML</h3>", unsafe_allow_html=True)
-            
-            # 使用CSS类隐藏标签，使界面更干净
-            st.markdown('<div class="hide-label">', unsafe_allow_html=True)
-            edited_yaml = st.text_area("", yaml_str, height=600, key="yaml_editor")
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            # 操作按钮
-            col_a, col_b, col_c = st.columns([1, 1, 2])
-            with col_a:
-                # 保存修改按钮
-                if st.button("应用修改", key="apply_yaml_changes"):
-                    try:
-                        # 使用验证函数检查YAML格式
-                        valid_yaml, error_msg = validate_yaml(edited_yaml)
-                        
-                        if valid_yaml and import_global_state_yaml(edited_yaml):
-                            st.success("状态已更新")
+        # 操作按钮
+        col_a, col_b, col_c = st.columns([1, 1, 2])
+        with col_a:
+            # 保存修改按钮
+            if st.button("应用修改", key="apply_yaml_changes"):
+                try:
+                    # 使用验证函数检查YAML格式
+                    valid_yaml, error_msg = validate_yaml(edited_yaml)
+                    
+                    if valid_yaml and import_global_state_yaml(edited_yaml):
+                        st.success("状态已更新")
+                    else:
+                        if error_msg:
+                            st.error(f"YAML格式有误: {error_msg}")
                         else:
-                            if error_msg:
-                                st.error(f"YAML格式有误: {error_msg}")
-                            else:
-                                st.error("无法更新状态")
-                    except Exception as e:
-                        st.error(f"更新失败: {str(e)}")
-            
-            with col_b:
-                # 重置按钮
-                if st.button("重置", key="reset_yaml"):
-                    st.session_state.yaml_editor = yaml_str
-                    st.rerun()
-            
-            with col_c:
-                # 复制按钮
-                if st.button("复制到剪贴板", key="copy_yaml"):
-                    # 由于直接的JavaScript交互有限制，这里使用一个变通方法
-                    st.success("复制功能已激活，请从编辑器中选择全部内容(Ctrl+A)并复制(Ctrl+C)")
+                            st.error("无法更新状态")
+                except Exception as e:
+                    st.error(f"更新失败: {str(e)}")
         
-        # 右侧预览区
-        with col_preview:
-            st.markdown("<h3 style='margin-bottom: 5px;'>YAML预览</h3>", unsafe_allow_html=True)
-            
-            # 导入yaml库
-            import yaml
-            
+        with col_b:
+            # 重置按钮
+            if st.button("重置", key="reset_yaml"):
+                st.session_state.yaml_editor = yaml_str
+                st.rerun()
+        
+        with col_c:
+            # YAML验证状态
             try:
-                # 尝试解析编辑中的YAML
                 valid_yaml, error_msg = validate_yaml(edited_yaml)
-                
                 if valid_yaml:
-                    # 将解析后的YAML重新格式化为字符串以显示
-                    parsed_yaml = yaml.safe_load(edited_yaml)
-                    formatted_yaml = yaml.dump(parsed_yaml, sort_keys=False, allow_unicode=True, indent=2)
-                    # 使用函数显示格式化的YAML
-                    display_yaml_in_ui(formatted_yaml)
+                    st.success("YAML格式正确")
                 else:
                     st.error(f"YAML格式有误: {error_msg}")
-                    st.markdown(f"```\n{edited_yaml}\n```")
             except Exception as e:
-                st.error(f"预览错误: {str(e)}")
+                st.error(f"验证错误: {str(e)}")
     
     # 任务文件标签页
     with tabs[1]:
