@@ -1,12 +1,14 @@
 import streamlit as st
 import pandas as pd
 import os
+import yaml
 from code_editor import code_editor
 from src.utils.selection_utils import (
     get_global_state, update_global_state, 
     export_yaml_state as export_global_state_yaml, 
     import_global_state_yaml,
-    validate_yaml, update_task_runtime, record_task_run
+    validate_yaml, update_task_runtime, record_task_run,
+    load_local_config
 )
 
 def render_state_manager():
@@ -119,7 +121,6 @@ def render_state_manager():
         if "yaml_table_view" in st.session_state and st.session_state.yaml_table_view:
             try:
                 # 解析YAML到字典
-                import yaml
                 yaml_dict = yaml.safe_load(edited_yaml)
                 
                 # 第一级键值对展示为表格
@@ -148,6 +149,36 @@ def render_state_manager():
                     st.info("YAML中没有顶级键")
             except Exception as e:
                 st.error(f"无法解析YAML为表格: {str(e)}")
+                
+        # 显示本地配置
+        with st.expander("本地配置", expanded=False):
+            local_config = load_local_config()
+            
+            if local_config:
+                st.subheader("本地存储的配置")
+                
+                # 以YAML形式显示
+                st.code(yaml.dump(local_config, sort_keys=False, allow_unicode=True, indent=2), language="yaml")
+                
+                # 显示常用标签
+                if "favorite_tags" in local_config and local_config["favorite_tags"]:
+                    st.subheader("常用标签")
+                    
+                    # 创建多列布局显示标签
+                    cols_per_row = 4
+                    tags = sorted(local_config["favorite_tags"])
+                    rows = (len(tags) + cols_per_row - 1) // cols_per_row  # 向上取整
+                    
+                    for row in range(rows):
+                        tag_cols = st.columns(cols_per_row)
+                        for col in range(cols_per_row):
+                            idx = row * cols_per_row + col
+                            if idx < len(tags):
+                                tag = tags[idx]
+                                with tag_cols[col]:
+                                    st.code(f"#{tag}", language=None)
+            else:
+                st.info("未找到本地配置文件或配置为空")
     
     # ===== 任务文件标签页 =====
     with tabs[tab_indices["任务文件"]]:

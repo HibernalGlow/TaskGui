@@ -1,6 +1,7 @@
 import streamlit as st
 from ..services.taskfile import read_taskfile
 from streamlit_tags import st_tags
+from ..utils.selection_utils import save_favorite_tags
 
 def render_sidebar(current_taskfile):
     """渲染侧边栏控件"""
@@ -117,20 +118,33 @@ def render_sidebar(current_taskfile):
         with st.expander("管理常用标签", expanded=False):
             st.markdown("选择要保存为常用标签的标签:")
             
+            # 初始化标记，用于检测常用标签是否有变化
+            tags_changed = False
+            
             # 创建一个多列布局，用于显示所有标签的checkbox
             if all_tags:
                 all_tag_cols = st.columns(3)
                 for i, tag in enumerate(sorted(all_tags)):
                     with all_tag_cols[i % 3]:
                         # 创建checkbox来添加/移除收藏标签
-                        if st.checkbox(tag, value=tag in st.session_state.favorite_tags, key=f"fav_{tag}"):
-                            if tag not in st.session_state.favorite_tags:
+                        was_selected = tag in st.session_state.favorite_tags
+                        is_selected = st.checkbox(tag, value=was_selected, key=f"fav_{tag}")
+                        
+                        # 检测是否发生变化
+                        if was_selected != is_selected:
+                            tags_changed = True
+                            
+                            if is_selected and tag not in st.session_state.favorite_tags:
                                 st.session_state.favorite_tags.append(tag)
-                        else:
-                            if tag in st.session_state.favorite_tags:
+                            elif not is_selected and tag in st.session_state.favorite_tags:
                                 st.session_state.favorite_tags.remove(tag)
             else:
                 st.info("没有找到标签")
+            
+            # 如果常用标签有变化，保存到本地
+            if tags_changed:
+                save_favorite_tags(st.session_state.favorite_tags)
+                st.success("常用标签已保存")
         
         # 添加并行执行模式选项
         st.markdown("## 执行设置")

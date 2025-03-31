@@ -1,10 +1,55 @@
 import streamlit as st
 import json
 import yaml
+import os
 from datetime import datetime
+from pathlib import Path
 
 # 全局内存缓存
 _MEMORY_CACHE = None  # 内存缓存
+
+# 本地配置文件路径
+LOCAL_CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".glowtoolbox")
+LOCAL_CONFIG_FILE = os.path.join(LOCAL_CONFIG_DIR, "local_config.yaml")
+
+# 确保配置目录存在
+def ensure_config_dir():
+    """确保配置目录存在"""
+    if not os.path.exists(LOCAL_CONFIG_DIR):
+        try:
+            os.makedirs(LOCAL_CONFIG_DIR)
+        except Exception as e:
+            print(f"创建配置目录失败: {str(e)}")
+            return False
+    return True
+
+# 加载本地配置
+def load_local_config():
+    """从本地文件加载配置"""
+    if not os.path.exists(LOCAL_CONFIG_FILE):
+        return {}
+    
+    try:
+        with open(LOCAL_CONFIG_FILE, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+            return config if config else {}
+    except Exception as e:
+        print(f"加载配置文件失败: {str(e)}")
+        return {}
+
+# 保存本地配置
+def save_local_config(config):
+    """保存配置到本地文件"""
+    if not ensure_config_dir():
+        return False
+    
+    try:
+        with open(LOCAL_CONFIG_FILE, 'w', encoding='utf-8') as f:
+            yaml.dump(config, f, sort_keys=False, allow_unicode=True, indent=2)
+        return True
+    except Exception as e:
+        print(f"保存配置文件失败: {str(e)}")
+        return False
 
 # 初始化全局任务状态
 def init_global_state():
@@ -21,6 +66,9 @@ def init_global_state():
         else:
             # 如果内存缓存为空，创建默认状态
             create_default_state()
+    
+    # 添加本地配置信息
+    load_local_data()
     
     # 兼容旧的会话状态
     sync_session_state()
@@ -46,6 +94,9 @@ def create_default_state():
                 "theme": "light",
                 "aggrid_group_by": None
             }
+        },
+        "local": {  # 添加local键，用于存储本地配置
+            "favorite_tags": []
         }
     }
     # 更新内存缓存
@@ -81,6 +132,55 @@ def ensure_state_structure(state):
                 "aggrid_group_by": None
             }
         }
+    
+    # 确保local键存在
+    if "local" not in state:
+        state["local"] = {
+            "favorite_tags": []
+        }
+    elif "favorite_tags" not in state["local"]:
+        state["local"]["favorite_tags"] = []
+
+# 加载本地数据并同步到全局状态
+def load_local_data():
+    """从本地配置加载数据并同步到全局状态"""
+    global_state = st.session_state.global_task_state
+    
+    # 确保结构完整
+    ensure_state_structure(global_state)
+    
+    # 加载本地配置
+    local_config = load_local_config()
+    
+    # 更新常用标签
+    if "favorite_tags" in local_config:
+        global_state["local"]["favorite_tags"] = local_config["favorite_tags"]
+    
+    # 确保会话状态中有常用标签
+    if 'favorite_tags' not in st.session_state:
+        st.session_state.favorite_tags = global_state["local"]["favorite_tags"].copy()
+
+# 保存常用标签到本地
+def save_favorite_tags(tags):
+    """保存常用标签到本地配置"""
+    global_state = get_global_state()
+    
+    # 确保结构完整
+    ensure_state_structure(global_state)
+    
+    # 更新全局状态中的常用标签
+    global_state["local"]["favorite_tags"] = tags
+    
+    # 更新会话状态
+    st.session_state.favorite_tags = tags.copy()
+    
+    # 更新全局状态
+    update_global_state(global_state)
+    
+    # 保存到本地文件
+    local_config = load_local_config()
+    local_config["favorite_tags"] = tags
+    save_local_config(local_config)
 
 def sync_session_state():
     """同步全局状态与会话状态的兼容层"""
@@ -97,6 +197,14 @@ def sync_session_state():
     # 更新会话状态
     st.session_state.selected = selected
     st.session_state.selected_tasks = selected_tasks
+    
+    # 同步常用标签
+    if 'favorite_tags' not in st.session_state:
+        st.session_state.favorite_tags = []
+        
+    # 从全局状态更新常用标签
+    if "local" in st.session_state.global_task_state and "favorite_tags" in st.session_state.global_task_state["local"]:
+        st.session_state.favorite_tags = st.session_state.global_task_state["local"]["favorite_tags"].copy()
 
 # 获取全局状态
 def get_global_state():

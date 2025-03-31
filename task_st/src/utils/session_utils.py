@@ -1,4 +1,5 @@
 import streamlit as st
+from .selection_utils import load_local_config
 
 # 初始化会话状态
 def init_session_state():
@@ -15,9 +16,14 @@ def init_session_state():
     
     if 'tags_filter' not in st.session_state:
         st.session_state.tags_filter = []
-        
+    
+    # 从本地配置加载常用标签
     if 'favorite_tags' not in st.session_state:
-        st.session_state.favorite_tags = []
+        local_config = load_local_config()
+        if "favorite_tags" in local_config:
+            st.session_state.favorite_tags = local_config["favorite_tags"]
+        else:
+            st.session_state.favorite_tags = []
     
     if 'run_parallel' not in st.session_state:
         st.session_state.run_parallel = False
