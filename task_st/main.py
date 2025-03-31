@@ -234,18 +234,71 @@ def render_state_manager():
     with tabs[0]:
         st.subheader("YAML编辑器")
         
+        # 添加YAML格式说明
+        st.markdown("""
+        ### YAML格式说明
+        - 使用缩进来表示层级关系（每层缩进2个空格）
+        - 列表项使用 `-` 开头
+        - 键值对使用 `key: value` 格式
+        - 多行文本使用 `|` 或 `>` 符号
+        - 布尔值使用 `true`/`false` 或 `yes`/`no`
+        """)
+        
         # 导出为YAML字符串
         yaml_str = export_global_state_yaml()
         
-        # 添加编辑区域
-        edited_yaml = st.text_area("编辑状态YAML", yaml_str, height=400)
+        # 添加编辑区域，使用更大的高度和更好的格式化
+        edited_yaml = st.text_area(
+            "编辑状态YAML",
+            yaml_str,
+            height=600,  # 增加高度
+            help="""YAML格式的状态数据。
+            提示：
+            1. 每行一个键值对
+            2. 使用2个空格进行缩进
+            3. 列表项使用'-'开头
+            4. 保持正确的缩进层级
+            5. 确保YAML语法正确"""
+        )
+        
+        # 添加格式化按钮
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("格式化YAML", key="format_yaml"):
+                try:
+                    import yaml
+                    # 解析并重新格式化YAML
+                    data = yaml.safe_load(edited_yaml)
+                    formatted_yaml = yaml.dump(
+                        data,
+                        default_flow_style=False,
+                        sort_keys=False,
+                        allow_unicode=True,
+                        width=80,
+                        indent=2,
+                        line_break='\n'
+                    )
+                    st.session_state.edited_yaml = formatted_yaml
+                    st.success("YAML已格式化")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"格式化失败: {str(e)}")
+        
+        with col2:
+            if st.button("验证YAML", key="validate_yaml"):
+                try:
+                    import yaml
+                    yaml.safe_load(edited_yaml)
+                    st.success("YAML格式正确")
+                except Exception as e:
+                    st.error(f"YAML格式错误: {str(e)}")
         
         # 保存修改按钮
         if st.button("应用修改", key="apply_yaml_changes"):
             if import_global_state_yaml(edited_yaml):
                 st.success("状态已更新")
             else:
-                st.error("无法更新状态，YAML格式可能有误")
+                st.error("更新失败，请检查YAML格式是否正确")
     
     # 任务文件标签页
     with tabs[1]:

@@ -556,8 +556,24 @@ def export_yaml_state():
     return export_state_as_dict()
 
 def export_global_state_yaml():
-    """导出全局状态 (兼容旧接口)"""
-    return export_state_as_dict()
+    """导出全局状态为YAML字符串"""
+    try:
+        import yaml
+        state_dict = get_global_state()
+        # 使用dump而不是dumps，并设置正确的格式化选项
+        yaml_str = yaml.dump(
+            state_dict,
+            default_flow_style=False,  # 使用块样式而不是流样式
+            sort_keys=False,  # 保持键的顺序
+            allow_unicode=True,  # 允许Unicode字符
+            width=80,  # 设置行宽
+            indent=2,  # 设置缩进
+            line_break='\n'  # 使用换行符
+        )
+        return yaml_str
+    except Exception as e:
+        print(f"导出状态失败: {str(e)}")
+        return ""
 
 def import_global_state_yaml(yaml_str, rerun=True):
     """从YAML导入全局状态 (兼容旧接口)"""
