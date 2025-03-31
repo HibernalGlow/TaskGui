@@ -12,6 +12,13 @@ except ImportError:
 # 导入选择状态更新函数
 from ..utils.selection_utils import update_task_selection, get_task_selection_state, init_global_state, force_save_state, update_memory_cache, get_selected_tasks
 
+# 添加配置更新函数
+def update_aggrid_setting(setting_key, value):
+    """更新AgGrid设置并保存到session_state"""
+    if 'aggrid_settings' not in st.session_state:
+        st.session_state.aggrid_settings = {}
+    st.session_state.aggrid_settings[setting_key] = value
+    
 def render_aggrid_table(filtered_df, current_taskfile):
     """使用AgGrid渲染表格 - 使用内存状态管理"""
     if not HAS_AGGRID:
@@ -20,6 +27,38 @@ def render_aggrid_table(filtered_df, current_taskfile):
     
     # 确保全局状态已初始化
     init_global_state()
+    
+    # 初始化配置持久化状态
+    if 'aggrid_settings' not in st.session_state:
+        st.session_state.aggrid_settings = {}
+    
+    # 默认设置值
+    default_settings = {
+        'enable_filter': True,
+        'enable_sorting': True,
+        'enable_trigger': True,
+        'enable_row_group': True,
+        'enable_multiselect': True,
+        'enable_editing': False,
+        'enable_enterprise': True,
+        'theme': 'streamlit',
+        'enable_excel_export': True,
+        'enable_row_pinning': True,
+        'group_by_columns': [],  # 默认不使用目录分组
+        'auto_group_column': True,
+        'group_hide_open_parents': True,
+        'enable_pagination': True,
+        'page_size': 20,
+        'enable_column_resize': True,
+        'enable_side_bar': True,
+        'enable_quick_filter': True,
+        'quick_filter_text': '',
+    }
+    
+    # 初始化或更新默认设置
+    for key, value in default_settings.items():
+        if key not in st.session_state.aggrid_settings:
+            st.session_state.aggrid_settings[key] = value
     
     # 准备表格数据
     filtered_df_copy = filtered_df.copy()
@@ -46,19 +85,162 @@ def render_aggrid_table(filtered_df, current_taskfile):
         # 其他AgGrid功能选项
         col1, col2 = st.columns(2)
         with col1:
-            enable_filter = st.checkbox("启用列过滤", value=True, key="aggrid_enable_filter")
-            enable_sorting = st.checkbox("启用排序", value=True, key="aggrid_enable_sorting")
-            enable_trigger = st.checkbox("启用交互触发器", value=True, key="aggrid_enable_trigger")
+            enable_filter = st.checkbox(
+                "启用列过滤", 
+                value=st.session_state.aggrid_settings['enable_filter'], 
+                key="aggrid_enable_filter",
+                on_change=lambda: update_aggrid_setting('enable_filter', st.session_state.aggrid_enable_filter)
+            )
+            enable_sorting = st.checkbox(
+                "启用排序", 
+                value=st.session_state.aggrid_settings['enable_sorting'], 
+                key="aggrid_enable_sorting",
+                on_change=lambda: update_aggrid_setting('enable_sorting', st.session_state.aggrid_enable_sorting)
+            )
+            enable_trigger = st.checkbox(
+                "启用交互触发器", 
+                value=st.session_state.aggrid_settings['enable_trigger'], 
+                key="aggrid_enable_trigger",
+                on_change=lambda: update_aggrid_setting('enable_trigger', st.session_state.aggrid_enable_trigger)
+            )
+            # 添加行分组功能
+            enable_row_group = st.checkbox(
+                "启用数据分组", 
+                value=st.session_state.aggrid_settings['enable_row_group'], 
+                key="aggrid_enable_rowgroup",
+                on_change=lambda: update_aggrid_setting('enable_row_group', st.session_state.aggrid_enable_rowgroup)
+            )
+            # 添加多行选择功能
+            enable_multi_select = st.checkbox(
+                "启用多行选择", 
+                value=st.session_state.aggrid_settings['enable_multiselect'], 
+                key="aggrid_enable_multiselect",
+                on_change=lambda: update_aggrid_setting('enable_multiselect', st.session_state.aggrid_enable_multiselect)
+            )
         
         with col2:
-            enable_editing = st.checkbox("允许编辑单元格", value=False, key="aggrid_enable_editing")
-            enable_enterprise = st.checkbox("启用企业功能", value=True, key="aggrid_enable_enterprise")
+            enable_editing = st.checkbox(
+                "允许编辑单元格", 
+                value=st.session_state.aggrid_settings['enable_editing'], 
+                key="aggrid_enable_editing",
+                on_change=lambda: update_aggrid_setting('enable_editing', st.session_state.aggrid_enable_editing)
+            )
+            enable_enterprise = st.checkbox(
+                "启用企业功能", 
+                value=st.session_state.aggrid_settings['enable_enterprise'], 
+                key="aggrid_enable_enterprise",
+                on_change=lambda: update_aggrid_setting('enable_enterprise', st.session_state.aggrid_enable_enterprise)
+            )
+            theme_options = ["streamlit", "light", "dark", "blue", "fresh", "material"]
+            theme_index = theme_options.index(st.session_state.aggrid_settings['theme']) if st.session_state.aggrid_settings['theme'] in theme_options else 0
             theme_option = st.selectbox(
                 "表格主题",
-                options=["streamlit", "light", "dark", "blue", "fresh", "material"],
-                index=0,
-                key="aggrid_theme"
+                options=theme_options,
+                index=theme_index,
+                key="aggrid_theme",
+                on_change=lambda: update_aggrid_setting('theme', st.session_state.aggrid_theme)
             )
+            # 添加Excel导出功能
+            enable_excel_export = st.checkbox(
+                "启用Excel导出", 
+                value=st.session_state.aggrid_settings['enable_excel_export'], 
+                key="aggrid_enable_excel_export",
+                on_change=lambda: update_aggrid_setting('enable_excel_export', st.session_state.aggrid_enable_excel_export)
+            )
+            # 添加列/行固定功能
+            enable_row_pinning = st.checkbox(
+                "启用行固定", 
+                value=st.session_state.aggrid_settings['enable_row_pinning'], 
+                key="aggrid_enable_row_pinning",
+                on_change=lambda: update_aggrid_setting('enable_row_pinning', st.session_state.aggrid_enable_row_pinning)
+            )
+        
+        # 分组设置
+        if enable_row_group:
+            st.write("分组设置")
+            groupable_columns = ["显示名称", "描述", "标签", "目录"]
+            group_by_columns = st.multiselect(
+                "选择要分组的列",
+                options=groupable_columns,
+                default=st.session_state.aggrid_settings['group_by_columns'],
+                key="aggrid_group_columns",
+                on_change=lambda: update_aggrid_setting('group_by_columns', st.session_state.aggrid_group_columns)
+            )
+            
+            auto_group_column = st.checkbox(
+                "自动创建分组列", 
+                value=st.session_state.aggrid_settings['auto_group_column'], 
+                key="aggrid_auto_group_column",
+                on_change=lambda: update_aggrid_setting('auto_group_column', st.session_state.aggrid_auto_group_column)
+            )
+            group_hide_open_parents = st.checkbox(
+                "隐藏已展开的父级", 
+                value=st.session_state.aggrid_settings['group_hide_open_parents'], 
+                key="aggrid_hide_open_parents",
+                on_change=lambda: update_aggrid_setting('group_hide_open_parents', st.session_state.aggrid_hide_open_parents)
+            )
+        
+        # 高级表格功能
+        st.write("高级表格功能")
+        col3, col4 = st.columns(2)
+        with col3:
+            enable_pagination = st.checkbox(
+                "启用分页", 
+                value=st.session_state.aggrid_settings['enable_pagination'], 
+                key="aggrid_enable_pagination",
+                on_change=lambda: update_aggrid_setting('enable_pagination', st.session_state.aggrid_enable_pagination)
+            )
+            if enable_pagination:
+                page_size = st.number_input(
+                    "每页行数", 
+                    min_value=5, 
+                    max_value=100, 
+                    value=st.session_state.aggrid_settings['page_size'], 
+                    step=5, 
+                    key="aggrid_page_size",
+                    on_change=lambda: update_aggrid_setting('page_size', st.session_state.aggrid_page_size)
+                )
+            
+            enable_column_resize = st.checkbox(
+                "允许调整列宽", 
+                value=st.session_state.aggrid_settings['enable_column_resize'], 
+                key="aggrid_enable_column_resize",
+                on_change=lambda: update_aggrid_setting('enable_column_resize', st.session_state.aggrid_enable_column_resize)
+            )
+        
+        with col4:
+            enable_side_bar = st.checkbox(
+                "显示侧边栏", 
+                value=st.session_state.aggrid_settings['enable_side_bar'], 
+                key="aggrid_enable_side_bar",
+                on_change=lambda: update_aggrid_setting('enable_side_bar', st.session_state.aggrid_enable_side_bar)
+            )
+            enable_quick_filter = st.checkbox(
+                "启用快速筛选", 
+                value=st.session_state.aggrid_settings['enable_quick_filter'], 
+                key="aggrid_enable_quick_filter",
+                on_change=lambda: update_aggrid_setting('enable_quick_filter', st.session_state.aggrid_enable_quick_filter)
+            )
+            if enable_quick_filter:
+                quick_filter_text = st.text_input(
+                    "快速筛选", 
+                    value=st.session_state.aggrid_settings['quick_filter_text'],
+                    key="aggrid_quick_filter_text",
+                    on_change=lambda: update_aggrid_setting('quick_filter_text', st.session_state.aggrid_quick_filter_text)
+                )
+        
+        # 添加保存/重置按钮
+        col5, col6 = st.columns(2)
+        with col5:
+            if st.button("保存当前配置为默认", key="save_aggrid_config"):
+                # 已经在on_change中保存了，这里只需提示
+                st.success("当前配置已保存")
+        
+        with col6:
+            if st.button("重置为默认配置", key="reset_aggrid_config"):
+                for key, value in default_settings.items():
+                    st.session_state.aggrid_settings[key] = value
+                st.rerun()
     
     # 构建 AgGrid 选项
     gb = GridOptionsBuilder.from_dataframe(display_df)
@@ -99,6 +281,128 @@ def render_aggrid_table(filtered_df, current_taskfile):
         sorteable=enable_sorting,
         editable=enable_editing,
     )
+
+    # 配置分组功能
+    if 'enable_row_group' in locals() and enable_row_group and 'group_by_columns' in locals():
+        # 设置可分组的列
+        for col in group_by_columns:
+            gb.configure_column(col, rowGroup=True, enableRowGroup=True)
+        
+        # 配置分组选项
+        gb.configure_grid_options(
+            # 启用行分组
+            groupSelectsChildren=True,
+            groupDefaultExpanded=1,  # 默认展开第一级
+            autoGroupColumnDef={
+                "headerName": "分组",
+                "minWidth": 200,
+                "cellRendererParams": {
+                    "suppressCount": False,  # 显示每组的计数
+                }
+            }
+        )
+        
+        if 'auto_group_column' in locals() and auto_group_column:
+            gb.configure_grid_options(
+                autoGroupColumnDef={
+                    "headerName": "分组",
+                    "minWidth": 200,
+                    "cellRendererParams": {
+                        "suppressCount": False,
+                    }
+                }
+            )
+            
+        if 'group_hide_open_parents' in locals() and group_hide_open_parents:
+            gb.configure_grid_options(groupHideOpenParents=True)
+    
+    # 配置多行选择
+    if 'enable_multi_select' in locals() and enable_multi_select:
+        gb.configure_selection(
+            selection_mode='multiple',
+            use_checkbox=True,
+            groupSelectsChildren=True,
+            groupSelectsFiltered=True
+        )
+    
+    # 配置行固定
+    if 'enable_row_pinning' in locals() and enable_row_pinning:
+        gb.configure_grid_options(
+            enableRowDrag=True,
+            suppressRowDrag=False,
+            suppressMovableColumns=False,
+            rowDragManaged=True,
+            suppressMoveWhenRowDragging=False
+        )
+    
+    # 配置分页
+    if 'enable_pagination' in locals() and enable_pagination:
+        gb.configure_pagination(
+            enabled=True,
+            paginationAutoPageSize=False,
+            paginationPageSize=page_size if 'page_size' in locals() else 20
+        )
+    
+    # 配置列宽调整
+    if 'enable_column_resize' in locals() and enable_column_resize:
+        gb.configure_grid_options(
+            enableColumnResizing=True,
+            suppressColumnVirtualisation=True
+        )
+    
+    # 配置侧边栏
+    if 'enable_side_bar' in locals() and enable_side_bar:
+        side_bar_config = {
+            "toolPanels": [
+                {
+                    "id": "columns",
+                    "labelDefault": "列",
+                    "labelKey": "columns",
+                    "iconKey": "columns",
+                    "toolPanel": "agColumnsToolPanel",
+                },
+                {
+                    "id": "filters",
+                    "labelDefault": "筛选器",
+                    "labelKey": "filters",
+                    "iconKey": "filter",
+                    "toolPanel": "agFiltersToolPanel",
+                }
+            ],
+            "defaultToolPanel": ""
+        }
+        gb.configure_side_bar(side_bar_config)
+    
+    # 配置快速筛选
+    if 'enable_quick_filter' in locals() and enable_quick_filter:
+        gb.configure_grid_options(
+            enableQuickFilter=True,
+            quickFilterText=quick_filter_text if 'quick_filter_text' in locals() else ""
+        )
+    
+    # 配置Excel导出功能
+    if 'enable_excel_export' in locals() and enable_excel_export:
+        gb.configure_grid_options(
+            enableRangeSelection=True,
+            allowContextMenuWithControlKey=True,
+            getContextMenuItems=JsCode("""
+            function getContextMenuItems(params) {
+                return [
+                    'copy',
+                    'copyWithHeaders',
+                    'paste',
+                    'separator',
+                    'export',
+                    {
+                        name: '导出到Excel',
+                        action: function() {
+                            params.api.exportDataAsExcel();
+                        }
+                    }
+                ];
+            }
+            """)
+        )
     
     # 自定义 JavaScript 代码处理选择事件，确保状态同步
     js_code = JsCode("""
@@ -235,6 +539,9 @@ def render_aggrid_table(filtered_df, current_taskfile):
         reload_data=False,
         allow_unsafe_jscode=True,
         theme=theme_option,
+        # 添加新的高级功能支持
+        enable_sidebar=enable_side_bar if 'enable_side_bar' in locals() else st.session_state.aggrid_settings['enable_side_bar'],
+        columns_auto_size_mode='FIT_CONTENTS' if 'enable_column_resize' in locals() and enable_column_resize else 'FIT_ALL_COLUMNS_TO_VIEW',
     )
     
     # 处理表格勾选状态变化
