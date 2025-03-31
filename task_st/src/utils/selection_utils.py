@@ -6,13 +6,22 @@ import os
 
 # 全局状态文件路径
 GLOBAL_STATE_FILE = "task_state.yaml"
+_MEMORY_CACHE = None  # 内存缓存
+_LAST_SAVE_TIME = None  # 上次保存时间
 
 # 初始化全局任务状态
 def init_global_state():
     """
     初始化全局任务状态YAML
     """
+    global _MEMORY_CACHE, _LAST_SAVE_TIME
+    
     if 'global_task_state' not in st.session_state:
+        # 优先从内存缓存加载
+        if _MEMORY_CACHE is not None:
+            st.session_state.global_task_state = _MEMORY_CACHE
+            return
+            
         # 尝试从文件加载状态
         if os.path.exists(GLOBAL_STATE_FILE):
             try:
@@ -20,6 +29,8 @@ def init_global_state():
                     st.session_state.global_task_state = yaml.safe_load(f)
                 # 确保基本结构存在
                 ensure_state_structure(st.session_state.global_task_state)
+                # 更新内存缓存
+                _MEMORY_CACHE = st.session_state.global_task_state.copy()
             except Exception as e:
                 print(f"加载全局状态失败: {str(e)}")
                 create_default_state()
@@ -31,6 +42,7 @@ def init_global_state():
 
 def create_default_state():
     """创建默认的全局状态结构"""
+    global _MEMORY_CACHE
     current_time = datetime.now().isoformat()
     st.session_state.global_task_state = {
         "version": "1.0",
@@ -50,6 +62,8 @@ def create_default_state():
             }
         }
     }
+    # 更新内存缓存
+    _MEMORY_CACHE = st.session_state.global_task_state.copy()
 
 def ensure_state_structure(state):
     """确保状态包含所有必要的字段"""
@@ -104,11 +118,24 @@ def get_global_state():
     return st.session_state.global_task_state
 
 # 保存全局状态到文件
-def save_global_state():
+def save_global_state(force=False):
     """保存全局状态到YAML文件"""
+    global _MEMORY_CACHE, _LAST_SAVE_TIME
+    current_time = datetime.now()
+    
+    # 更新内存缓存
+    _MEMORY_CACHE = st.session_state.global_task_state.copy()
+    
+    # 如果距离上次保存小于5秒且不是强制保存，则跳过
+    if not force and _LAST_SAVE_TIME is not None:
+        time_diff = (current_time - _LAST_SAVE_TIME).total_seconds()
+        if time_diff < 5:  # 5秒节流
+            return True
+    
     try:
         with open(GLOBAL_STATE_FILE, 'w', encoding='utf-8') as f:
             yaml.dump(st.session_state.global_task_state, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+        _LAST_SAVE_TIME = current_time
         return True
     except Exception as e:
         print(f"保存全局状态失败: {str(e)}")
@@ -123,6 +150,7 @@ def update_global_state(state_dict, save_to_file=True):
         state_dict: 新的状态字典
         save_to_file: 是否保存到文件
     """
+    global _MEMORY_CACHE
     init_global_state()
     st.session_state.global_task_state = state_dict
     
@@ -131,6 +159,9 @@ def update_global_state(state_dict, save_to_file=True):
     
     # 同步会话状态兼容层
     sync_session_state()
+    
+    # 更新内存缓存
+    _MEMORY_CACHE = st.session_state.global_task_state.copy()
     
     # 保存到文件
     if save_to_file:
@@ -164,7 +195,7 @@ def register_task_file(file_path, meta=None):
         if meta:
             global_state["task_files"][file_path]["meta"].update(meta)
     
-    update_global_state(global_state)
+    update_global_state(global_state, save_to_file=False)  # 不立即保存文件，提高性能
 
 def register_tasks_from_df(tasks_df, source_file):
     """
@@ -178,6 +209,9 @@ def register_tasks_from_df(tasks_df, source_file):
         task_name = row['name']
         task_data = row.to_dict()
         register_task(task_name, task_data, source_file)
+    
+    # 批量操作后一次性保存
+    save_global_state(force=True)
 
 def register_task(task_name, task_data, source_file, runtime_data=None):
     """
@@ -215,7 +249,7 @@ def register_task(task_name, task_data, source_file, runtime_data=None):
         }
     }
     
-    update_global_state(global_state)
+    update_global_state(global_state, save_to_file=False)  # 不立即保存文件，提高性能
 
 def update_task_selection(task_name, is_selected, rerun=True):
     """
@@ -237,13 +271,15 @@ def update_task_selection(task_name, is_selected, rerun=True):
             global_state["tasks"][task_name]["last_selected"] = datetime.now().isoformat()
         
         # 更新全局状态
-        update_global_state(global_state)
+        update_global_state(global_state, save_to_file=False)  # 不立即保存，提高性能
         
         # 同步会话状态
         sync_session_state()
         
         # 根据需要重新运行应用
         if rerun:
+            # 保存状态以确保数据持久化
+            save_global_state(force=True)
             st.rerun()
 
 def toggle_task_selection(task_name, rerun=True):
@@ -291,10 +327,12 @@ def clear_all_selections(rerun=True):
             global_state["tasks"][task_name]["selected"] = False
     
     # 更新全局状态
-    update_global_state(global_state)
+    update_global_state(global_state, save_to_file=False)
     
     # 根据需要重新运行应用
     if rerun:
+        # 保存状态以确保数据持久化
+        save_global_state(force=True)
         st.rerun()
 
 def update_task_runtime(task_name, runtime_data):
@@ -316,7 +354,7 @@ def update_task_runtime(task_name, runtime_data):
         global_state["tasks"][task_name]["runtime"] = current_runtime
         
         # 更新全局状态
-        update_global_state(global_state)
+        update_global_state(global_state, save_to_file=False)
         return True
     
     return False
@@ -339,7 +377,9 @@ def record_task_run(task_name, status="success"):
         runtime["run_count"] = runtime.get("run_count", 0) + 1
         runtime["last_status"] = status
         
-        update_global_state(global_state)
+        update_global_state(global_state, save_to_file=False)
+        # 延迟保存，提高响应速度
+        save_global_state()
 
 def export_yaml_state():
     """
@@ -357,7 +397,7 @@ def import_global_state_yaml(yaml_str, rerun=True):
     """
     try:
         state_dict = yaml.safe_load(yaml_str)
-        update_global_state(state_dict)
+        update_global_state(state_dict, save_to_file=True)
         if rerun:
             st.rerun()
         return True
@@ -394,6 +434,11 @@ def update_user_preferences(preferences):
     
     global_state["user_preferences"].update(preferences)
     update_global_state(global_state)
+
+# 强制将内存中的状态保存到文件
+def force_save_state():
+    """强制将内存中的状态保存到文件"""
+    return save_global_state(force=True)
 
 # 兼容旧方法 - 保留以确保兼容性
 def export_global_state_json():

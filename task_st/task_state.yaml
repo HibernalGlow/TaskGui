@@ -1,8 +1,8 @@
 version: '1.0'
-last_updated: '2025-03-31T13:41:27.007641'
+last_updated: '2025-03-31T13:45:59.491803'
 task_files:
   D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml:
-    last_loaded: '2025-03-31T13:41:26.608304'
+    last_loaded: '2025-03-31T13:45:59.485778'
     meta:
       description: 任务文件
       created_at: 1743247683.472555
@@ -11,7 +11,7 @@ task_files:
 tasks:
   artbook_dedup:
     selected: false
-    last_selected: '2025-03-31T13:41:07.908069'
+    last_selected: '2025-03-31T13:45:30.923472'
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: artbook_dedup
@@ -34,7 +34,7 @@ tasks:
       custom_flags: {}
   auto_cover:
     selected: false
-    last_selected: '2025-03-31T13:41:14.991732'
+    last_selected: '2025-03-31T13:45:32.979176'
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: auto_cover
@@ -104,7 +104,7 @@ tasks:
       custom_flags: {}
   auto_unzip:
     selected: false
-    last_selected: null
+    last_selected: '2025-03-31T13:45:37.964265'
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: auto_unzip
@@ -222,7 +222,7 @@ tasks:
       custom_flags: {}
   gallery_finder:
     selected: false
-    last_selected: null
+    last_selected: '2025-03-31T13:43:57.946257'
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: gallery_finder
