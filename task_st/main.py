@@ -22,6 +22,7 @@ from src.services.taskfile import read_taskfile
 from src.utils.file_utils import open_file, get_directory_files
 from src.views.styles import apply_custom_styles
 from src.components.preview_card import render_shared_preview
+from src.utils.selection_utils import get_global_state, update_global_state, export_global_state_json, import_global_state_json
 
 # 添加当前目录到路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -126,7 +127,7 @@ def main():
             render_shared_preview(filtered_df, default_taskfile)
         
         # 使用单层页签 - 将所有页签放在一排
-        tabs = st.tabs(["📊 表格视图", "🗂️ 卡片视图", "📁 分组视图", "📈 仪表盘", "⚙️ 设置"])
+        tabs = st.tabs(["📊 表格视图", "🗂️ 卡片视图", "📁 分组视图", "📈 仪表盘", "⚙️ 设置", "🔍 状态管理"])
         
         # 表格视图
         with tabs[0]:
@@ -168,7 +169,11 @@ def main():
             
             st.subheader("任务执行")
             st.radio("默认运行模式", options=["顺序执行", "并行执行"], index=0, disabled=True)
-            
+        
+        # 状态管理页签
+        with tabs[5]:
+            render_state_manager()
+        
     except Exception as e:
         st.error(f"发生错误: {str(e)}")
         st.error("如果错误与st-aggrid相关，请确保已安装: `pip install streamlit-aggrid`")
@@ -195,6 +200,72 @@ def filter_tasks(tasks_df):
         )]
     
     return filtered_df
+
+def render_state_manager():
+    """渲染状态管理器页面"""
+    st.markdown("## 🔍 全局状态管理")
+    st.info("在这里您可以查看和修改系统的全局状态数据")
+    
+    # 获取当前状态
+    global_state = get_global_state()
+    
+    # 创建两列布局
+    col1, col2 = st.columns([3, 2])
+    
+    with col1:
+        st.subheader("当前状态")
+        
+        # 显示基本状态信息
+        st.write(f"版本: {global_state.get('version', 'N/A')}")
+        st.write(f"最后更新: {global_state.get('last_updated', 'N/A')}")
+        st.write(f"选中任务数: {len(global_state.get('selected_tasks', []))}")
+        
+        # 导出为JSON字符串
+        json_str = export_global_state_json()
+        
+        # 添加编辑区域
+        edited_json = st.text_area("编辑状态JSON", json_str, height=400)
+        
+        # 保存修改按钮
+        if st.button("保存修改"):
+            if import_global_state_json(edited_json):
+                st.success("状态已更新")
+            else:
+                st.error("无法更新状态，JSON格式可能有误")
+    
+    with col2:
+        st.subheader("选中任务列表")
+        
+        # 显示选中的任务
+        selected_tasks = global_state.get('selected_tasks', [])
+        if selected_tasks:
+            for i, task in enumerate(selected_tasks):
+                st.write(f"{i+1}. {task}")
+                # 添加移除按钮
+                if st.button("移除", key=f"remove_{i}"):
+                    if task in global_state['selected']:
+                        global_state['selected'][task] = False
+                    global_state['selected_tasks'].remove(task)
+                    update_global_state(global_state)
+                    st.rerun()
+        else:
+            st.info("没有选中的任务")
+        
+        st.subheader("选择状态")
+        
+        # 显示所有任务的选择状态
+        st.write("任务选择状态预览:")
+        
+        # 创建表格展示所有任务的状态
+        task_states = []
+        for task, is_selected in global_state.get('selected', {}).items():
+            task_states.append({"任务名称": task, "已选中": is_selected})
+        
+        if task_states:
+            tasks_df = pd.DataFrame(task_states)
+            st.dataframe(tasks_df, use_container_width=True)
+        else:
+            st.info("没有任务状态信息")
 
 if __name__ == "__main__":
     main()

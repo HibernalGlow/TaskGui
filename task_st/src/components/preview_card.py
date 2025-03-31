@@ -2,7 +2,7 @@ import streamlit as st
 import os
 from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from ..services.task_runner import run_task_via_cmd
-from ..utils.selection_utils import update_task_selection, get_task_selection_state
+from ..utils.selection_utils import update_task_selection, get_task_selection_state, get_global_state, init_global_state, clear_all_selections
 
 def render_shared_preview(filtered_df, current_taskfile):
     """
@@ -12,13 +12,19 @@ def render_shared_preview(filtered_df, current_taskfile):
         filtered_df: 过滤后的任务DataFrame
         current_taskfile: 当前Taskfile路径
     """
+    # 确保全局状态已初始化
+    init_global_state()
+    
+    # 从全局状态获取选中的任务
+    global_state = get_global_state()
+    selected_tasks = global_state["selected_tasks"]
+    
     # 检查是否有选中的任务
-    if 'selected_tasks' not in st.session_state or not st.session_state.selected_tasks:
+    if not selected_tasks:
         st.info("请在下方视图中选择任务以查看预览")
         return
     
     # 过滤出选中的任务
-    selected_tasks = st.session_state.selected_tasks
     selected_df = filtered_df[filtered_df['name'].isin(selected_tasks)]
     
     if selected_df.empty:
@@ -35,10 +41,7 @@ def render_shared_preview(filtered_df, current_taskfile):
         # 清除选择按钮 - 使用统一的方式清除选择
         with col2:
             if st.button("🗑️ 清除选择", key="clear_preview_selection"):
-                # 使用统一的更新函数来清除
-                for task_name in selected_tasks.copy():
-                    update_task_selection(task_name, False, rerun=False)
-                st.rerun()
+                clear_all_selections(rerun=True)
         
         # 复制所有命令按钮
         with col3:

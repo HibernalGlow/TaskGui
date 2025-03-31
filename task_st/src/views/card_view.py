@@ -3,10 +3,13 @@ import os
 from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from ..services.task_runner import run_task_via_cmd
 from ..components.batch_operations import render_batch_operations
-from ..utils.selection_utils import update_task_selection, get_task_selection_state
+from ..utils.selection_utils import update_task_selection, get_task_selection_state, init_global_state
 
 def render_card_view(filtered_df, current_taskfile):
     """渲染卡片视图"""
+    # 确保全局状态已初始化
+    init_global_state()
+    
     st.markdown("### 任务卡片")
     
     # 每行显示的卡片数量
@@ -39,15 +42,15 @@ def render_card_view(filtered_df, current_taskfile):
                     cmd = get_task_command(task['name'], current_taskfile)
                     st.code(cmd, language="bash")
                     
-                    # 选择框 - 使用统一的更新函数
+                    # 获取当前选择状态，直接从全局状态获取
                     is_selected = get_task_selection_state(task['name'])
-                    if st.checkbox("选择此任务", value=is_selected, key=f"card_{task['name']}"):
-                        if not is_selected:
-                            # 只在状态变化时更新
-                            update_task_selection(task['name'], True)
-                    elif is_selected:
-                        # 只在状态变化时更新
-                        update_task_selection(task['name'], False)
+                    
+                    # 渲染勾选框，使用值变化模式而不是重复检查状态
+                    checkbox_value = st.checkbox("选择此任务", value=is_selected, key=f"card_{task['name']}")
+                    
+                    # 如果勾选状态与记录的状态不同，更新状态
+                    if checkbox_value != is_selected:
+                        update_task_selection(task['name'], checkbox_value)
                     
                     # 操作按钮
                     col1, col2, col3 = st.columns(3)

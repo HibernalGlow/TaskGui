@@ -10,7 +10,7 @@ except ImportError:
     st.error("未安装st-aggrid。请使用 `pip install streamlit-aggrid` 安装")
 
 # 导入选择状态更新函数
-from ..utils.selection_utils import update_task_selection, init_selection_state, get_task_selection_state
+from ..utils.selection_utils import update_task_selection, init_selection_state, get_task_selection_state, init_global_state
 
 def render_aggrid_table(filtered_df, current_taskfile):
     """使用AgGrid渲染表格 - 优化勾选状态获取并增加分组功能"""
@@ -19,6 +19,9 @@ def render_aggrid_table(filtered_df, current_taskfile):
         from .standard_table import render_edit_table
         render_edit_table(filtered_df, current_taskfile)
         return
+    
+    # 确保全局状态已初始化
+    init_global_state()
     
     # 准备表格数据
     filtered_df_copy = filtered_df.copy()
@@ -277,7 +280,7 @@ def render_aggrid_table(filtered_df, current_taskfile):
                     has_changes = True
                     changed_tasks.append((task_name, current_selection))
         
-        # 如果有状态变化，批量更新
+        # 如果有状态变化，批量更新全局状态
         if has_changes:
             # 更新除最后一个之外的所有任务，不刷新页面
             for task_name, is_selected in changed_tasks[:-1]:

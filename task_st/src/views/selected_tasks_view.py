@@ -6,16 +6,16 @@ from datetime import datetime
 from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from ..services.task_runner import run_task_via_cmd
 from .task_card_editor import render_task_edit_form
-from ..utils.selection_utils import clear_all_selections
+from ..utils.selection_utils import clear_all_selections, get_global_state, init_global_state
 
 def render_selected_tasks_section(filtered_df, current_taskfile):
     """渲染已选择任务的区域，包括清除选择按钮和卡片视图"""
-    # 初始化会话状态
-    if 'selected_tasks' not in st.session_state:
-        st.session_state.selected_tasks = []
+    # 确保全局状态已初始化
+    init_global_state()
     
-    # 获取选中的任务列表
-    selected_tasks = st.session_state.selected_tasks
+    # 从全局状态获取选中的任务
+    global_state = get_global_state()
+    selected_tasks = global_state["selected_tasks"]
     
     # 显示已选择的任务数量和操作按钮
     col1, col2, col3 = st.columns([2, 1, 1])
@@ -140,12 +140,12 @@ def render_task_card(task, current_taskfile):
 
 def render_selected_tasks_sidebar(filtered_df, current_taskfile):
     """渲染右侧边栏中的已选择任务区域"""
-    # 初始化会话状态
-    if 'selected_tasks' not in st.session_state:
-        st.session_state.selected_tasks = []
+    # 确保全局状态已初始化
+    init_global_state()
     
-    # 获取选中的任务列表
-    selected_tasks = st.session_state.selected_tasks
+    # 从全局状态获取选中的任务
+    global_state = get_global_state()
+    selected_tasks = global_state["selected_tasks"]
     
     # 显示已选择的任务数量和操作按钮
     st.markdown(f"### 已选择 {len(selected_tasks)} 个任务")
@@ -153,15 +153,8 @@ def render_selected_tasks_sidebar(filtered_df, current_taskfile):
     # 操作按钮
     col1, col2 = st.columns(2)
     with col1:
-        # 定义清除选择的回调函数
-        def clear_selection():
-            st.session_state.selected_tasks = []
-            if 'selected' in st.session_state:
-                for task in st.session_state.selected:
-                    st.session_state.selected[task] = False
-        
-        if st.button("清除选择", key="clear_sidebar_selection", on_click=clear_selection):
-            pass  # 清除选择的动作由回调函数处理，避免刷新
+        if st.button("清除选择", key="clear_sidebar_selection"):
+            clear_all_selections()
     
     with col2:
         if st.button("运行选中", key="run_sidebar_tasks"):
