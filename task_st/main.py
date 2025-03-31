@@ -12,7 +12,6 @@ from src import (
     filter_tasks,
     render_table_view,
     render_card_view,
-    render_group_view,
     render_sidebar,
     render_tag_filters,
     find_taskfiles,
@@ -140,7 +139,7 @@ def main():
             render_shared_preview(filtered_df, default_taskfile)
         
         # 使用单层页签 - 将所有页签放在一排
-        tabs = st.tabs(["📊 表格视图", "🗂️ 卡片视图", "📁 分组视图", "📈 仪表盘", "⚙️ 设置", "🔍 状态管理"])
+        tabs = st.tabs(["📊 表格视图", "🗂️ 卡片视图", "📈 仪表盘", "⚙️ 设置", "🔍 状态管理"])
         
         # 表格视图
         with tabs[0]:
@@ -150,9 +149,6 @@ def main():
         with tabs[1]:
             render_card_view(filtered_df, default_taskfile)
         
-        # 分组视图
-        with tabs[2]:
-            render_group_view(filtered_df, default_taskfile)
         
         # 仪表盘页签
         with tabs[3]:

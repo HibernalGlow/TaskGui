@@ -23,7 +23,6 @@ from .components.batch_operations import render_batch_operations
 # 导入视图
 from .views.table_view import render_table_view
 from .views.card_view import render_card_view
-from .views.group_view import render_group_view
 
 # 常量
 DEFAULT_TASKFILE_PATH = find_taskfiles()[0] if find_taskfiles() else None
@@ -57,5 +56,4 @@ __all__ = [
     # 视图
     'render_table_view',
     'render_card_view',
-    'render_group_view'
 ] 
