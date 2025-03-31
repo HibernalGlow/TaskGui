@@ -6,6 +6,58 @@ from src.services.task_runner import run_task_via_cmd, run_multiple_tasks as run
 from src.utils.selection_utils import get_selected_tasks, clear_all_selections, get_global_state, record_task_run, get_task_runtime
 from src.views.card.task_card import render_task_card
 
+def render_action_buttons(selected_tasks, current_taskfile, key_prefix="preview", is_sidebar=False):
+    """渲染任务操作按钮卡片
+    
+    参数:
+        selected_tasks: 选中的任务列表
+        current_taskfile: 当前任务文件路径
+        key_prefix: 按钮key前缀，用于区分不同位置的按钮
+        is_sidebar: 是否在侧边栏中渲染
+    """
+    container = st.sidebar.container() if is_sidebar else st.container()
+    
+    with container:
+        st.markdown("### 任务操作")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # 清除选择按钮
+            if st.button("清除选择", key=f"{key_prefix}_clear_selection"):
+                clear_all_selections()
+                st.rerun()
+        
+        with col2:
+            # 复制所有命令
+            if st.button("复制所有命令", key=f"{key_prefix}_copy_all"):
+                commands = []
+                for task_name in selected_tasks:
+                    cmd = get_task_command(task_name, current_taskfile)
+                    commands.append(cmd)
+                
+                all_commands = "\n".join(commands)
+                copy_to_clipboard(all_commands)
+                st.success("所有命令已复制到剪贴板")
+        
+        col3, col4 = st.columns(2)
+        
+        with col3:
+            # 运行方式选择
+            run_parallel = st.checkbox("并行运行", value=st.session_state.get('run_parallel', False), key=f"{key_prefix}_run_parallel")
+            st.session_state.run_parallel = run_parallel
+        
+        with col4:
+            # 运行所有选中任务
+            if st.button("运行所有任务", key=f"{key_prefix}_run_all"):
+                with st.spinner("正在启动所有选中的任务..."):
+                    results = run_tasks_via_cmd(selected_tasks, current_taskfile, parallel=run_parallel)
+                    # 记录所有任务的运行状态
+                    for task_name in selected_tasks:
+                        record_task_run(task_name, status="started")
+                
+                st.success(f"已启动 {len(selected_tasks)} 个任务")
+
 def render_shared_preview(filtered_df, current_taskfile):
     """渲染共享任务预览区域
     
@@ -30,42 +82,11 @@ def render_shared_preview(filtered_df, current_taskfile):
     # 获取选中任务的详细信息
     selected_df = filtered_df[filtered_df['name'].isin(selected_tasks)].copy()
     
-    # 添加操作按钮
-    col1, col2, col3, col4 = st.columns(4)
+    # 渲染操作按钮卡片
+    render_action_buttons(selected_tasks, current_taskfile)
     
-    with col1:
-        # 清除选择按钮
-        if st.button("清除选择", key="preview_clear_selection"):
-            clear_all_selections()
-            st.rerun()
-    
-    with col2:
-        # 复制所有命令
-        if st.button("复制所有命令", key="preview_copy_all"):
-            commands = []
-            for task_name in selected_tasks:
-                cmd = get_task_command(task_name, current_taskfile)
-                commands.append(cmd)
-            
-            all_commands = "\n".join(commands)
-            copy_to_clipboard(all_commands)
-            st.success("所有命令已复制到剪贴板")
-    
-    with col3:
-        # 运行方式选择
-        run_parallel = st.checkbox("并行运行", value=st.session_state.get('run_parallel', False), key="preview_run_parallel")
-        st.session_state.run_parallel = run_parallel
-    
-    with col4:
-        # 运行所有选中任务
-        if st.button("运行所有任务", key="preview_run_all"):
-            with st.spinner("正在启动所有选中的任务..."):
-                results = run_tasks_via_cmd(selected_tasks, current_taskfile, parallel=run_parallel)
-                # 记录所有任务的运行状态
-                for task_name in selected_tasks:
-                    record_task_run(task_name, status="started")
-            
-            st.success(f"已启动 {len(selected_tasks)} 个任务")
+    # 在侧边栏中也渲染操作按钮卡片
+    render_action_buttons(selected_tasks, current_taskfile, key_prefix="sidebar", is_sidebar=True)
     
     # 创建任务页签列表
     task_names = selected_df['name'].tolist()
