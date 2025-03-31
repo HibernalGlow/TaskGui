@@ -70,7 +70,7 @@ def render_aggrid_table(filtered_df, current_taskfile):
         st.rerun()
     
     # 表格下方添加状态信息
-    selected_tasks = get_selected_tasks()
-    st.write(f"当前选中: {len(selected_tasks)} 个任务")
+    # selected_tasks = get_selected_tasks()
+    # st.write(f"当前选中: {len(selected_tasks)} 个任务")
     
     return grid_return
