@@ -2,8 +2,14 @@ import streamlit as st
 from ..utils.file_utils import get_task_command, copy_to_clipboard
 from ..services.task_runner import run_multiple_tasks
 
-def render_batch_operations(current_taskfile, view_key=""):
-    """渲染批量操作区域"""
+def render_batch_operations(current_taskfile, view_key="default"):
+    """
+    渲染批量操作组件
+    
+    参数:
+        current_taskfile: 当前任务文件路径
+        view_key: 视图类型的唯一键值，用于防止不同视图的按钮key冲突
+    """
     if 'selected_tasks' not in st.session_state:
         st.session_state.selected_tasks = []
     

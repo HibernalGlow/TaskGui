@@ -48,7 +48,7 @@ def create_default_state():
         "version": "1.0",
         "last_updated": current_time,
         "task_files": {},
-        "tasks": {},
+        "tasks": {},  # 保留tasks键但只存储基本信息
         "user_preferences": {
             "default_view": "aggrid",
             "last_filter": {
@@ -99,11 +99,14 @@ def sync_session_state():
     selected = {}
     selected_tasks = []
     
-    for task_name, task_info in st.session_state.global_task_state.get("tasks", {}).items():
-        is_selected = task_info.get("selected", False)
-        selected[task_name] = is_selected
-        if is_selected:
-            selected_tasks.append(task_name)
+    # 从新的存储位置获取选中状态
+    for file_path, file_info in st.session_state.global_task_state.get("task_files", {}).items():
+        if "task_state" in file_info:
+            for task_name, task_state in file_info["task_state"].items():
+                is_selected = task_state.get("selected", False)
+                selected[task_name] = is_selected
+                if is_selected:
+                    selected_tasks.append(task_name)
     
     # 更新会话状态
     st.session_state.selected = selected
@@ -188,12 +191,16 @@ def register_task_file(file_path, meta=None):
             "meta": meta or {
                 "description": "任务文件",
                 "created_at": current_time
-            }
+            },
+            "task_state": {}  # 添加task_state字段，用于存储任务状态
         }
     else:
         global_state["task_files"][file_path]["last_loaded"] = current_time
         if meta:
             global_state["task_files"][file_path]["meta"].update(meta)
+        # 确保task_state字段存在
+        if "task_state" not in global_state["task_files"][file_path]:
+            global_state["task_files"][file_path]["task_state"] = {}
     
     update_global_state(global_state, save_to_file=False)  # 不立即保存文件，提高性能
 
@@ -225,28 +232,51 @@ def register_task(task_name, task_data, source_file, runtime_data=None):
     """
     global_state = get_global_state()
     
+    # 确保task_files和source_file存在
+    if "task_files" not in global_state:
+        global_state["task_files"] = {}
+    
+    if source_file not in global_state["task_files"]:
+        register_task_file(source_file)
+    
+    # 确保task_state字段存在
+    if "task_state" not in global_state["task_files"][source_file]:
+        global_state["task_files"][source_file]["task_state"] = {}
+    
+    # 保存任务基本信息到tasks（不包含选中状态和运行时数据）
     if "tasks" not in global_state:
         global_state["tasks"] = {}
     
-    # 如果任务已存在，保留选中状态
+    global_state["tasks"][task_name] = {
+        "source_file": source_file,
+        "data": task_data
+    }
+    
+    # 获取现有的选中状态和运行时数据（如果有）
     selected = False
     last_selected = None
-    if task_name in global_state["tasks"]:
-        selected = global_state["tasks"][task_name].get("selected", False)
-        last_selected = global_state["tasks"][task_name].get("last_selected")
+    task_runtime = runtime_data or {
+        "last_run": None,
+        "run_count": 0,
+        "last_status": None,
+        "custom_flags": {}
+    }
     
-    # 创建或更新任务信息
-    global_state["tasks"][task_name] = {
+    # 如果任务已存在于task_state中，保留选中状态和运行时数据
+    if task_name in global_state["task_files"][source_file]["task_state"]:
+        task_state = global_state["task_files"][source_file]["task_state"][task_name]
+        selected = task_state.get("selected", False)
+        last_selected = task_state.get("last_selected")
+        if "runtime" in task_state:
+            # 只使用提供的runtime_data覆盖，否则保留原有数据
+            if runtime_data is None:
+                task_runtime = task_state["runtime"]
+    
+    # 更新task_state
+    global_state["task_files"][source_file]["task_state"][task_name] = {
         "selected": selected,
         "last_selected": last_selected,
-        "source_file": source_file,
-        "data": task_data,
-        "runtime": runtime_data or {
-            "last_run": None,
-            "run_count": 0,
-            "last_status": None,
-            "custom_flags": {}
-        }
+        "runtime": task_runtime
     }
     
     update_global_state(global_state, save_to_file=False)  # 不立即保存文件，提高性能
@@ -262,13 +292,34 @@ def update_task_selection(task_name, is_selected, rerun=True):
     """
     global_state = get_global_state()
     
+    # 查找任务所属的文件
+    source_file = None
     if "tasks" in global_state and task_name in global_state["tasks"]:
+        source_file = global_state["tasks"][task_name].get("source_file")
+    
+    if source_file and source_file in global_state["task_files"]:
+        # 确保task_state结构存在
+        if "task_state" not in global_state["task_files"][source_file]:
+            global_state["task_files"][source_file]["task_state"] = {}
+        
+        # 确保任务在task_state中存在
+        if task_name not in global_state["task_files"][source_file]["task_state"]:
+            global_state["task_files"][source_file]["task_state"][task_name] = {
+                "selected": False,
+                "runtime": {
+                    "last_run": None,
+                    "run_count": 0,
+                    "last_status": None,
+                    "custom_flags": {}
+                }
+            }
+        
         # 更新选中状态
-        global_state["tasks"][task_name]["selected"] = is_selected
+        global_state["task_files"][source_file]["task_state"][task_name]["selected"] = is_selected
         
         # 如果被选中，记录选中时间
         if is_selected:
-            global_state["tasks"][task_name]["last_selected"] = datetime.now().isoformat()
+            global_state["task_files"][source_file]["task_state"][task_name]["last_selected"] = datetime.now().isoformat()
         
         # 更新全局状态
         update_global_state(global_state, save_to_file=False)  # 不立即保存，提高性能
@@ -290,12 +341,11 @@ def toggle_task_selection(task_name, rerun=True):
         task_name: 任务名称
         rerun: 是否执行rerun刷新页面
     """
-    global_state = get_global_state()
+    # 获取当前选中状态
+    current_state = get_task_selection_state(task_name)
     
-    if "tasks" in global_state and task_name in global_state["tasks"]:
-        # 获取当前状态并切换
-        current_state = global_state["tasks"][task_name].get("selected", False)
-        update_task_selection(task_name, not current_state, rerun)
+    # 更新为相反状态
+    update_task_selection(task_name, not current_state, rerun)
 
 def get_task_selection_state(task_name):
     """
@@ -308,8 +358,16 @@ def get_task_selection_state(task_name):
     """
     global_state = get_global_state()
     
+    # 查找任务所属的文件
+    source_file = None
     if "tasks" in global_state and task_name in global_state["tasks"]:
-        return global_state["tasks"][task_name].get("selected", False)
+        source_file = global_state["tasks"][task_name].get("source_file")
+    
+    if source_file and source_file in global_state["task_files"]:
+        # 获取选中状态
+        if "task_state" in global_state["task_files"][source_file] and \
+           task_name in global_state["task_files"][source_file]["task_state"]:
+            return global_state["task_files"][source_file]["task_state"][task_name].get("selected", False)
     
     return False
 
@@ -322,9 +380,12 @@ def clear_all_selections(rerun=True):
     """
     global_state = get_global_state()
     
-    if "tasks" in global_state:
-        for task_name in global_state["tasks"]:
-            global_state["tasks"][task_name]["selected"] = False
+    # 遍历所有任务文件和任务状态
+    for file_path in global_state.get("task_files", {}):
+        if "task_state" in global_state["task_files"][file_path]:
+            for task_name in global_state["task_files"][file_path]["task_state"]:
+                # 设置选中状态为False
+                global_state["task_files"][file_path]["task_state"][task_name]["selected"] = False
     
     # 更新全局状态
     update_global_state(global_state, save_to_file=False)
@@ -345,13 +406,39 @@ def update_task_runtime(task_name, runtime_data):
     """
     global_state = get_global_state()
     
+    # 查找任务所属的文件
+    source_file = None
     if "tasks" in global_state and task_name in global_state["tasks"]:
-        # 获取当前运行时数据
-        current_runtime = global_state["tasks"][task_name].get("runtime", {})
+        source_file = global_state["tasks"][task_name].get("source_file")
+    
+    if source_file and source_file in global_state["task_files"]:
+        # 确保task_state结构存在
+        if "task_state" not in global_state["task_files"][source_file]:
+            global_state["task_files"][source_file]["task_state"] = {}
+        
+        # 确保任务在task_state中存在
+        if task_name not in global_state["task_files"][source_file]["task_state"]:
+            global_state["task_files"][source_file]["task_state"][task_name] = {
+                "selected": False,
+                "runtime": {
+                    "last_run": None,
+                    "run_count": 0,
+                    "last_status": None,
+                    "custom_flags": {}
+                }
+            }
+        
+        # 确保runtime字段存在
+        if "runtime" not in global_state["task_files"][source_file]["task_state"][task_name]:
+            global_state["task_files"][source_file]["task_state"][task_name]["runtime"] = {
+                "last_run": None,
+                "run_count": 0,
+                "last_status": None,
+                "custom_flags": {}
+            }
         
         # 更新运行时数据
-        current_runtime.update(runtime_data)
-        global_state["tasks"][task_name]["runtime"] = current_runtime
+        global_state["task_files"][source_file]["task_state"][task_name]["runtime"].update(runtime_data)
         
         # 更新全局状态
         update_global_state(global_state, save_to_file=False)
@@ -369,10 +456,39 @@ def record_task_run(task_name, status="success"):
     """
     global_state = get_global_state()
     
+    # 查找任务所属的文件
+    source_file = None
     if "tasks" in global_state and task_name in global_state["tasks"]:
+        source_file = global_state["tasks"][task_name].get("source_file")
+    
+    if source_file and source_file in global_state["task_files"]:
+        # 确保task_state结构存在
+        if "task_state" not in global_state["task_files"][source_file]:
+            global_state["task_files"][source_file]["task_state"] = {}
+        
+        # 确保任务在task_state中存在
+        if task_name not in global_state["task_files"][source_file]["task_state"]:
+            global_state["task_files"][source_file]["task_state"][task_name] = {
+                "selected": False,
+                "runtime": {
+                    "last_run": None,
+                    "run_count": 0,
+                    "last_status": None,
+                    "custom_flags": {}
+                }
+            }
+        
+        # 确保runtime字段存在
+        if "runtime" not in global_state["task_files"][source_file]["task_state"][task_name]:
+            global_state["task_files"][source_file]["task_state"][task_name]["runtime"] = {
+                "last_run": None,
+                "run_count": 0,
+                "last_status": None,
+                "custom_flags": {}
+            }
         
         # 更新运行时数据
-        runtime = global_state["tasks"][task_name]["runtime"]
+        runtime = global_state["task_files"][source_file]["task_state"][task_name]["runtime"]
         runtime["last_run"] = datetime.now().isoformat()
         runtime["run_count"] = runtime.get("run_count", 0) + 1
         runtime["last_status"] = status
@@ -380,6 +496,37 @@ def record_task_run(task_name, status="success"):
         update_global_state(global_state, save_to_file=False)
         # 延迟保存，提高响应速度
         save_global_state()
+
+def get_task_runtime(task_name):
+    """
+    获取任务运行时数据
+    
+    参数:
+        task_name: 任务名称
+    返回:
+        dict: 任务运行时数据
+    """
+    global_state = get_global_state()
+    
+    # 查找任务所属的文件
+    source_file = None
+    if "tasks" in global_state and task_name in global_state["tasks"]:
+        source_file = global_state["tasks"][task_name].get("source_file")
+    
+    if source_file and source_file in global_state["task_files"]:
+        # 获取运行时数据
+        if "task_state" in global_state["task_files"][source_file] and \
+           task_name in global_state["task_files"][source_file]["task_state"] and \
+           "runtime" in global_state["task_files"][source_file]["task_state"][task_name]:
+            return global_state["task_files"][source_file]["task_state"][task_name]["runtime"]
+    
+    # 返回默认运行时数据
+    return {
+        "last_run": None,
+        "run_count": 0,
+        "last_status": None,
+        "custom_flags": {}
+    }
 
 def export_yaml_state():
     """
@@ -411,10 +558,12 @@ def get_selected_tasks():
     global_state = get_global_state()
     selected_tasks = []
     
-    if "tasks" in global_state:
-        for task_name, task_info in global_state["tasks"].items():
-            if task_info.get("selected", False):
-                selected_tasks.append(task_name)
+    # 从新的存储位置获取选中状态
+    for file_path, file_info in global_state.get("task_files", {}).items():
+        if "task_state" in file_info:
+            for task_name, task_state in file_info["task_state"].items():
+                if task_state.get("selected", False):
+                    selected_tasks.append(task_name)
     
     return selected_tasks
 

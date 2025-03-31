@@ -1,17 +1,240 @@
 version: '1.0'
-last_updated: '2025-03-31T13:45:59.491803'
+last_updated: '2025-03-31T14:06:09.451627'
 task_files:
   D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml:
-    last_loaded: '2025-03-31T13:45:59.485778'
+    last_loaded: '2025-03-31T14:06:09.446108'
     meta:
       description: 任务文件
       created_at: 1743247683.472555
       modified_at: 1743398910.4455388
       task_count: 28
+    task_state:
+      artbook_dedup:
+        selected: false
+        last_selected: '2025-03-31T14:05:46.234915'
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      auto_cover:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      auto_recycle:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      auto_repack:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      auto_unzip:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      auto_uuid:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      batch_img_filter:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      comic_low_width:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      find_same_artist:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      gallery_finder:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      img_filter:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      janai_monitor:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      manga_archive_classifier:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      merge_part_folders:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      no_translate_find:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      one_name:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      organize_folder:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      pics_convert:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      psd_convert_clipboard:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      recruit_cover_filter:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      rename_images:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      restore_bak:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      single_packer_cg:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      sn_fix:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      timestamps_record:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      upscale_bus:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      video_format:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
+      width_filter:
+        selected: false
+        last_selected: null
+        runtime:
+          last_run: null
+          run_count: 0
+          last_status: null
+          custom_flags: {}
 tasks:
   artbook_dedup:
-    selected: false
-    last_selected: '2025-03-31T13:45:30.923472'
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: artbook_dedup
@@ -27,14 +250,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\fliter\artbook_dedup.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   auto_cover:
-    selected: false
-    last_selected: '2025-03-31T13:45:32.979176'
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: auto_cover
@@ -51,14 +267,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\comic\uuid\auto_cover.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   auto_recycle:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: auto_recycle
@@ -74,14 +283,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\folder\auto_recycle.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   auto_repack:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: auto_repack
@@ -97,14 +299,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\folder\auto_repack.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   auto_unzip:
-    selected: false
-    last_selected: '2025-03-31T13:45:37.964265'
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: auto_unzip
@@ -120,14 +315,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\folder\auto_unzip.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   auto_uuid:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: auto_uuid
@@ -143,14 +331,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\comic\uuid\auto_uuid.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   batch_img_filter:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: batch_img_filter
@@ -167,14 +348,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\fliter\batch_img_filter.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   comic_low_width:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: comic_low_width
@@ -191,14 +365,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\comic-low-width\main.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   find_same_artist:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: find_same_artist
@@ -215,14 +382,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\comic\classify\find_same_artist.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   gallery_finder:
-    selected: false
-    last_selected: '2025-03-31T13:43:57.946257'
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: gallery_finder
@@ -238,14 +398,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\nodes\archive\gallery_finder.py" -c -o'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   img_filter:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: img_filter
@@ -261,14 +414,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\fliter\img_filter.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   janai_monitor:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: janai_monitor
@@ -285,14 +431,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\comic\upscale\janai_monitor.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   manga_archive_classifier:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: manga_archive_classifier
@@ -309,14 +448,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\comic\manga_archive_classifier.py" -c'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   merge_part_folders:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: merge_part_folders
@@ -332,14 +464,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\folder\merge_part_folders.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   no_translate_find:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: no_translate_find
@@ -355,14 +480,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\fliter\no_translate_find.py" -c'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   one_name:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: one_name
@@ -379,14 +497,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\comic\uuid\one_name.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   organize_folder:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: organize_folder
@@ -402,14 +513,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\folder\organize_folder.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   pics_convert:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: pics_convert
@@ -425,14 +529,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\pics\pics_convert.py" -c'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   psd_convert_clipboard:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: psd_convert_clipboard
@@ -449,14 +546,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\pics\psd_convert.py" --clipboard'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   recruit_cover_filter:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: recruit_cover_filter
@@ -472,14 +562,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\fliter\recruit_cover_filter.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   rename_images:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: rename_images
@@ -496,14 +579,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\folder\rename_images.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   restore_bak:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: restore_bak
@@ -520,14 +596,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\refactor\restore_bak.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   single_packer_cg:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: single_packer_cg
@@ -543,14 +612,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\nodes\archive\single_packer.py" -c -g'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   sn_fix:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: sn_fix
@@ -566,14 +628,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\refactor\sn_fix.py" -c'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   timestamps_record:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: timestamps_record
@@ -590,14 +645,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\folder\timestamps_record.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   upscale_bus:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: upscale_bus
@@ -613,14 +661,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\fliter\upscale_bus.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   video_format:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: video_format
@@ -637,14 +678,7 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\folder\video_format.py" -c'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
   width_filter:
-    selected: false
-    last_selected: null
     source_file: D:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\Taskfile.yml
     data:
       name: width_filter
@@ -660,11 +694,6 @@ tasks:
       deps: []
       cmds:
       - '"{{.PYTHON}}" "src\scripts\fliter\width_filter.py"'
-    runtime:
-      last_run: null
-      run_count: 0
-      last_status: null
-      custom_flags: {}
 user_preferences:
   default_view: aggrid
   last_filter:

@@ -1,12 +1,18 @@
 import streamlit as st
 import pandas as pd
 import os
-from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
+from ..utils.file_utils import get_task_command, copy_to_clipboard
 from ..services.task_runner import run_task_via_cmd, run_tasks_via_cmd
-from ..utils.selection_utils import get_selected_tasks, clear_all_selections, get_global_state, record_task_run
+from ..utils.selection_utils import get_selected_tasks, clear_all_selections, get_global_state, record_task_run, get_task_runtime
 
-def render_shared_preview(filtered_df, current_taskfile):
-    """渲染共享任务预览区域"""
+def render_shared_preview(filtered_df, current_taskfile, location="sidebar"):
+    """渲染共享任务预览区域
+    
+    参数:
+        filtered_df: 过滤后的任务数据框
+        current_taskfile: 当前任务文件路径
+        location: 预览位置，用于区分不同位置的按钮key，可选值为"sidebar"或"main"
+    """
     # 获取全局状态
     global_state = get_global_state()
     
@@ -28,14 +34,16 @@ def render_shared_preview(filtered_df, current_taskfile):
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        # 清除选择按钮
-        if st.button("清除选择", key="shared_clear_selection"):
+        # 清除选择按钮 - 为不同位置生成不同的key
+        clear_btn_key = f"clear_selection_{location}"
+        if st.button("清除选择", key=clear_btn_key):
             clear_all_selections()
             st.rerun()
     
     with col2:
         # 复制所有命令
-        if st.button("复制所有命令", key="shared_copy_all"):
+        copy_btn_key = f"copy_all_{location}"
+        if st.button("复制所有命令", key=copy_btn_key):
             commands = []
             for task_name in selected_tasks:
                 cmd = get_task_command(task_name, current_taskfile)
@@ -47,12 +55,14 @@ def render_shared_preview(filtered_df, current_taskfile):
     
     with col3:
         # 运行方式选择
-        run_parallel = st.checkbox("并行运行", value=st.session_state.get('run_parallel', False), key="shared_run_parallel")
+        checkbox_key = f"run_parallel_{location}"
+        run_parallel = st.checkbox("并行运行", value=st.session_state.get('run_parallel', False), key=checkbox_key)
         st.session_state.run_parallel = run_parallel
     
     with col4:
         # 运行所有选中任务
-        if st.button("运行所有任务", key="shared_run_all"):
+        run_btn_key = f"run_all_{location}"
+        if st.button("运行所有任务", key=run_btn_key):
             with st.spinner("正在启动所有选中的任务..."):
                 results = run_tasks_via_cmd(selected_tasks, current_taskfile, parallel=run_parallel)
                 # 记录所有任务的运行状态
@@ -62,11 +72,17 @@ def render_shared_preview(filtered_df, current_taskfile):
             st.success(f"已启动 {len(selected_tasks)} 个任务")
     
     # 显示选中任务的信息
-    for _, task in selected_df.iterrows():
-        render_task_preview(task, current_taskfile)
+    for idx, (_, task) in enumerate(selected_df.iterrows()):
+        render_task_preview(task, current_taskfile, f"{location}_{idx}")
 
-def render_task_preview(task, current_taskfile):
-    """渲染单个任务的预览卡片"""
+def render_task_preview(task, current_taskfile, prefix=""):
+    """渲染单个任务的预览卡片
+    
+    参数:
+        task: 任务数据
+        current_taskfile: 当前任务文件路径
+        prefix: 按钮key前缀，避免重复key
+    """
     # 创建一个带边框的容器
     with st.container():
         st.markdown("---")
@@ -79,7 +95,8 @@ def render_task_preview(task, current_taskfile):
         
         with col2:
             # 添加操作按钮
-            if st.button("运行", key=f"preview_run_{task['name']}"):
+            run_key = f"run_{prefix}_{task['name']}"
+            if st.button("运行", key=run_key):
                 with st.spinner(f"正在启动任务 {task['name']}..."):
                     result = run_task_via_cmd(task['name'], current_taskfile)
                     # 记录任务运行
@@ -87,7 +104,8 @@ def render_task_preview(task, current_taskfile):
                 st.success(f"任务 {task['name']} 已在新窗口启动")
             
             # 复制命令按钮
-            if st.button("复制命令", key=f"preview_copy_{task['name']}"):
+            copy_key = f"copy_{prefix}_{task['name']}"
+            if st.button("复制命令", key=copy_key):
                 cmd = get_task_command(task['name'], current_taskfile)
                 copy_to_clipboard(cmd)
                 st.success("命令已复制到剪贴板")
@@ -103,15 +121,13 @@ def render_task_preview(task, current_taskfile):
         cmd = get_task_command(task['name'], current_taskfile)
         st.code(cmd, language="bash")
         
-        # 在全局状态中获取任务运行信息
-        global_state = get_global_state()
-        if "tasks" in global_state and task['name'] in global_state["tasks"]:
-            runtime = global_state["tasks"][task['name']].get("runtime", {})
-            
-            # 如果有运行记录，显示运行信息
-            if runtime.get("run_count", 0) > 0:
-                st.markdown(f"**运行次数**: {runtime.get('run_count', 0)}")
-                st.markdown(f"**最后运行**: {runtime.get('last_run', 'N/A')}")
-                st.markdown(f"**最后状态**: {runtime.get('last_status', 'N/A')}")
+        # 获取任务运行时数据
+        runtime = get_task_runtime(task['name'])
+        
+        # 如果有运行记录，显示运行信息
+        if runtime.get("run_count", 0) > 0:
+            st.markdown(f"**运行次数**: {runtime.get('run_count', 0)}")
+            st.markdown(f"**最后运行**: {runtime.get('last_run', 'N/A')}")
+            st.markdown(f"**最后状态**: {runtime.get('last_status', 'N/A')}")
         
         st.markdown("---")
