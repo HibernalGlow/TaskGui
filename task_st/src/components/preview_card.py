@@ -62,7 +62,7 @@ def render_action_buttons(selected_tasks, current_taskfile, key_prefix="preview"
                         for task_name in selected_tasks:
                             record_task_run(task_name, status="started")
                     
-                    st.success(f"已启动 {len(selected_tasks)} 个任务")
+            st.success(f"已启动 {len(selected_tasks)} 个任务")
 
 def render_preview_tab_content(filtered_df, current_taskfile):
     """渲染预览页签的内容
