@@ -6,6 +6,7 @@ from datetime import datetime
 from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from ..services.task_runner import run_task_via_cmd
 from .task_card_editor import render_task_edit_form
+from ..utils.selection_utils import clear_all_selections
 
 def render_selected_tasks_section(filtered_df, current_taskfile):
     """渲染已选择任务的区域，包括清除选择按钮和卡片视图"""
@@ -21,16 +22,10 @@ def render_selected_tasks_section(filtered_df, current_taskfile):
     with col1:
         st.markdown(f"### 已选择 {len(selected_tasks)} 个任务")
     
-    # 定义清除选择的回调函数
-    def clear_selection():
-        st.session_state.selected_tasks = []
-        if 'selected' in st.session_state:
-            for task in st.session_state.selected:
-                st.session_state.selected[task] = False
-    
+    # 使用统一的清除选择函数
     with col2:
-        if st.button("清除选择", key="clear_table_selection", on_click=clear_selection):
-            pass  # 清除选择的动作由回调函数处理，避免刷新
+        if st.button("清除选择", key="clear_table_selection"):
+            clear_all_selections()
     
     with col3:
         if st.button("运行选中的任务", key="run_selected_tasks"):

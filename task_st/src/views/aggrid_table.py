@@ -9,6 +9,9 @@ except ImportError:
     HAS_AGGRID = False
     st.error("未安装st-aggrid。请使用 `pip install streamlit-aggrid` 安装")
 
+# 导入选择状态更新函数
+from ..utils.selection_utils import update_task_selection, init_selection_state, get_task_selection_state
+
 def render_aggrid_table(filtered_df, current_taskfile):
     """使用AgGrid渲染表格 - 优化勾选状态获取并增加分组功能"""
     if not HAS_AGGRID:
@@ -22,25 +25,16 @@ def render_aggrid_table(filtered_df, current_taskfile):
     filtered_df_copy['tags_str'] = filtered_df_copy['tags'].apply(lambda x: ', '.join(x) if isinstance(x, list) else '')
     filtered_df_copy['显示名称'] = filtered_df_copy.apply(lambda x: f"{x['emoji']} {x['name']}", axis=1)
     
-    # 初始化会话状态
-    if 'selected_tasks' not in st.session_state:
-        st.session_state.selected_tasks = []
-        
-    if 'selected' not in st.session_state:
-        st.session_state.selected = {task: False for task in filtered_df_copy['name']}
+    # 初始化会话状态 - 使用集中管理的选择状态
+    init_selection_state(filtered_df_copy['name'].tolist())
     
     # AgGrid分组设置状态
     if 'aggrid_group_by' not in st.session_state:
         st.session_state.aggrid_group_by = []
     
-    # 确保所有任务都有选择状态
-    for task in filtered_df_copy['name']:
-        if task not in st.session_state.selected:
-            st.session_state.selected[task] = False
-    
-    # 创建勾选列，从会话状态获取
+    # 创建勾选列，从集中状态管理获取
     filtered_df_copy['选择'] = filtered_df_copy['name'].apply(
-        lambda x: st.session_state.selected.get(x, False)
+        lambda x: get_task_selection_state(x)
     )
     
     # 准备要显示的列
@@ -263,47 +257,33 @@ def render_aggrid_table(filtered_df, current_taskfile):
         theme=theme_option,
     )
     
-    # 处理 AgGrid 触发器返回的数据
-    if enable_trigger and grid_return.get('selected_rows') and 'data' in grid_return:
-        # 这里处理通过触发器获取的数据
-        if isinstance(grid_return.get('selected_rows'), list):
-            # 从触发器返回的已选择行更新选择状态
-            selected_names = [row.get('name') for row in grid_return['selected_rows'] if row.get('name')]
-            
-            # 更新选择状态
-            has_changes = False
-            for task, is_selected in st.session_state.selected.items():
-                new_selection = task in selected_names
-                if is_selected != new_selection:
-                    st.session_state.selected[task] = new_selection
-                    has_changes = True
-            
-            # 只有当有变化时才更新选中的任务列表
-            if has_changes:
-                st.session_state.selected_tasks = [
-                    task for task, is_selected in st.session_state.selected.items() 
-                    if is_selected
-                ]
-    # 标准数据处理 (无触发器或触发器未启用时)
-    elif grid_return and 'data' in grid_return:
+    # 处理表格勾选状态变化
+    if 'data' in grid_return:
         updated_df = pd.DataFrame(grid_return['data'])
         
-        # 检查选择状态是否有变化
+        # 记录状态是否有变化
         has_changes = False
+        changed_tasks = []
         
-        # 更新选择状态
+        # 检查每个任务的选择状态是否发生变化
         for idx, row in updated_df.iterrows():
             task_name = row['name']
             if task_name and pd.notna(task_name):  # 确保任务名有效
-                # 确保布尔值类型一致
                 current_selection = bool(row['选择'])
-                if st.session_state.selected.get(task_name) != current_selection:
-                    st.session_state.selected[task_name] = current_selection
+                previous_selection = get_task_selection_state(task_name)
+                
+                # 如果状态有变化，记录下来
+                if current_selection != previous_selection:
                     has_changes = True
+                    changed_tasks.append((task_name, current_selection))
         
-        # 只有当有变化时才更新选中的任务列表
+        # 如果有状态变化，批量更新
         if has_changes:
-            st.session_state.selected_tasks = [
-                task for task, is_selected in st.session_state.selected.items() 
-                if is_selected
-            ]
+            # 更新除最后一个之外的所有任务，不刷新页面
+            for task_name, is_selected in changed_tasks[:-1]:
+                update_task_selection(task_name, is_selected, rerun=False)
+            
+            # 更新最后一个任务并刷新页面
+            if changed_tasks:
+                last_task, last_selection = changed_tasks[-1]
+                update_task_selection(last_task, last_selection, rerun=True)

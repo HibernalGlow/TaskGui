@@ -2,7 +2,7 @@ import streamlit as st
 import os
 from ..utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from ..services.task_runner import run_task_via_cmd
-from ..utils.selection_utils import update_task_selection
+from ..utils.selection_utils import update_task_selection, get_task_selection_state
 
 def render_shared_preview(filtered_df, current_taskfile):
     """

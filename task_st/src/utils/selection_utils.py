@@ -13,15 +13,17 @@ def update_task_selection(task_name, is_selected, rerun=True):
     if 'selected_tasks' not in st.session_state:
         st.session_state.selected_tasks = []
     
-    # 更新选中状态
-    if is_selected and task_name not in st.session_state.selected_tasks:
-        st.session_state.selected_tasks.append(task_name)
-    elif not is_selected and task_name in st.session_state.selected_tasks:
-        st.session_state.selected_tasks.remove(task_name)
+    if 'selected' not in st.session_state:
+        st.session_state.selected = {}
     
-    # 同步更新selected字典状态
-    if 'selected' in st.session_state:
-        st.session_state.selected[task_name] = is_selected
+    # 更新选中状态字典
+    st.session_state.selected[task_name] = is_selected
+    
+    # 根据字典重建选中任务列表
+    st.session_state.selected_tasks = [
+        task for task, is_selected in st.session_state.selected.items() 
+        if is_selected
+    ]
     
     # 根据需要重新运行应用
     if rerun:
@@ -36,21 +38,61 @@ def toggle_task_selection(task_name, rerun=True):
         rerun: 是否执行rerun刷新页面
     """
     # 初始化会话状态
+    if 'selected' not in st.session_state:
+        st.session_state.selected = {}
+    
+    # 获取当前状态
+    current_state = st.session_state.selected.get(task_name, False)
+    
+    # 更新为相反状态
+    update_task_selection(task_name, not current_state, rerun)
+
+def get_task_selection_state(task_name):
+    """
+    获取任务的选中状态
+    
+    参数:
+        task_name: 任务名称
+    返回:
+        bool: 任务是否被选中
+    """
+    if 'selected' not in st.session_state:
+        st.session_state.selected = {}
+    
+    return st.session_state.selected.get(task_name, False)
+
+def init_selection_state(task_names):
+    """
+    初始化任务选择状态
+    
+    参数:
+        task_names: 所有任务名称列表
+    """
+    # 确保会话状态初始化
+    if 'selected' not in st.session_state:
+        st.session_state.selected = {}
+        
     if 'selected_tasks' not in st.session_state:
         st.session_state.selected_tasks = []
     
-    # 切换选中状态
-    is_currently_selected = task_name in st.session_state.selected_tasks
+    # 确保所有任务都有选择状态
+    for task in task_names:
+        if task not in st.session_state.selected:
+            st.session_state.selected[task] = False
+
+def clear_all_selections(rerun=True):
+    """
+    清除所有选中状态
     
-    if is_currently_selected:
-        st.session_state.selected_tasks.remove(task_name)
-    else:
-        st.session_state.selected_tasks.append(task_name)
-    
-    # 同步更新selected字典状态
+    参数:
+        rerun: 是否执行rerun刷新页面
+    """
     if 'selected' in st.session_state:
-        st.session_state.selected[task_name] = not is_currently_selected
+        for task in st.session_state.selected:
+            st.session_state.selected[task] = False
     
-    # 根据需要重新运行应用
+    if 'selected_tasks' in st.session_state:
+        st.session_state.selected_tasks = []
+    
     if rerun:
         st.rerun()
