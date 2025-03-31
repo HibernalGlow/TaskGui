@@ -6,6 +6,12 @@ from src.services.task_runner import run_task_via_cmd, run_multiple_tasks as run
 from src.utils.selection_utils import get_selected_tasks, clear_all_selections, get_global_state, record_task_run, get_task_runtime
 from src.views.card.task_card import render_task_card
 
+try:
+    from streamlit_pills import pills
+    PILLS_AVAILABLE = True
+except ImportError:
+    PILLS_AVAILABLE = False
+
 def render_action_buttons(selected_tasks, current_taskfile, key_prefix="preview", is_sidebar=False):
     """渲染任务操作按钮卡片
     
@@ -58,6 +64,57 @@ def render_action_buttons(selected_tasks, current_taskfile, key_prefix="preview"
                     
                     st.success(f"已启动 {len(selected_tasks)} 个任务")
 
+def render_preview_tab_content(filtered_df, current_taskfile):
+    """渲染预览页签的内容
+    
+    参数:
+        filtered_df: 过滤后的任务数据框
+        current_taskfile: 当前任务文件路径
+    """
+    # 从全局状态获取选中的任务
+    selected_tasks = get_selected_tasks()
+    
+    # 如果没有选中任务，显示提示信息
+    if not selected_tasks:
+        st.info("没有选中的任务。请从表格中选择要操作的任务。")
+        return
+    
+    # 显示选中的任务数量
+    st.markdown(f"**已选择 {len(selected_tasks)} 个任务**")
+    
+    # 获取选中任务的详细信息
+    selected_df = filtered_df[filtered_df['name'].isin(selected_tasks)].copy()
+    
+    # 渲染操作按钮卡片
+    render_action_buttons(selected_tasks, current_taskfile)
+    
+    # 创建任务页签列表
+    task_names = selected_df['name'].tolist()
+    task_emojis = selected_df['emoji'].tolist()
+    
+    # 如果有安装pills组件，使用pills显示任务选择
+    if PILLS_AVAILABLE and task_names:
+        selected_task = pills("选择任务", task_names, task_emojis, key="preview_pills")
+        # 找到选中的任务数据
+        task = selected_df[selected_df['name'] == selected_task].iloc[0]
+        # 渲染选中的任务卡片
+        st.markdown("### 任务详情")
+        render_task_card(
+            task=task, 
+            current_taskfile=current_taskfile, 
+            idx=0, 
+            view_type="preview", 
+            show_checkbox=False
+        )
+    # 否则使用标准的tabs组件
+    elif task_names:
+        tabs = st.tabs([f"{task['emoji']} {task['name']}" for _, task in selected_df.iterrows()])
+        
+        # 在每个页签中渲染对应的任务卡片
+        for idx, ((_, task), tab) in enumerate(zip(selected_df.iterrows(), tabs)):
+            with tab:
+                render_task_preview_in_tab(task, current_taskfile, idx)
+
 def render_shared_preview(filtered_df, current_taskfile):
     """渲染共享任务预览区域
     
@@ -76,30 +133,10 @@ def render_shared_preview(filtered_df, current_taskfile):
         st.info("没有选中的任务。请从表格中选择要操作的任务。")
         return
     
-    # 显示选中的任务数量
-    st.markdown(f"**已选择 {len(selected_tasks)} 个任务**")
-    
-    # 获取选中任务的详细信息
-    selected_df = filtered_df[filtered_df['name'].isin(selected_tasks)].copy()
-    
-    # 渲染操作按钮卡片
-    render_action_buttons(selected_tasks, current_taskfile)
-    
-    # 在侧边栏中也渲染操作按钮卡片
+    # 在侧边栏中渲染操作按钮卡片
     render_action_buttons(selected_tasks, current_taskfile, key_prefix="sidebar", is_sidebar=True)
     
-    # 创建任务页签列表
-    task_names = selected_df['name'].tolist()
-    
-    # 使用tabs来并列展示任务卡片
-    if task_names:
-        tabs = st.tabs([f"{task['emoji']} {task['name']}" for _, task in selected_df.iterrows()])
-        
-        # 在每个页签中渲染对应的任务卡片
-        for idx, ((_, task), tab) in enumerate(zip(selected_df.iterrows(), tabs)):
-            with tab:
-                render_task_preview_in_tab(task, current_taskfile, idx)
-
+    # 不再在主界面直接显示预览内容，而是通过外部的Tab系统显示
 
 def render_task_preview_in_tab(task, current_taskfile, idx=0):
     """在页签中渲染单个任务的预览卡片

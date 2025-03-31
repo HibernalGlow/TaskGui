@@ -221,18 +221,18 @@ def main():
             render_shared_preview(filtered_df, default_taskfile)
         
         # 使用字典存储页签标题和索引的映射，便于动态管理
-        tab_names = ["📊 表格视图", "🗂️ 卡片视图", "📈 仪表盘", "⚙️ 设置", "🔍 状态管理"]
+        tab_names = ["📊 表格", "🗂️ 卡片", "📈 仪表盘", "⚙️ 设置", "🔍 状态"]
         tab_indices = {name: idx for idx, name in enumerate(tab_names)}
         
         # 创建页签
         tabs = st.tabs(tab_names)
         
         # 表格视图
-        with tabs[tab_indices["📊 表格视图"]]:
+        with tabs[tab_indices["📊 表格"]]:
             render_table_view(filtered_df, default_taskfile, show_sidebar=False)  # 关闭右侧预览
         
         # 卡片视图
-        with tabs[tab_indices["🗂️ 卡片视图"]]:
+        with tabs[tab_indices["🗂️ 卡片"]]:
             render_card_view(filtered_df, default_taskfile)
         
         # 仪表盘页签
@@ -265,7 +265,7 @@ def main():
             st.radio("默认运行模式", options=["顺序执行", "并行执行"], index=0, disabled=True)
         
         # 状态管理页签
-        with tabs[tab_indices["🔍 状态管理"]]:
+        with tabs[tab_indices["🔍 状态"]]:
             render_state_manager()
             
     except Exception as e:
