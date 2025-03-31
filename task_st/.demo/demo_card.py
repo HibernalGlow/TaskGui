@@ -254,7 +254,8 @@ with tab2:
     - 更复杂的实现
     """)
     
-    if 'streamlit_elements' in globals():
+    # 修改这里，从检查模块改为检查具体的导入类
+    if 'elements' in globals() and 'mui' in globals():
         # 使用 streamlit-elements 创建 Material UI 卡片
         with elements("mui_cards"):
             # 创建布局容器
@@ -314,7 +315,7 @@ with tab2:
                                 mui.Button("查看", size="small")
                                 mui.Button("复制", size="small")
     else:
-        st.warning("streamlit-elements 未安装，无法显示 Material UI 卡片")
+        st.warning("streamlit-elements 未安装或导入有误，无法显示 Material UI 卡片")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -331,7 +332,8 @@ with tab3:
     - 适合大量数据
     """)
     
-    if 'st_aggrid' in globals():
+    # 修改这里，从检查模块改为检查具体的导入类
+    if 'AgGrid' in globals() and 'GridOptionsBuilder' in globals():
         # 定义卡片渲染器JavaScript代码
         card_renderer = JsCode("""
         class CardRenderer {
@@ -497,7 +499,7 @@ with tab3:
             height=800
         )
     else:
-        st.warning("streamlit-aggrid 未安装，无法显示卡片式表格")
+        st.warning("streamlit-aggrid 未安装或导入有误，无法显示卡片式表格")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -549,5 +551,3 @@ with tab4:
                 with btn_cols[2]:
                     if st.button("复制", key=f"custom_copy_{task['id']}"):
                         st.success(f"已复制 {task['name']} 的命令")
-                
-                st.markdown("# filepath: d:\1VSCODE\GlowToolBox\src\scripts\task\task_gui\task_st\card_components_demo.py")
