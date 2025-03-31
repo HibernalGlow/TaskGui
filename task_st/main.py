@@ -16,6 +16,7 @@ from src.services.task_runner import run_task_via_cmd, run_multiple_tasks
 from src.components.styles import apply_custom_styles
 from src.components.preview_card import render_action_buttons
 from src.manage.state_manager import render_state_manager
+from src.tabs.dashboard import render_dashboard
 from src.utils.selection_utils import (
     get_global_state, update_global_state, 
     export_yaml_state as export_global_state_yaml, 
@@ -257,20 +258,7 @@ def main():
         
         # 仪表盘页签
         with tabs[tab_indices["📈 仪表盘"]]:
-            st.markdown("## 📊 任务仪表盘")
-            st.info("仪表盘功能正在开发中...")
-            
-            # 占位内容
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("总任务数", len(tasks_df))
-            with col2:
-                st.metric("选中任务", len(st.session_state.selected_tasks))
-            
-            # 示例图表
-            st.subheader("标签分布")
-            st.write("此处将显示任务标签的分布统计")
-        
+            render_dashboard()
         # 设置页签
         with tabs[tab_indices["⚙️ 设置"]]:
             st.markdown("## ⚙️ 系统设置")
