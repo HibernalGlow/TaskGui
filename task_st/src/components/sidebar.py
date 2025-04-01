@@ -109,7 +109,7 @@ def render_sidebar(current_taskfile):
         # 确保tags_widget_key存在，用于控制st_tags组件的刷新
         if 'tags_widget_key' not in st.session_state:
             st.session_state.tags_widget_key = 0
-            
+        
         # 显示收藏标签作为快速过滤器按钮
         if st.session_state.favorite_tags:
             st.markdown("#### 常用标签")
@@ -203,7 +203,7 @@ def render_sidebar(current_taskfile):
             with col2:
                 if st.button("❌ 退出", help="完全关闭任务管理器"):
                     exit_application()
-
+                
         # 添加背景设置部分
         with st.expander("🎨 背景设置"):
             # 初始化背景设置

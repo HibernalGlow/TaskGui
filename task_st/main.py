@@ -215,17 +215,12 @@ def main():
         # 过滤任务
         filtered_df = filter_tasks(tasks_df)
         
-        # 共享预览区域 - 放在页签上方，仅显示操作按钮
-        preview_expander = st.expander("📌 选中任务操作", expanded=True)
-        with preview_expander:
-            # 从全局状态获取选中的任务
-            selected_tasks = get_selected_tasks()
-            st.markdown(f"### **已选择 {len(selected_tasks)} 个任务**")
-            # if selected_tasks:
-            render_action_buttons(selected_tasks, default_taskfile, key_prefix="main_preview")
-            render_action_buttons(selected_tasks, default_taskfile, key_prefix="sidebar", is_sidebar=True)
-            # else:
-            #     st.info("没有选中的任务。请从表格中选择要操作的任务。")
+        # 从全局状态获取选中的任务
+        selected_tasks = get_selected_tasks()
+        
+        # 渲染操作按钮（现在已经包含expander）
+        render_action_buttons(selected_tasks, default_taskfile, key_prefix="main_preview")
+        render_action_buttons(selected_tasks, default_taskfile, key_prefix="sidebar", is_sidebar=True)
         
         # 使用字典存储页签标题和索引的映射，便于动态管理
         tab_names = ["📊 表格", "🗂️ 卡片", "🔍 预览", "📈 仪表盘", "⚙️ 设置", "🔧 状态"]
