@@ -206,8 +206,16 @@ def main():
         # 获取所有标签
         all_tags = get_all_tags(tasks_df)
         
-        # 渲染侧边栏
-        render_sidebar(default_taskfile)
+        # 从全局状态获取选中的任务
+        selected_tasks = get_selected_tasks()
+        
+        # 侧边栏内容
+        with st.sidebar:
+            # 在侧边栏顶部渲染操作按钮
+            render_action_buttons(selected_tasks, default_taskfile, key_prefix="sidebar", is_sidebar=True)
+            
+            # 渲染侧边栏
+            render_sidebar(default_taskfile)
         
         # 渲染标签过滤器 - 代码已移至侧边栏，仅保留调用以保持兼容性
         render_tag_filters(all_tags)
@@ -215,12 +223,8 @@ def main():
         # 过滤任务
         filtered_df = filter_tasks(tasks_df)
         
-        # 从全局状态获取选中的任务
-        selected_tasks = get_selected_tasks()
-        
-        # 渲染操作按钮（现在已经包含expander）
+        # 渲染主界面操作按钮
         render_action_buttons(selected_tasks, default_taskfile, key_prefix="main_preview")
-        render_action_buttons(selected_tasks, default_taskfile, key_prefix="sidebar", is_sidebar=True)
         
         # 使用字典存储页签标题和索引的映射，便于动态管理
         tab_names = ["📊 表格", "🗂️ 卡片", "🔍 预览", "📈 仪表盘", "⚙️ 设置", "🔧 状态"]

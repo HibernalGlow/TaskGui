@@ -86,247 +86,247 @@ def set_sidebar_background(image_path):
 
 def render_sidebar(current_taskfile):
     """渲染侧边栏控件"""
-    with st.sidebar:
-        st.title("任务管理器")
+    # 移除with st.sidebar:包装，直接渲染侧边栏内容
+    # st.title("任务管理器")
+    
+    # 添加任务过滤
+    st.markdown("## 过滤任务")
+    
+    # 按名称搜索
+    search_term = st.text_input("搜索任务名称:", key="search_task")
+    
+    # 获取所有标签
+    all_tags = get_all_tags(current_taskfile)
+    
+    # 初始化常用标签和筛选状态
+    if 'favorite_tags' not in st.session_state:
+        st.session_state.favorite_tags = []
         
-        # 添加任务过滤
-        st.markdown("## 过滤任务")
-        
-        # 按名称搜索
-        search_term = st.text_input("搜索任务名称:", key="search_task")
-        
-        # 获取所有标签
-        all_tags = get_all_tags(current_taskfile)
-        
-        # 初始化常用标签和筛选状态
-        if 'favorite_tags' not in st.session_state:
-            st.session_state.favorite_tags = []
-            
-        # 确保tags_filter存在于session_state中
-        if 'tags_filter' not in st.session_state:
-            st.session_state.tags_filter = []
-        
-        # 确保tags_widget_key存在，用于控制st_tags组件的刷新
-        if 'tags_widget_key' not in st.session_state:
-            st.session_state.tags_widget_key = 0
-        
-        # 将常用标签和标签筛选放入同一个expander中
-        with st.expander("🏷️ 标签筛选", expanded=True):
-            # 显示收藏标签作为快速过滤器按钮
-            if st.session_state.favorite_tags:
-                st.markdown("#### 常用标签")
-                # 使用更紧凑的布局显示常用标签
-                cols_per_row = 2
-                for i in range(0, len(st.session_state.favorite_tags), cols_per_row):
-                    fav_tag_cols = st.columns(cols_per_row)
-                    for j in range(cols_per_row):
-                        if i + j < len(st.session_state.favorite_tags):
-                            tag = sorted(st.session_state.favorite_tags)[i + j]
-                            with fav_tag_cols[j]:
-                                # 创建按钮，点击时添加或移除该标签的过滤
-                                is_active = tag in st.session_state.tags_filter
-                                btn_label = f"✓ #{tag}" if is_active else f"#{tag}"
-                                btn_type = "primary" if is_active else "secondary"
-                                
-                                if st.button(btn_label, key=f"quick_{tag}", type=btn_type):
-                                    # 切换标签的状态
-                                    if tag in st.session_state.tags_filter:
-                                        # 移除标签
-                                        st.session_state.tags_filter.remove(tag)
-                                    else:
-                                        # 添加标签
-                                        st.session_state.tags_filter.append(tag)
-                                    # 增加key值以强制刷新st_tags组件
-                                    st.session_state.tags_widget_key += 1
-                                    st.rerun()
-            
-            # 标签过滤器部分
-            # st.markdown("### 从列表选择标签")
-            
-            # 添加一个下拉框，用于快速选择标签
-            if all_tags:
-                tag_dropdown = st.selectbox(
-                    "从列表选择标签:",
-                    options=[""] + sorted(all_tags),  # 添加空选项作为默认值
-                    index=0,  # 默认选择第一个（空选项）
-                    key="tag_dropdown"
-                )
-                
-                # 如果用户从下拉框选择了一个非空标签，添加到标签过滤器中
-                if tag_dropdown and tag_dropdown not in st.session_state.tags_filter:
-                    st.session_state.tags_filter.append(tag_dropdown)
-                    # 增加key值以强制刷新st_tags组件
-                    st.session_state.tags_widget_key += 1
-                    st.rerun()
-                    
-            # 使用分隔线和标题替代嵌套的expander
-            # st.markdown("---")
-            st.markdown("#### 管理常用标签")
-            
-            # 添加一个折叠按钮来模拟expander功能
-            if 'show_tag_manager' not in st.session_state:
-                st.session_state.show_tag_manager = False
-                
-            show_manager = st.checkbox("显示/隐藏标签管理", value=st.session_state.show_tag_manager, key="show_tag_manager_toggle")
-            st.session_state.show_tag_manager = show_manager
-            
-            # 只有当选择显示时才显示标签管理内容
-            if st.session_state.show_tag_manager:
-                # 初始化标记，用于检测常用标签是否有变化
-                tags_changed = False
-                
-                # 创建一个多列布局，用于显示所有标签的checkbox
-                if all_tags:
-                    all_tag_cols = st.columns(3)
-                    for i, tag in enumerate(sorted(all_tags)):
-                        with all_tag_cols[i % 3]:
-                            # 创建checkbox来添加/移除收藏标签
-                            was_selected = tag in st.session_state.favorite_tags
-                            is_selected = st.checkbox(tag, value=was_selected, key=f"fav_{tag}")
+    # 确保tags_filter存在于session_state中
+    if 'tags_filter' not in st.session_state:
+        st.session_state.tags_filter = []
+    
+    # 确保tags_widget_key存在，用于控制st_tags组件的刷新
+    if 'tags_widget_key' not in st.session_state:
+        st.session_state.tags_widget_key = 0
+    
+    # 将常用标签和标签筛选放入同一个expander中
+    with st.expander("🏷️ 标签筛选", expanded=True):
+        # 显示收藏标签作为快速过滤器按钮
+        if st.session_state.favorite_tags:
+            st.markdown("#### 常用标签")
+            # 使用更紧凑的布局显示常用标签
+            cols_per_row = 2
+            for i in range(0, len(st.session_state.favorite_tags), cols_per_row):
+                fav_tag_cols = st.columns(cols_per_row)
+                for j in range(cols_per_row):
+                    if i + j < len(st.session_state.favorite_tags):
+                        tag = sorted(st.session_state.favorite_tags)[i + j]
+                        with fav_tag_cols[j]:
+                            # 创建按钮，点击时添加或移除该标签的过滤
+                            is_active = tag in st.session_state.tags_filter
+                            btn_label = f"✓ #{tag}" if is_active else f"#{tag}"
+                            btn_type = "primary" if is_active else "secondary"
                             
-                            # 检测是否发生变化
-                            if was_selected != is_selected:
-                                tags_changed = True
-                                
-                                if is_selected and tag not in st.session_state.favorite_tags:
-                                    st.session_state.favorite_tags.append(tag)
-                                elif not is_selected and tag in st.session_state.favorite_tags:
-                                    st.session_state.favorite_tags.remove(tag)
-                else:
-                    st.info("没有找到标签")
-                
-                # 如果常用标签有变化，保存到本地
-                if tags_changed:
-                    save_favorite_tags(st.session_state.favorite_tags)
-                    st.success("常用标签已保存")
+                            if st.button(btn_label, key=f"quick_{tag}", type=btn_type):
+                                # 切换标签的状态
+                                if tag in st.session_state.tags_filter:
+                                    # 移除标签
+                                    st.session_state.tags_filter.remove(tag)
+                                else:
+                                    # 添加标签
+                                    st.session_state.tags_filter.append(tag)
+                                # 增加key值以强制刷新st_tags组件
+                                st.session_state.tags_widget_key += 1
+                                st.rerun()
         
-        # 显示已选任务数量
-        # if 'selected_tasks' in st.session_state and st.session_state.selected_tasks:
-        #     st.markdown(f"## 已选择 {len(st.session_state.selected_tasks)} 个任务")
+        # 标签过滤器部分
+        # st.markdown("### 从列表选择标签")
         
-        # 添加系统操作部分
-        with st.expander("系统"):
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("🔄 重启", help="重新启动任务管理器"):
-                    restart_application()
+        # 添加一个下拉框，用于快速选择标签
+        if all_tags:
+            tag_dropdown = st.selectbox(
+                "从列表选择标签:",
+                options=[""] + sorted(all_tags),  # 添加空选项作为默认值
+                index=0,  # 默认选择第一个（空选项）
+                key="tag_dropdown"
+            )
             
-            with col2:
-                if st.button("❌ 退出", help="完全关闭任务管理器"):
-                    exit_application()
-                
-        # 添加背景设置部分
-        with st.expander("🎨 背景设置"):
-            # 初始化背景设置
-            if 'background_settings' not in st.session_state:
-                st.session_state.background_settings = load_background_settings()
+            # 如果用户从下拉框选择了一个非空标签，添加到标签过滤器中
+            if tag_dropdown and tag_dropdown not in st.session_state.tags_filter:
+                st.session_state.tags_filter.append(tag_dropdown)
+                # 增加key值以强制刷新st_tags组件
+                st.session_state.tags_widget_key += 1
+                st.rerun()
             
-            # 拆分为主背景和侧边栏背景设置
-            tabs = st.tabs(["主界面背景", "侧边栏背景"])
+        # 使用分隔线和标题替代嵌套的expander
+        # st.markdown("---")
+        st.markdown("#### 管理常用标签")
+        
+        # 添加一个折叠按钮来模拟expander功能
+        if 'show_tag_manager' not in st.session_state:
+            st.session_state.show_tag_manager = False
             
-            with tabs[0]:  # 主界面背景设置
-                # 启用/禁用背景
-                st.session_state.background_settings['enabled'] = st.checkbox(
-                    "启用背景图片",
-                    value=st.session_state.background_settings.get('enabled', False),
-                    key="main_bg_enabled"
+        show_manager = st.checkbox("显示/隐藏标签管理", value=st.session_state.show_tag_manager, key="show_tag_manager_toggle")
+        st.session_state.show_tag_manager = show_manager
+        
+        # 只有当选择显示时才显示标签管理内容
+        if st.session_state.show_tag_manager:
+            # 初始化标记，用于检测常用标签是否有变化
+            tags_changed = False
+            
+            # 创建一个多列布局，用于显示所有标签的checkbox
+            if all_tags:
+                all_tag_cols = st.columns(3)
+                for i, tag in enumerate(sorted(all_tags)):
+                    with all_tag_cols[i % 3]:
+                        # 创建checkbox来添加/移除收藏标签
+                        was_selected = tag in st.session_state.favorite_tags
+                        is_selected = st.checkbox(tag, value=was_selected, key=f"fav_{tag}")
+                        
+                        # 检测是否发生变化
+                        if was_selected != is_selected:
+                            tags_changed = True
+                            
+                            if is_selected and tag not in st.session_state.favorite_tags:
+                                st.session_state.favorite_tags.append(tag)
+                            elif not is_selected and tag in st.session_state.favorite_tags:
+                                st.session_state.favorite_tags.remove(tag)
+            else:
+                st.info("没有找到标签")
+            
+            # 如果常用标签有变化，保存到本地
+            if tags_changed:
+                save_favorite_tags(st.session_state.favorite_tags)
+                st.success("常用标签已保存")
+    
+    # 显示已选任务数量
+    # if 'selected_tasks' in st.session_state and st.session_state.selected_tasks:
+    #     st.markdown(f"## 已选择 {len(st.session_state.selected_tasks)} 个任务")
+    
+    # 添加系统操作部分
+    with st.expander("系统"):
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔄 重启", help="重新启动任务管理器"):
+                restart_application()
+        
+        with col2:
+            if st.button("❌ 退出", help="完全关闭任务管理器"):
+                exit_application()
+            
+    # 添加背景设置部分
+    with st.expander("🎨 背景设置"):
+        # 初始化背景设置
+        if 'background_settings' not in st.session_state:
+            st.session_state.background_settings = load_background_settings()
+        
+        # 拆分为主背景和侧边栏背景设置
+        tabs = st.tabs(["主界面背景", "侧边栏背景"])
+        
+        with tabs[0]:  # 主界面背景设置
+            # 启用/禁用背景
+            st.session_state.background_settings['enabled'] = st.checkbox(
+                "启用背景图片",
+                value=st.session_state.background_settings.get('enabled', False),
+                key="main_bg_enabled"
+            )
+            
+            if st.session_state.background_settings['enabled']:
+                # 选择背景图片
+                uploaded_file = st.file_uploader(
+                    "选择背景图片",
+                    type=['png', 'jpg', 'jpeg', 'gif'],
+                    key="main_background_image"
                 )
                 
-                if st.session_state.background_settings['enabled']:
-                    # 选择背景图片
-                    uploaded_file = st.file_uploader(
-                        "选择背景图片",
-                        type=['png', 'jpg', 'jpeg', 'gif'],
-                        key="main_background_image"
-                    )
-                    
-                    if uploaded_file is not None:
-                        # 保存图片到临时目录
-                        import tempfile
-                        temp_dir = tempfile.gettempdir()
-                        temp_path = os.path.join(temp_dir, uploaded_file.name)
-                        with open(temp_path, "wb") as f:
-                            f.write(uploaded_file.getbuffer())
-                        st.session_state.background_settings['image_path'] = temp_path
-                        # 存储base64编码的图片
-                        st.session_state.background_settings['image_base64'] = get_base64_encoded_image(temp_path)
-                        st.session_state.background_settings['image_format'] = uploaded_file.name.split('.')[-1].lower()
-                    
-                    # 透明度调节
-                    st.session_state.background_settings['opacity'] = st.slider(
-                        "背景透明度",
-                        min_value=0.0,
-                        max_value=1.0,
-                        value=st.session_state.background_settings.get('opacity', 0.5),
-                        step=0.1,
-                        key="main_bg_opacity"
-                    )
-                    
-                    # 模糊度调节
-                    st.session_state.background_settings['blur'] = st.slider(
-                        "背景模糊度",
-                        min_value=0,
-                        max_value=20,
-                        value=st.session_state.background_settings.get('blur', 0),
-                        step=1,
-                        key="main_bg_blur"
-                    )
-                    
-                    # 应用背景设置
-                    if st.button("应用主界面背景", key="apply_main_bg"):
-                        if 'image_path' in st.session_state.background_settings and os.path.exists(st.session_state.background_settings['image_path']):
-                            # 应用背景
-                            success = set_background_image(
-                                st.session_state.background_settings['image_path'],
-                                st.session_state.background_settings['opacity'],
-                                st.session_state.background_settings['blur']
-                            )
-                            if success:
-                                # 保存设置
-                                save_background_settings(st.session_state.background_settings)
-                                st.success("主界面背景设置已应用")
-                        else:
-                            st.error("请先选择有效的背景图片")
-            
-            with tabs[1]:  # 侧边栏背景设置
-                # 启用/禁用侧边栏背景
-                st.session_state.background_settings['sidebar_enabled'] = st.checkbox(
-                    "启用侧边栏背景",
-                    value=st.session_state.background_settings.get('sidebar_enabled', False),
-                    key="sidebar_bg_enabled"
+                if uploaded_file is not None:
+                    # 保存图片到临时目录
+                    import tempfile
+                    temp_dir = tempfile.gettempdir()
+                    temp_path = os.path.join(temp_dir, uploaded_file.name)
+                    with open(temp_path, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+                    st.session_state.background_settings['image_path'] = temp_path
+                    # 存储base64编码的图片
+                    st.session_state.background_settings['image_base64'] = get_base64_encoded_image(temp_path)
+                    st.session_state.background_settings['image_format'] = uploaded_file.name.split('.')[-1].lower()
+                
+                # 透明度调节
+                st.session_state.background_settings['opacity'] = st.slider(
+                    "背景透明度",
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=st.session_state.background_settings.get('opacity', 0.5),
+                    step=0.1,
+                    key="main_bg_opacity"
                 )
                 
-                if st.session_state.background_settings['sidebar_enabled']:
-                    # 选择侧边栏背景图片
-                    sidebar_uploaded_file = st.file_uploader(
-                        "选择侧边栏背景图片",
-                        type=['png', 'jpg', 'jpeg', 'gif'],
-                        key="sidebar_background_image"
-                    )
-                    
-                    if sidebar_uploaded_file is not None:
-                        # 保存图片到临时目录
-                        import tempfile
-                        temp_dir = tempfile.gettempdir()
-                        sidebar_temp_path = os.path.join(temp_dir, sidebar_uploaded_file.name)
-                        with open(sidebar_temp_path, "wb") as f:
-                            f.write(sidebar_uploaded_file.getbuffer())
-                        st.session_state.background_settings['sidebar_image_path'] = sidebar_temp_path
-                        # 存储base64编码的图片
-                        st.session_state.background_settings['sidebar_image_base64'] = get_base64_encoded_image(sidebar_temp_path)
-                        st.session_state.background_settings['sidebar_image_format'] = sidebar_uploaded_file.name.split('.')[-1].lower()
-                    
-                    # 应用侧边栏背景设置
-                    if st.button("应用侧边栏背景", key="apply_sidebar_bg"):
-                        if 'sidebar_image_path' in st.session_state.background_settings and os.path.exists(st.session_state.background_settings['sidebar_image_path']):
-                            # 应用侧边栏背景
-                            success = set_sidebar_background(st.session_state.background_settings['sidebar_image_path'])
-                            if success:
-                                # 保存设置
-                                save_background_settings(st.session_state.background_settings)
-                                st.success("侧边栏背景设置已应用")
-                        else:
-                            st.error("请先选择有效的侧边栏背景图片")
+                # 模糊度调节
+                st.session_state.background_settings['blur'] = st.slider(
+                    "背景模糊度",
+                    min_value=0,
+                    max_value=20,
+                    value=st.session_state.background_settings.get('blur', 0),
+                    step=1,
+                    key="main_bg_blur"
+                )
+                
+                # 应用背景设置
+                if st.button("应用主界面背景", key="apply_main_bg"):
+                    if 'image_path' in st.session_state.background_settings and os.path.exists(st.session_state.background_settings['image_path']):
+                        # 应用背景
+                        success = set_background_image(
+                            st.session_state.background_settings['image_path'],
+                            st.session_state.background_settings['opacity'],
+                            st.session_state.background_settings['blur']
+                        )
+                        if success:
+                            # 保存设置
+                            save_background_settings(st.session_state.background_settings)
+                            st.success("主界面背景设置已应用")
+                    else:
+                        st.error("请先选择有效的背景图片")
+        
+        with tabs[1]:  # 侧边栏背景设置
+            # 启用/禁用侧边栏背景
+            st.session_state.background_settings['sidebar_enabled'] = st.checkbox(
+                "启用侧边栏背景",
+                value=st.session_state.background_settings.get('sidebar_enabled', False),
+                key="sidebar_bg_enabled"
+            )
+            
+            if st.session_state.background_settings['sidebar_enabled']:
+                # 选择侧边栏背景图片
+                sidebar_uploaded_file = st.file_uploader(
+                    "选择侧边栏背景图片",
+                    type=['png', 'jpg', 'jpeg', 'gif'],
+                    key="sidebar_background_image"
+                )
+                
+                if sidebar_uploaded_file is not None:
+                    # 保存图片到临时目录
+                    import tempfile
+                    temp_dir = tempfile.gettempdir()
+                    sidebar_temp_path = os.path.join(temp_dir, sidebar_uploaded_file.name)
+                    with open(sidebar_temp_path, "wb") as f:
+                        f.write(sidebar_uploaded_file.getbuffer())
+                    st.session_state.background_settings['sidebar_image_path'] = sidebar_temp_path
+                    # 存储base64编码的图片
+                    st.session_state.background_settings['sidebar_image_base64'] = get_base64_encoded_image(sidebar_temp_path)
+                    st.session_state.background_settings['sidebar_image_format'] = sidebar_uploaded_file.name.split('.')[-1].lower()
+                
+                # 应用侧边栏背景设置
+                if st.button("应用侧边栏背景", key="apply_sidebar_bg"):
+                    if 'sidebar_image_path' in st.session_state.background_settings and os.path.exists(st.session_state.background_settings['sidebar_image_path']):
+                        # 应用侧边栏背景
+                        success = set_sidebar_background(st.session_state.background_settings['sidebar_image_path'])
+                        if success:
+                            # 保存设置
+                            save_background_settings(st.session_state.background_settings)
+                            st.success("侧边栏背景设置已应用")
+                    else:
+                        st.error("请先选择有效的侧边栏背景图片")
             
             # 重置背景设置
             if st.button("重置所有背景设置", key="reset_all_bg"):

@@ -19,9 +19,10 @@ def render_action_buttons(selected_tasks, current_taskfile, key_prefix="preview"
         selected_tasks: 选中的任务列表
         current_taskfile: 当前任务文件路径
         key_prefix: 按钮key前缀，用于区分不同位置的按钮
-        is_sidebar: 是否在侧边栏中渲染
+        is_sidebar: 是否在侧边栏中渲染（已由调用函数处理）
     """
-    container = st.sidebar.container() if is_sidebar else st.container()
+    # 使用当前上下文，不再创建新的sidebar.container
+    container = st.container()
     
     with container:
         # 创建expander，在侧边栏或主界面中显示
