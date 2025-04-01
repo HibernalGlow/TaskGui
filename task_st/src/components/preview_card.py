@@ -25,24 +25,24 @@ def render_action_buttons(selected_tasks, current_taskfile, key_prefix="preview"
     container = st.container()
     
     with container:
-        # 创建expander，在侧边栏或主界面中显示
-        with st.expander("📌 选中任务操作", expanded=True):
-            # 显示已选择的任务数量
-            st.markdown(f"### **已选择 {len(selected_tasks)} 个任务**")
+        # 创建expander，在侧边栏或主界面中显示，使用更简洁的标题
+        with st.expander("📌 任务操作", expanded=True):
+            # 显示已选择的任务数量，更简洁的显示
+            # st.markdown(f"### **选中{len(selected_tasks)}个任务**")
             
             with st.container():
                 # 使用响应式布局，在宽屏幕上单行显示，在窄屏上自适应折行
                 cols = st.columns([1, 1, 1, 1])
                 
                 with cols[0]:
-                    # 清除选择按钮
-                    if st.button("清除选择", key=f"{key_prefix}_clear_selection", use_container_width=True):
+                    # 清除选择按钮，使用emoji代替文本
+                    if st.button("🗑️", key=f"{key_prefix}_clear_selection", use_container_width=True, help="清除选择"):
                         clear_all_selections()
                         st.rerun()
                 
                 with cols[1]:
-                    # 复制所有命令
-                    if st.button("复制所有命令", key=f"{key_prefix}_copy_all", use_container_width=True):
+                    # 复制所有命令，使用emoji代替文本
+                    if st.button("📋", key=f"{key_prefix}_copy_all", use_container_width=True, help="复制所有命令"):
                         commands = []
                         for task_name in selected_tasks:
                             cmd = get_task_command(task_name, current_taskfile)
@@ -50,23 +50,26 @@ def render_action_buttons(selected_tasks, current_taskfile, key_prefix="preview"
                         
                         all_commands = "\n".join(commands)
                         copy_to_clipboard(all_commands)
-                        st.success("所有命令已复制到剪贴板")
+                        st.success("已复制")
                 
                 with cols[2]:
-                    # 运行方式选择
-                    run_parallel = st.checkbox("并行运行", value=st.session_state.get('run_parallel', False), key=f"{key_prefix}_run_parallel")
-                    st.session_state.run_parallel = run_parallel
+                    # 运行方式选择，使用按钮代替复选框，通过颜色变化表示选中状态
+                    btn_type = "primary" if st.session_state.get('run_parallel', False) else "secondary"
+                    if st.button("⚡并行", key=f"{key_prefix}_run_parallel", type=btn_type, use_container_width=True, help="切换并行/顺序运行"):
+                        # 切换状态
+                        st.session_state.run_parallel = not st.session_state.get('run_parallel', False)
+                        st.rerun()
                 
                 with cols[3]:
-                    # 运行所有选中任务
-                    if st.button("运行所有任务", key=f"{key_prefix}_run_all", use_container_width=True):
+                    # 运行所有选中任务，使用emoji代替文本
+                    if st.button("▶️", key=f"{key_prefix}_run_all", use_container_width=True, help="运行所有任务"):
                         with st.spinner("正在启动所有选中的任务..."):
-                            results = run_tasks_via_cmd(selected_tasks, current_taskfile, parallel=run_parallel)
+                            results = run_tasks_via_cmd(selected_tasks, current_taskfile, parallel=st.session_state.get('run_parallel', False))
                             # 记录所有任务的运行状态
                             for task_name in selected_tasks:
                                 record_task_run(task_name, status="started")
                         
-                st.success(f"已启动 {len(selected_tasks)} 个任务")
+                st.success(f"已选中{len(selected_tasks)}个任务")
 
 def render_preview_tab_content(filtered_df, current_taskfile):
     """渲染预览页签的内容

@@ -87,13 +87,7 @@ def set_sidebar_background(image_path):
 def render_sidebar(current_taskfile):
     """渲染侧边栏控件"""
     # 移除with st.sidebar:包装，直接渲染侧边栏内容
-    # st.title("任务管理器")
-    
-    # 添加任务过滤
-    st.markdown("## 过滤任务")
-    
-    # 按名称搜索
-    search_term = st.text_input("搜索任务名称:", key="search_task")
+    st.title("任务管理器")
     
     # 获取所有标签
     all_tags = get_all_tags(current_taskfile)
@@ -109,6 +103,11 @@ def render_sidebar(current_taskfile):
     # 确保tags_widget_key存在，用于控制st_tags组件的刷新
     if 'tags_widget_key' not in st.session_state:
         st.session_state.tags_widget_key = 0
+    
+    # 将搜索框放入expander中
+    with st.expander("🔍 过滤任务", expanded=True):
+        # 按名称搜索
+        search_term = st.text_input("搜索任务名称:", key="search_task", placeholder="输入关键词...")
     
     # 将常用标签和标签筛选放入同一个expander中
     with st.expander("🏷️ 标签筛选", expanded=True):
