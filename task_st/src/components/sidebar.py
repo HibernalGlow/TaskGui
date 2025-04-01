@@ -141,12 +141,12 @@ def render_sidebar(current_taskfile):
                                     st.rerun()
             
             # 标签过滤器部分
-            st.markdown("### 从列表选择标签")
+            # st.markdown("### 从列表选择标签")
             
             # 添加一个下拉框，用于快速选择标签
             if all_tags:
                 tag_dropdown = st.selectbox(
-                    # "从列表选择标签:",
+                    "从列表选择标签:",
                     options=[""] + sorted(all_tags),  # 添加空选项作为默认值
                     index=0,  # 默认选择第一个（空选项）
                     key="tag_dropdown"
@@ -161,7 +161,7 @@ def render_sidebar(current_taskfile):
                     
             # 使用分隔线和标题替代嵌套的expander
             # st.markdown("---")
-            st.markdown("### 管理常用标签")
+            st.markdown("#### 管理常用标签")
             
             # 添加一个折叠按钮来模拟expander功能
             if 'show_tag_manager' not in st.session_state:
