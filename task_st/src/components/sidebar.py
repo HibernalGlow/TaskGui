@@ -1,10 +1,88 @@
 import streamlit as st
 from src.services.taskfile import read_taskfile
 from streamlit_tags import st_tags
-from src.utils.selection_utils import save_favorite_tags
+from src.utils.selection_utils import save_favorite_tags, save_background_settings, load_background_settings
 import os
 import sys
 import subprocess
+import base64
+
+def get_base64_encoded_image(image_path):
+    """获取图片的base64编码"""
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+def set_background_image(image_path, opacity=0.5, blur=0):
+    """设置背景图片"""
+    try:
+        # 获取图片格式
+        img_format = image_path.split('.')[-1].lower()
+        if img_format not in ['png', 'jpg', 'jpeg', 'gif']:
+            img_format = 'png'  # 默认使用png格式
+        
+        # 获取图片的base64编码
+        img_base64 = get_base64_encoded_image(image_path)
+        
+        # 应用CSS样式
+        st.markdown(
+            f"""
+            <style>
+            .stApp {{
+                background-image: url(data:image/{img_format};base64,{img_base64});
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-attachment: fixed;
+            }}
+            .stApp::before {{
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: inherit;
+                filter: blur({blur}px) brightness({1 - opacity});
+                z-index: -1;
+            }}
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+        return True
+    except Exception as e:
+        st.error(f"设置背景图片失败: {str(e)}")
+        return False
+
+def set_sidebar_background(image_path):
+    """设置侧边栏背景图片"""
+    try:
+        # 获取图片格式
+        img_format = image_path.split('.')[-1].lower()
+        if img_format not in ['png', 'jpg', 'jpeg', 'gif']:
+            img_format = 'png'  # 默认使用png格式
+        
+        # 获取图片的base64编码
+        img_base64 = get_base64_encoded_image(image_path)
+        
+        # 应用CSS样式
+        st.markdown(
+            f"""
+            <style>
+            [data-testid="stSidebar"] > div:first-child {{
+                background-image: url(data:image/{img_format};base64,{img_base64});
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+            }}
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+        return True
+    except Exception as e:
+        st.error(f"设置侧边栏背景失败: {str(e)}")
+        return False
 
 def render_sidebar(current_taskfile):
     """渲染侧边栏控件"""
@@ -32,27 +110,6 @@ def render_sidebar(current_taskfile):
         if 'tags_widget_key' not in st.session_state:
             st.session_state.tags_widget_key = 0
             
-        # 显示快速标签过滤按钮
-        # st.markdown("### ⚡ 快速选择")
-        
-        # # 添加操作按钮
-        # quick_cols = st.columns(2)
-        # with quick_cols[0]:
-        #     if st.button("🔍 全部", key="show_all_tags"):
-        #         # 清空筛选标签
-        #         st.session_state.tags_filter = []
-        #         # 增加key值以强制刷新st_tags组件
-        #         st.session_state.tags_widget_key += 1
-        #         st.rerun()
-                
-        # with quick_cols[1]:
-        #     if st.button("❌ 清除", key="clear_tag_filters"):
-        #         # 清空筛选标签
-        #         st.session_state.tags_filter = []
-        #         # 增加key值以强制刷新st_tags组件
-        #         st.session_state.tags_widget_key += 1
-        #         st.rerun()
-        
         # 显示收藏标签作为快速过滤器按钮
         if st.session_state.favorite_tags:
             st.markdown("#### 常用标签")
@@ -100,23 +157,6 @@ def render_sidebar(current_taskfile):
                 st.session_state.tags_widget_key += 1
                 st.rerun()
         
-        # 使用streamlit-tags组件进行标签选择
-        # 通过动态key值确保组件刷新
-        widget_key = f"tags_selector_{st.session_state.tags_widget_key}"
-        
-        # 这个组件允许用户通过文本输入和下拉菜单选择标签
-        # selected_tags = st_tags(
-        #     label="",  # 移除标签文本，避免重复
-        #     text="输入或选择标签...",
-        #     value=st.session_state.tags_filter,  # 使用当前选中的标签作为默认值
-        #     suggestions=sorted(all_tags),  # 所有可用标签作为建议
-        #     maxtags=10,  # 最多可以选择的标签数
-        #     key=widget_key
-        # )
-        
-        # # 将selected_tags的结果同步到session_state
-        # st.session_state.tags_filter = selected_tags
-        
         # 常用标签管理
         with st.expander("管理常用标签", expanded=False):
             st.markdown("选择要保存为常用标签的标签:")
@@ -155,7 +195,6 @@ def render_sidebar(current_taskfile):
         
         # 添加系统操作部分
         with st.expander("系统"):
-        
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("🔄 重启", help="重新启动任务管理器"):
@@ -164,25 +203,145 @@ def render_sidebar(current_taskfile):
             with col2:
                 if st.button("❌ 退出", help="完全关闭任务管理器"):
                     exit_application()
+
+        # 添加背景设置部分
+        with st.expander("🎨 背景设置"):
+            # 初始化背景设置
+            if 'background_settings' not in st.session_state:
+                st.session_state.background_settings = load_background_settings()
+            
+            # 拆分为主背景和侧边栏背景设置
+            tabs = st.tabs(["主界面背景", "侧边栏背景"])
+            
+            with tabs[0]:  # 主界面背景设置
+                # 启用/禁用背景
+                st.session_state.background_settings['enabled'] = st.checkbox(
+                    "启用背景图片",
+                    value=st.session_state.background_settings.get('enabled', False),
+                    key="main_bg_enabled"
+                )
                 
-        # 添加关于部分
-        # with st.expander("关于"):
-        #     st.markdown("""
-        #     ### 任务管理器
+                if st.session_state.background_settings['enabled']:
+                    # 选择背景图片
+                    uploaded_file = st.file_uploader(
+                        "选择背景图片",
+                        type=['png', 'jpg', 'jpeg', 'gif'],
+                        key="main_background_image"
+                    )
+                    
+                    if uploaded_file is not None:
+                        # 保存图片到临时目录
+                        import tempfile
+                        temp_dir = tempfile.gettempdir()
+                        temp_path = os.path.join(temp_dir, uploaded_file.name)
+                        with open(temp_path, "wb") as f:
+                            f.write(uploaded_file.getbuffer())
+                        st.session_state.background_settings['image_path'] = temp_path
+                        # 存储base64编码的图片
+                        st.session_state.background_settings['image_base64'] = get_base64_encoded_image(temp_path)
+                        st.session_state.background_settings['image_format'] = uploaded_file.name.split('.')[-1].lower()
+                    
+                    # 透明度调节
+                    st.session_state.background_settings['opacity'] = st.slider(
+                        "背景透明度",
+                        min_value=0.0,
+                        max_value=1.0,
+                        value=st.session_state.background_settings.get('opacity', 0.5),
+                        step=0.1,
+                        key="main_bg_opacity"
+                    )
+                    
+                    # 模糊度调节
+                    st.session_state.background_settings['blur'] = st.slider(
+                        "背景模糊度",
+                        min_value=0,
+                        max_value=20,
+                        value=st.session_state.background_settings.get('blur', 0),
+                        step=1,
+                        key="main_bg_blur"
+                    )
+                    
+                    # 应用背景设置
+                    if st.button("应用主界面背景", key="apply_main_bg"):
+                        if 'image_path' in st.session_state.background_settings and os.path.exists(st.session_state.background_settings['image_path']):
+                            # 应用背景
+                            success = set_background_image(
+                                st.session_state.background_settings['image_path'],
+                                st.session_state.background_settings['opacity'],
+                                st.session_state.background_settings['blur']
+                            )
+                            if success:
+                                # 保存设置
+                                save_background_settings(st.session_state.background_settings)
+                                st.success("主界面背景设置已应用")
+                        else:
+                            st.error("请先选择有效的背景图片")
             
-        #     这个工具可以帮助您管理和运行各种任务。
+            with tabs[1]:  # 侧边栏背景设置
+                # 启用/禁用侧边栏背景
+                st.session_state.background_settings['sidebar_enabled'] = st.checkbox(
+                    "启用侧边栏背景",
+                    value=st.session_state.background_settings.get('sidebar_enabled', False),
+                    key="sidebar_bg_enabled"
+                )
+                
+                if st.session_state.background_settings['sidebar_enabled']:
+                    # 选择侧边栏背景图片
+                    sidebar_uploaded_file = st.file_uploader(
+                        "选择侧边栏背景图片",
+                        type=['png', 'jpg', 'jpeg', 'gif'],
+                        key="sidebar_background_image"
+                    )
+                    
+                    if sidebar_uploaded_file is not None:
+                        # 保存图片到临时目录
+                        import tempfile
+                        temp_dir = tempfile.gettempdir()
+                        sidebar_temp_path = os.path.join(temp_dir, sidebar_uploaded_file.name)
+                        with open(sidebar_temp_path, "wb") as f:
+                            f.write(sidebar_uploaded_file.getbuffer())
+                        st.session_state.background_settings['sidebar_image_path'] = sidebar_temp_path
+                        # 存储base64编码的图片
+                        st.session_state.background_settings['sidebar_image_base64'] = get_base64_encoded_image(sidebar_temp_path)
+                        st.session_state.background_settings['sidebar_image_format'] = sidebar_uploaded_file.name.split('.')[-1].lower()
+                    
+                    # 应用侧边栏背景设置
+                    if st.button("应用侧边栏背景", key="apply_sidebar_bg"):
+                        if 'sidebar_image_path' in st.session_state.background_settings and os.path.exists(st.session_state.background_settings['sidebar_image_path']):
+                            # 应用侧边栏背景
+                            success = set_sidebar_background(st.session_state.background_settings['sidebar_image_path'])
+                            if success:
+                                # 保存设置
+                                save_background_settings(st.session_state.background_settings)
+                                st.success("侧边栏背景设置已应用")
+                        else:
+                            st.error("请先选择有效的侧边栏背景图片")
             
-        #     **功能**:
-        #     - 支持多种视图模式
-        #     - 可以同时运行多个任务
-        #     - 支持文件浏览和打开
-        #     - 可以复制命令到剪贴板
-            
-        #     **使用方法**:
-        #     1. 选择您喜欢的视图模式
-        #     2. 筛选您想要的任务
-        #     3. 选择任务并执行操作
-        #     """)
+            # 重置背景设置
+            if st.button("重置所有背景设置", key="reset_all_bg"):
+                st.session_state.background_settings = {
+                    'enabled': False,
+                    'sidebar_enabled': False,
+                    'image_path': '',
+                    'sidebar_image_path': '',
+                    'opacity': 0.5,
+                    'blur': 0
+                }
+                save_background_settings(st.session_state.background_settings)
+                
+                # 重置CSS
+                st.markdown("""
+                <style>
+                .stApp {
+                    background-image: none;
+                }
+                [data-testid="stSidebar"] > div:first-child {
+                    background-image: none;
+                }
+                </style>
+                """, unsafe_allow_html=True)
+                
+                st.success("所有背景设置已重置")
 
 def get_all_tags(taskfile_path):
     """获取所有可用的标签"""

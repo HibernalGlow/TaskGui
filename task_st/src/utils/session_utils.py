@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 
 # 初始化会话状态
 def init_session_state():
@@ -20,54 +21,59 @@ def init_session_state():
 
 # 定义CSS样式
 def setup_css():
-    """设置应用的CSS样式"""
+    """设置自定义CSS样式"""
+    # 注入自定义CSS样式
     st.markdown("""
     <style>
-    .copy-btn {
-        display: inline-block;
-        padding: 2px 8px;
-        background-color: #f0f2f6;
-        color: #31333F;
-        border: 1px solid #ddd;
+    /* 自定义标题样式 */
+    .st-emotion-cache-1gulkj5 > h1,
+    .st-emotion-cache-1gulkj5 > h2,
+    .st-emotion-cache-1gulkj5 > h3 {
+        margin-top: 0;
+        padding-top: 0.5rem;
+    }
+    
+    /* 自定义按钮样式 */
+    .stButton button {
         border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-        margin-left: 10px;
+        padding: 2px 10px;
     }
-    .copy-btn:hover {
-        background-color: #ddd;
+    
+    /* 调整卡片视图样式 */
+    .card {
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        transition: all 0.3s cubic-bezier(.25,.8,.25,1);
     }
-    .tag {
-        display: inline-block;
-        padding: 2px 8px;
-        background-color: #f0f2f6;
-        color: #31333F;
-        border-radius: 12px;
-        margin-right: 5px;
-        font-size: 12px;
+    
+    .card:hover {
+        box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
     }
-    .run-btn {
-        background-color: #4CAF50;
-        color: white;
+    
+    /* 调整选项卡容器样式 */
+    .stTabs [role="tablist"] {
+        border-bottom: 1px solid #e0e0e0;
     }
-
-    /* 任务卡片页签样式 */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 1px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        padding: 10px 16px;
-        background-color: #f8f9fa;
+    
+    .stTabs [role="tab"] {
+        padding: 8px 16px;
+        background-color: transparent;
+        border: none;
         border-radius: 4px 4px 0 0;
+        margin-right: 4px;
     }
-    .stTabs [aria-selected="true"] {
-        background-color: #e0f7fa;
-        border-bottom: 2px solid #2196F3;
+    
+    .stTabs [role="tab"][aria-selected="true"] {
+        background-color: white;
+        border: 1px solid #e0e0e0;
+        border-bottom: none;
+        font-weight: bold;
     }
+    
     .stTabs [role="tabpanel"] {
         padding: 16px;
         border: 1px solid #e0e0e0;
@@ -75,5 +81,49 @@ def setup_css():
         border-top: none;
         background-color: white;
     }
+
+    /* 背景图片样式 */
+    .main {
+        background-image: var(--background-image);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        min-height: 100vh;
+    }
+    .main::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: inherit;
+        filter: blur(var(--background-blur)) brightness(var(--background-brightness));
+        z-index: -1;
+    }
     </style>
-    """, unsafe_allow_html=True) 
+    """, unsafe_allow_html=True)
+    
+    # 加载背景设置
+    try:
+        from src.utils.selection_utils import load_background_settings
+        from src.components.sidebar import set_background_image, set_sidebar_background
+        
+        # 获取背景设置
+        bg_settings = load_background_settings()
+        
+        # 应用主界面背景
+        if bg_settings.get('enabled', False) and bg_settings.get('image_path', '') and os.path.exists(bg_settings['image_path']):
+            set_background_image(
+                bg_settings['image_path'],
+                bg_settings.get('opacity', 0.5),
+                bg_settings.get('blur', 0)
+            )
+        
+        # 应用侧边栏背景
+        if bg_settings.get('sidebar_enabled', False) and bg_settings.get('sidebar_image_path', '') and os.path.exists(bg_settings['sidebar_image_path']):
+            set_sidebar_background(bg_settings['sidebar_image_path'])
+    except Exception as e:
+        # 忽略错误，确保应用仍能正常启动
+        pass 
