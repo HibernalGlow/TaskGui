@@ -6,16 +6,16 @@ primaryColor = "#39C5BB"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F0F2F6"
 textColor = "#262730"
-font = "霞鹜文楷"
+# font = "霞鹜文楷"
 
-[[theme.fontFaces]]
-font = "霞鹜文楷"
-url = ".streamlit/static/LXGWWenKaiMono-Regular.ttf"
-weight = 400
-style = "normal"
+# [[theme.fontFaces]]
+# font = "霞鹜文楷"
+# url = ".streamlit/static/LXGWWenKaiMono-Regular.ttf"
+# weight = 500
+# style = "normal"
 
-[[theme.fontFaces]]
-font = "霞鹜文楷"
-url = ".streamlit/static/LXGWWenKaiMono-Medium.ttf"
-weight = 700
-style = "normal" 
+# [[theme.fontFaces]]
+# font = "霞鹜文楷"
+# url = ".streamlit/static/LXGWWenKaiMono-Medium.ttf"
+# weight = 700
+# style = "bold" 
