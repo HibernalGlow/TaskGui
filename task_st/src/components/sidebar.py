@@ -190,8 +190,8 @@ def render_sidebar(current_taskfile):
                 st.success("常用标签已保存")
         
         # 显示已选任务数量
-        if 'selected_tasks' in st.session_state and st.session_state.selected_tasks:
-            st.markdown(f"## 已选择 {len(st.session_state.selected_tasks)} 个任务")
+        # if 'selected_tasks' in st.session_state and st.session_state.selected_tasks:
+        #     st.markdown(f"## 已选择 {len(st.session_state.selected_tasks)} 个任务")
         
         # 添加系统操作部分
         with st.expander("系统"):
