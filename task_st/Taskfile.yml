@@ -144,6 +144,7 @@ tasks:
     tags:
     - folder
     - organize
+    
     cmds:
     - '"{{.PYTHON}}" "src\scripts\folder\organize_folder.py"'
   pics_convert:
@@ -239,3 +240,14 @@ tasks:
     - dimension
     cmds:
     - '"{{.PYTHON}}" "src\scripts\fliter\width_filter.py"'
+  st:
+    desc: 🚀 任务管理器 - 启动图形化任务管理界面
+    dir: '{{.ROOT_DIR}}\src\scripts\task\task_gui\task_st'
+    tags:
+    - gui
+    - task
+    - manager
+    cmds:
+    - cmd: cmd.exe /c start "" "C:\Users\30902\Desktop\任务管理器.lnk"
+      platforms: [windows]
+    - '".venv\Scripts\python.exe" "run_task_manager.py" -noterm '

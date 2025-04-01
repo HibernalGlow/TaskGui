@@ -2,6 +2,9 @@ import streamlit as st
 from src.services.taskfile import read_taskfile
 from streamlit_tags import st_tags
 from src.utils.selection_utils import save_favorite_tags
+import os
+import sys
+import subprocess
 
 def render_sidebar(current_taskfile):
     """渲染侧边栏控件"""
@@ -146,24 +149,22 @@ def render_sidebar(current_taskfile):
                 save_favorite_tags(st.session_state.favorite_tags)
                 st.success("常用标签已保存")
         
-        # 添加并行执行模式选项
-        # st.markdown("## 执行设置")
-        
-        # if 'run_parallel' not in st.session_state:
-        #     st.session_state.run_parallel = False
-            
-        # parallel_mode = st.checkbox(
-        #     "并行执行任务", 
-        #     value=st.session_state.run_parallel,
-        #     help="选中时，多个任务将同时启动"
-        # )
-        
-        # st.session_state.run_parallel = parallel_mode
-        
         # 显示已选任务数量
         if 'selected_tasks' in st.session_state and st.session_state.selected_tasks:
             st.markdown(f"## 已选择 {len(st.session_state.selected_tasks)} 个任务")
         
+        # 添加系统操作部分
+        with st.expander("系统"):
+        
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("🔄 重启", help="重新启动任务管理器"):
+                    restart_application()
+            
+            with col2:
+                if st.button("❌ 退出", help="完全关闭任务管理器"):
+                    exit_application()
+                
         # 添加关于部分
         # with st.expander("关于"):
         #     st.markdown("""
@@ -194,3 +195,21 @@ def get_all_tags(taskfile_path):
         return sorted(list(set(all_tags)))
     except Exception as e:
         return []
+
+def restart_application():
+    """重启应用程序"""
+    run_script = "run_task_manager.py"
+    
+    # 启动新实例
+    if os.path.exists(run_script):
+        subprocess.Popen([sys.executable, run_script])
+    else:
+        st.error(f"找不到启动脚本: {run_script}")
+        return
+        
+    # 退出当前实例
+    os._exit(0)
+
+def exit_application():
+    """完全退出应用程序"""
+    os._exit(0)
