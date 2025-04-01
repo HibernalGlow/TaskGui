@@ -87,7 +87,7 @@ def set_sidebar_background(image_path):
 def render_sidebar(current_taskfile):
     """渲染侧边栏控件"""
     # 移除with st.sidebar:包装，直接渲染侧边栏内容
-    st.title("任务管理器")
+    # st.title("任务管理器")
     
     # 获取所有标签
     all_tags = get_all_tags(current_taskfile)

@@ -55,7 +55,7 @@ def render_action_buttons(selected_tasks, current_taskfile, key_prefix="preview"
                 with cols[2]:
                     # 运行方式选择，使用按钮代替复选框，通过颜色变化表示选中状态
                     btn_type = "primary" if st.session_state.get('run_parallel', False) else "secondary"
-                    if st.button("⚡并行", key=f"{key_prefix}_run_parallel", type=btn_type, use_container_width=True, help="切换并行/顺序运行"):
+                    if st.button("⚡", key=f"{key_prefix}_run_parallel", type=btn_type, use_container_width=True, help="切换并行/顺序运行"):
                         # 切换状态
                         st.session_state.run_parallel = not st.session_state.get('run_parallel', False)
                         st.rerun()
