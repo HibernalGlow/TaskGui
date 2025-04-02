@@ -185,54 +185,58 @@ def render_sidebar(current_taskfile):
         if st.session_state.favorite_tags:
             st.markdown("#### 常用标签")
             
-            # 创建一个完整的HTML字符串，一次性渲染所有标签
+            # 使用自定义HTML渲染标签 (视觉效果)
             tags_html = '<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">'
             
-            # 为每个标签创建HTML
             for tag in sorted(st.session_state.favorite_tags):
                 is_active = tag in st.session_state.tags_filter
-                # 简化的标签样式
                 bg_color = get_tag_color(tag)
                 
                 if is_active:
-                    tag_html = f'<span style="cursor: pointer; display: inline-block; background-color: {bg_color}; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500; border: 2px solid #555;">✓ #{tag}</span>'
+                    tags_html += f'<div style="cursor: pointer; display: inline-block; background-color: {bg_color}; color: #333; padding: 3px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500; border: 2px solid #555;">✓ #{tag}</div>'
                 else:
-                    tag_html = f'<span style="cursor: pointer; display: inline-block; background-color: {bg_color}; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500;">#{tag}</span>'
-                
-                tags_html += tag_html
+                    tags_html += f'<div style="cursor: pointer; display: inline-block; background-color: {bg_color}; color: #333; padding: 3px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500;">#{tag}</div>'
             
-            # 关闭标签容器
             tags_html += '</div>'
-            
-            # 一次性渲染所有标签
             st.markdown(tags_html, unsafe_allow_html=True)
             
-            # 使用常规按钮作为后备方案
-            st.markdown("##### 选择操作")
-            # 使用更紧凑的布局显示常用标签
-            cols_per_row = 2
-            for i in range(0, len(st.session_state.favorite_tags), cols_per_row):
-                fav_tag_cols = st.columns(cols_per_row)
-                for j in range(cols_per_row):
-                    if i + j < len(st.session_state.favorite_tags):
-                        tag = sorted(st.session_state.favorite_tags)[i + j]
-                        with fav_tag_cols[j]:
-                            # 创建按钮，点击时添加或移除该标签的过滤
-                            is_active = tag in st.session_state.tags_filter
-                            btn_label = f"✓ #{tag}" if is_active else f"#{tag}"
-                            btn_type = "primary" if is_active else "secondary"
-                            
-                            if st.button(btn_label, key=f"quick_{tag}", type=btn_type):
-                                # 切换标签的状态
-                                if tag in st.session_state.tags_filter:
-                                    # 移除标签
-                                    st.session_state.tags_filter.remove(tag)
-                                else:
-                                    # 添加标签
-                                    st.session_state.tags_filter.append(tag)
-                                # 增加key值以强制刷新st_tags组件
-                                st.session_state.tags_widget_key += 1
-                                st.rerun()
+            # 创建实际的按钮功能 (但隐藏起来)
+            # 使用行布局和小尺寸，以便放置更多按钮在视野之外
+            cols = st.columns(6)
+            
+            for i, tag in enumerate(sorted(st.session_state.favorite_tags)):
+                is_active = tag in st.session_state.tags_filter
+                
+                # 在指定列中创建按钮，设置小尺寸
+                with cols[i % 6]:
+                    if st.button(
+                        "", # 空标签，减少占用空间
+                        key=f"tag_btn_{tag}",
+                        help=f"点击切换标签 {tag}",
+                    ):
+                        # 切换标签的状态
+                        if tag in st.session_state.tags_filter:
+                            # 移除标签
+                            st.session_state.tags_filter.remove(tag)
+                        else:
+                            # 添加标签
+                            st.session_state.tags_filter.append(tag)
+                        # 增加key值以强制刷新
+                        st.session_state.tags_widget_key += 1
+                        st.rerun()
+            
+            # 添加CSS隐藏按钮区域，但保留功能
+            st.markdown("""
+            <style>
+            /* 隐藏按钮区域，但保留功能 */
+            [data-testid="column"]:has(button[data-testid="baseButton-secondary"]) {
+                visibility: hidden;
+                height: 0;
+                position: absolute;
+                z-index: -1;
+            }
+            </style>
+            """, unsafe_allow_html=True)
         
         # 标签过滤器部分
         # st.markdown("### 从列表选择标签")
