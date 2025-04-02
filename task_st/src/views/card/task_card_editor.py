@@ -21,7 +21,7 @@ def render_task_edit_form(task, taskfile_path, on_save_callback=None):
     
     # 编辑表单
     with st.form(key=f"edit_form_{edited_task['name']}"):
-        st.markdown(f"### 编辑任务: {edited_task['name']}")
+        st.markdown(f"{edited_task['name']}")
         
         # 组织编辑字段
         col1, col2 = st.columns(2)
