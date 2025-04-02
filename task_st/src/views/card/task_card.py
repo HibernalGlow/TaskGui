@@ -116,8 +116,8 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
-                # 运行按钮
-                if st.button("运行", key=f"run_{prefix}"):
+                # 运行按钮 - 使用▶️ (播放)图标
+                if st.button("▶️", key=f"run_{prefix}", help="运行此任务"):
                     with st.spinner(f"正在启动任务 {task['name']}..."):
                         result = run_task_via_cmd(task['name'], current_taskfile)
                         # 记录任务运行
@@ -125,8 +125,8 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
                     st.success(f"任务 {task['name']} 已在新窗口启动")
             
             with col2:
-                # 文件按钮
-                if st.button("文件", key=f"file_{prefix}"):
+                # 文件按钮 - 使用📁 (文件夹)图标
+                if st.button("📁", key=f"file_{prefix}", help="查看相关文件"):
                     if task['directory'] and os.path.exists(task['directory']):
                         files = get_directory_files(task['directory'])
                         if files:
@@ -140,15 +140,15 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
                             st.info("没有找到文件")
             
             with col3:
-                # 复制命令按钮
-                if st.button("复制", key=f"copy_{prefix}"):
+                # 复制命令按钮 - 使用📋 (剪贴板)图标
+                if st.button("📋", key=f"copy_{prefix}", help="复制任务命令"):
                     cmd = get_task_command(task['name'], current_taskfile)
                     copy_to_clipboard(cmd)
                     st.success("命令已复制")
                     
             with col4:
-                # 编辑按钮
-                if st.button("编辑", key=f"edit_{prefix}"):
+                # 编辑按钮 - 使用✏️ (铅笔)图标
+                if st.button("✏️", key=f"edit_{prefix}", help="编辑任务"):
                     st.session_state[edit_key] = True
                     st.rerun()
             
