@@ -1,7 +1,7 @@
 version: '3'
 vars:
   PYTHON: .venv\Scripts\python.exe
-  ROOT_DIR: D:\1VSCODE\GlowToolBox
+  GlowToolBox: D:\1VSCODE\GlowToolBox
 tasks:
   artbook_dedup:
     desc: 🖼️ 艺术书去重工具 - 删除重复的艺术书图片
@@ -152,7 +152,7 @@ tasks:
     - pics
     - convert
     cmds:
-    - '"{{.PYTHON}}" "src\scripts\pics\pics_convert.py" -c'
+    - '"{{.PYTHON}}" "src\scripts\pics\pics_convert.py" '
   psd_convert_clipboard:
     desc: 📋 PSD剪贴板转换 - 将PSD内容转换至剪贴板
     dir: '{{.GlowToolBox}}'

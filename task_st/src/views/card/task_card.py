@@ -128,7 +128,7 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
                         result = run_task_via_cmd(task['name'], current_taskfile)
                         # 记录任务运行
                         record_task_run(task['name'], status="started")
-                    st.success(f"任务 {task['name']} 已在新窗口启动")
+                    # st.success(f"任务 {task['name']} 已在新窗口启动")
             
             with col2:
                 # 文件按钮 - 使用📁 (文件夹)图标
@@ -157,7 +157,7 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
                 if st.button("📋", key=f"copy_{prefix}", help="复制任务命令"):
                     cmd = get_task_command(task['name'], current_taskfile)
                     copy_to_clipboard(cmd)
-                    st.success("命令已复制")
+                    # st.success("命令已复制")
                     
             with col4:
                 # 编辑按钮 - 使用✏️ (铅笔)图标
