@@ -787,9 +787,11 @@ def load_background_settings():
                 'enabled': False,
                 'sidebar_enabled': False,
                 'header_banner_enabled': False, 
+                'sidebar_banner_enabled': False,  # 侧边栏横幅开关
                 'image_path': '',
                 'sidebar_image_path': '',
                 'header_banner_path': '',
+                'sidebar_banner_path': '',  # 侧边栏横幅路径
                 'opacity': 0.5,
                 'blur': 0
             }
@@ -802,9 +804,11 @@ def load_background_settings():
             'enabled': False,
             'sidebar_enabled': False,
             'header_banner_enabled': False,
+            'sidebar_banner_enabled': False,  # 侧边栏横幅开关
             'image_path': '',
             'sidebar_image_path': '',
             'header_banner_path': '',
+            'sidebar_banner_path': '',  # 侧边栏横幅路径
             'opacity': 0.5,
             'blur': 0
         }
@@ -821,14 +825,17 @@ def load_background_settings():
             del settings['sidebar_image_base64']
         if 'header_banner_base64' in settings:
             del settings['header_banner_base64']
+        if 'sidebar_banner_base64' in settings:
+            del settings['sidebar_banner_base64']
         
         # 验证所有路径，确保它们是有效的文件
-        for path_key in ['image_path', 'sidebar_image_path', 'header_banner_path']:
+        for path_key in ['image_path', 'sidebar_image_path', 'header_banner_path', 'sidebar_banner_path']:
             if settings[path_key] and not os.path.isfile(settings[path_key]):
                 # 如果路径无效，重置相关设置
                 related_enabled_key = 'enabled' if path_key == 'image_path' else \
                                      'sidebar_enabled' if path_key == 'sidebar_image_path' else \
-                                     'header_banner_enabled'
+                                     'header_banner_enabled' if path_key == 'header_banner_path' else \
+                                     'sidebar_banner_enabled'
                 settings[path_key] = ''
                 settings[related_enabled_key] = False
         
@@ -840,9 +847,11 @@ def load_background_settings():
             'enabled': False,
             'sidebar_enabled': False,
             'header_banner_enabled': False, 
+            'sidebar_banner_enabled': False,  # 侧边栏横幅开关
             'image_path': '',
             'sidebar_image_path': '',
             'header_banner_path': '',
+            'sidebar_banner_path': '',  # 侧边栏横幅路径
             'opacity': 0.5,
             'blur': 0
         }
@@ -855,9 +864,11 @@ def save_background_settings(settings):
             'enabled': False,
             'sidebar_enabled': False,
             'header_banner_enabled': False,
+            'sidebar_banner_enabled': False,
             'image_path': '',
             'sidebar_image_path': '',
             'header_banner_path': '',
+            'sidebar_banner_path': '',
             'opacity': 0.5,
             'blur': 0
         }
@@ -875,15 +886,19 @@ def save_background_settings(settings):
             del settings_copy['sidebar_image_base64']
         if 'header_banner_base64' in settings_copy:
             del settings_copy['header_banner_base64']
+        if 'sidebar_banner_base64' in settings_copy:
+            del settings_copy['sidebar_banner_base64']
         if 'image_format' in settings_copy:
             del settings_copy['image_format']
         if 'sidebar_image_format' in settings_copy:
             del settings_copy['sidebar_image_format']
         if 'header_banner_format' in settings_copy:
             del settings_copy['header_banner_format']
+        if 'sidebar_banner_format' in settings_copy:
+            del settings_copy['sidebar_banner_format']
         
         # 验证所有路径
-        for path_key in ['image_path', 'sidebar_image_path', 'header_banner_path']:
+        for path_key in ['image_path', 'sidebar_image_path', 'header_banner_path', 'sidebar_banner_path']:
             if settings_copy[path_key] and not os.path.isfile(settings_copy[path_key]):
                 # 如果路径无效，记录警告但不阻止保存
                 print(f"警告: 保存的路径无效 {path_key}={settings_copy[path_key]}")

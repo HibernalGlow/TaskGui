@@ -4,9 +4,11 @@ favorite_tags:
 background_settings:
   enabled: false
   sidebar_enabled: false
-  header_banner_enabled: true
+  header_banner_enabled: false
+  sidebar_banner_enabled: true
   image_path: ''
   sidebar_image_path: ''
-  header_banner_path: E:\1PIC\2503\2025音律联觉\2025音律联觉（3）.avif
+  header_banner_path: ''
+  sidebar_banner_path: E:\1PIC\2503\2025音律联觉\2025音律联觉（2）.avif
   opacity: 0.5
   blur: 0

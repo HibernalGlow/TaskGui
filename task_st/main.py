@@ -186,6 +186,15 @@ def main():
         # 初始化全局状态
         init_global_state()
         
+        # 加载背景设置
+        if 'background_settings' not in st.session_state:
+            st.session_state.background_settings = load_background_settings()
+            # 确保侧边栏横幅设置存在
+            if 'sidebar_banner_enabled' not in st.session_state.background_settings:
+                st.session_state.background_settings['sidebar_banner_enabled'] = False
+            if 'sidebar_banner_path' not in st.session_state.background_settings:
+                st.session_state.background_settings['sidebar_banner_path'] = ''
+        
         # 获取任务文件列表
         taskfiles = find_taskfiles()
         if not taskfiles:
@@ -220,6 +229,20 @@ def main():
         
         # 侧边栏内容
         with st.sidebar:
+            # 显示侧边栏横幅图片
+            try:
+                if st.session_state.background_settings.get('sidebar_banner_enabled', False):
+                    sidebar_banner_path = st.session_state.background_settings.get('sidebar_banner_path', '')
+                    if sidebar_banner_path and os.path.isfile(sidebar_banner_path):
+                        st.image(sidebar_banner_path, use_container_width=True)
+                    else:
+                        # 如果文件不存在但设置为启用，则重置此设置
+                        st.session_state.background_settings['sidebar_banner_enabled'] = False
+                        save_background_settings(st.session_state.background_settings)
+            except Exception as e:
+                # 出现任何异常，禁用横幅并继续
+                print(f"显示侧边栏横幅时出错：{str(e)}")
+            
             # 在侧边栏顶部渲染操作按钮
             # render_action_buttons(selected_tasks, default_taskfile, key_prefix="sidebar", is_sidebar=True)
             
@@ -310,8 +333,8 @@ def main():
                 if 'background_settings' not in st.session_state:
                     st.session_state.background_settings = load_background_settings()
                 
-                # 拆分为主背景、侧边栏背景和顶部横幅设置
-                bg_tabs = st.tabs(["主界面背景", "侧边栏背景", "顶部横幅"])
+                # 拆分为主背景、侧边栏背景、顶部横幅和侧边栏横幅设置
+                bg_tabs = st.tabs(["主界面背景", "侧边栏背景", "顶部横幅", "侧边栏横幅"])
                 
                 with bg_tabs[0]:  # 主界面背景设置
                     # 启用/禁用背景
@@ -453,15 +476,61 @@ def main():
                                 # 如果路径无效，不启用横幅
                                 st.session_state.background_settings['header_banner_enabled'] = False
                 
+                with bg_tabs[3]:  # 侧边栏横幅设置
+                    # 启用/禁用侧边栏横幅
+                    st.session_state.background_settings['sidebar_banner_enabled'] = st.checkbox(
+                        "启用侧边栏横幅图片",
+                        value=st.session_state.background_settings.get('sidebar_banner_enabled', False),
+                        key="sidebar_banner_enabled"
+                    )
+                    
+                    if st.session_state.background_settings['sidebar_banner_enabled']:
+                        # 定义支持的图片格式
+                        SUPPORTED_FORMATS = ['png', 'jpg', 'jpeg', 'gif', 'webp']
+                        if 'AVIF_JXL_SUPPORT' in globals() and AVIF_JXL_SUPPORT:
+                            SUPPORTED_FORMATS.extend(['avif', 'jxl'])
+                        
+                        # 本地图片路径输入
+                        sidebar_banner_local_path = st.text_input(
+                            f"输入本地图片路径 (支持{', '.join(SUPPORTED_FORMATS)}格式)",
+                            value=st.session_state.background_settings.get('sidebar_banner_path', ''),
+                            key="sidebar_banner_local_path"
+                        )
+                        
+                        if sidebar_banner_local_path and os.path.isfile(sidebar_banner_local_path):
+                            try:
+                                st.session_state.background_settings['sidebar_banner_path'] = sidebar_banner_local_path
+                                # 预览图片
+                                st.image(sidebar_banner_local_path, caption="侧边栏横幅预览", width=250)
+                            except Exception as e:
+                                st.error(f"加载本地图片时出错: {str(e)}")
+                        elif sidebar_banner_local_path:
+                            st.warning("输入的文件路径不存在或不是有效的文件")
+                        
+                        # 应用侧边栏横幅设置
+                        if st.button("应用侧边栏横幅设置", key="apply_sidebar_banner"):
+                            # 验证横幅图片路径是否有效
+                            banner_path = st.session_state.background_settings.get('sidebar_banner_path', '')
+                            if banner_path and os.path.isfile(banner_path):
+                                # 保存设置
+                                save_background_settings(st.session_state.background_settings)
+                                st.success("侧边栏横幅设置已应用")
+                            else:
+                                st.error("无法应用设置：请先选择有效的图片文件")
+                                # 如果路径无效，不启用横幅
+                                st.session_state.background_settings['sidebar_banner_enabled'] = False
+                
                 # 重置背景设置按钮
                 if st.button("重置所有背景设置", key="reset_all_bg"):
                     st.session_state.background_settings = {
                         'enabled': False,
                         'sidebar_enabled': False,
                         'header_banner_enabled': False,
+                        'sidebar_banner_enabled': False,
                         'image_path': '',
                         'sidebar_image_path': '',
                         'header_banner_path': '',
+                        'sidebar_banner_path': '',
                         'opacity': 0.5,
                         'blur': 0
                     }
