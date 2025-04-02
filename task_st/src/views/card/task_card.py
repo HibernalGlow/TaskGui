@@ -93,7 +93,7 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
             
             # 显示标签 - 根据设置显示
             if card_settings.get("show_tags", True) and isinstance(task['tags'], list) and task['tags']:
-                st.write("**标签**:")
+                # st.write("**标签**:")
                 render_tags(task['tags'])
             
             # 显示目录 - 根据设置显示

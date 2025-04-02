@@ -120,7 +120,7 @@ def render_sidebar(current_taskfile):
     with st.expander("🏷️ 标签筛选", expanded=True):
         # 显示收藏标签作为快速过滤器按钮
         if st.session_state.favorite_tags:
-            st.markdown("#### 常用标签")
+            # st.markdown("#### 常用标签")
             # 使用更紧凑的布局显示常用标签
             cols_per_row = 2
             for i in range(0, len(st.session_state.favorite_tags), cols_per_row):
@@ -167,7 +167,7 @@ def render_sidebar(current_taskfile):
             
         # 使用分隔线和标题替代嵌套的expander
         # st.markdown("---")
-        st.markdown("#### 管理常用标签")
+        # st.markdown("#### 管理常用标签")
         
         # 添加一个折叠按钮来模拟expander功能
         if 'show_tag_manager' not in st.session_state:

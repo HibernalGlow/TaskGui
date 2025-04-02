@@ -923,7 +923,33 @@ def get_card_view_settings():
     返回:
         dict: 卡片视图设置字典
     """
+    # 尝试从本地配置加载设置
+    local_config = load_local_config()
+    local_card_settings = None
+    
+    # 如果本地配置中有卡片视图设置，则使用它
+    if ("user_preferences" in local_config and 
+            "ui_settings" in local_config["user_preferences"] and 
+            "card_view" in local_config["user_preferences"]["ui_settings"]):
+        local_card_settings = local_config["user_preferences"]["ui_settings"]["card_view"]
+    
+    # 如果本地配置有效，直接返回本地设置
+    if local_card_settings:
+        # 同时更新全局状态以保持一致
+        global_state = get_global_state()
+        if "user_preferences" not in global_state:
+            global_state["user_preferences"] = {}
+        if "ui_settings" not in global_state["user_preferences"]:
+            global_state["user_preferences"]["ui_settings"] = {}
+        
+        global_state["user_preferences"]["ui_settings"]["card_view"] = local_card_settings
+        update_global_state(global_state)
+        
+        return local_card_settings
+    
+    # 如果本地配置无效，从全局状态获取
     global_state = get_global_state()
+    
     # 确保设置存在
     if "user_preferences" not in global_state:
         global_state["user_preferences"] = {}
@@ -936,6 +962,19 @@ def get_card_view_settings():
             "show_directory": True,
             "show_command": True
         }
+        
+        # 更新全局状态
+        update_global_state(global_state)
+        
+        # 同时保存到本地配置
+        local_config = load_local_config()
+        if "user_preferences" not in local_config:
+            local_config["user_preferences"] = {}
+        if "ui_settings" not in local_config["user_preferences"]:
+            local_config["user_preferences"]["ui_settings"] = {}
+        
+        local_config["user_preferences"]["ui_settings"]["card_view"] = global_state["user_preferences"]["ui_settings"]["card_view"]
+        save_local_config(local_config)
     
     return global_state["user_preferences"]["ui_settings"]["card_view"]
 
@@ -958,3 +997,16 @@ def update_card_view_settings(settings):
     
     # 保存更新后的全局状态
     update_global_state(global_state)
+    
+    # 同时保存到本地配置文件
+    local_config = load_local_config()
+    if "user_preferences" not in local_config:
+        local_config["user_preferences"] = {}
+    if "ui_settings" not in local_config["user_preferences"]:
+        local_config["user_preferences"]["ui_settings"] = {}
+    
+    # 更新本地配置
+    local_config["user_preferences"]["ui_settings"]["card_view"] = settings
+    
+    # 保存到本地文件
+    save_local_config(local_config)

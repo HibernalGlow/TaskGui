@@ -12,3 +12,10 @@ background_settings:
   sidebar_banner_path: E:\1PIC\2503\2025音律联觉\2025音律联觉（2）.avif
   opacity: 0.5
   blur: 0
+user_preferences:
+  ui_settings:
+    card_view:
+      show_description: false
+      show_tags: true
+      show_directory: false
+      show_command: false
