@@ -110,50 +110,76 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
                 # 获取当前选择状态
                 is_selected = get_task_selection_state(task['name'])
                 
-                # 渲染勾选框
-                checkbox_value = st.checkbox("选择此任务", value=is_selected, key=f"select_{prefix}")
+                # 操作按钮 - 使用动态列布局
+                # 定义按钮配置列表
+                button_configs = [
+                    {
+                        "icon": "☑️",
+                        "key": f"select_{prefix}",
+                        "help": "选择/取消选择此任务",
+                        "callback": lambda: update_task_selection(task['name'], not is_selected),
+                        "is_selected": is_selected
+                    },
+                    {
+                        "icon": "▶️",
+                        "key": f"run_{prefix}",
+                        "help": "运行此任务",
+                        "callback": lambda: run_task_via_cmd(task['name'], current_taskfile)
+                    },
+                    {
+                        "icon": "📋",
+                        "key": f"copy_{prefix}",
+                        "help": "复制任务命令",
+                        "callback": lambda: copy_to_clipboard(get_task_command(task['name'], current_taskfile))
+                    },
+                    {
+                        "icon": "✏️",
+                        "key": f"edit_{prefix}",
+                        "help": "编辑任务",
+                        "callback": lambda: setattr(st.session_state, edit_key, True) or st.rerun()
+                    }
+                ]
                 
-                # 如果勾选状态与记录的状态不同，更新状态
-                if checkbox_value != is_selected:
-                    update_task_selection(task['name'], checkbox_value)
-                    st.rerun()  # 立即刷新以更新预览
-            
-            # 操作按钮 - 使用动态列布局
-            # 定义按钮配置列表
-            button_configs = [
-                {
-                    "icon": "▶️",
-                    "key": f"run_{prefix}",
-                    "help": "运行此任务",
-                    "callback": lambda: run_task_via_cmd(task['name'], current_taskfile)
-                },
-                {
-                    "icon": "📋",
-                    "key": f"copy_{prefix}",
-                    "help": "复制任务命令",
-                    "callback": lambda: copy_to_clipboard(get_task_command(task['name'], current_taskfile))
-                },
-                {
-                    "icon": "✏️",
-                    "key": f"edit_{prefix}",
-                    "help": "编辑任务",
-                    "callback": lambda: setattr(st.session_state, edit_key, True) or st.rerun()
-                }
-            ]
-            
-            # 创建动态列布局
-            button_columns = st.columns(len(button_configs))
-            
-            # 动态渲染按钮
-            for idx, (col, config) in enumerate(zip(button_columns, button_configs)):
-                with col:
-                    if st.button(config["icon"], key=config["key"], help=config["help"]):
-                        if config["icon"] == "▶️":
-                            with st.spinner(f"正在启动任务 {task['name']}..."):
+                # 为选择按钮创建唯一CSS样式
+                select_btn_key = f"select_{prefix}"
+                if is_selected:
+                    # 定义选中状态的CSS样式
+                    select_btn_style = f"""
+                    <style>
+                    button[key="{select_btn_key}"] {{
+                        background-color: var(--primary-color) !important;
+                        color: white !important;
+                        border-color: var(--primary-color) !important;
+                    }}
+                    </style>
+                    """
+                    st.markdown(select_btn_style, unsafe_allow_html=True)
+                
+                # 创建动态列布局
+                button_columns = st.columns(len(button_configs))
+                
+                # 动态渲染按钮
+                for idx, (col, config) in enumerate(zip(button_columns, button_configs)):
+                    with col:
+                        # 如果是选择按钮，根据状态使用不同的按钮类型
+                        if config.get("key") == select_btn_key:
+                            button_type = "primary" if is_selected else "secondary"
+                            if st.button(
+                                config["icon"], 
+                                key=config["key"], 
+                                help=config["help"],
+                                type=button_type
+                            ):
                                 config["callback"]()
-                                record_task_run(task['name'], status="started")
+                                st.rerun()
                         else:
-                            config["callback"]()
+                            if st.button(config["icon"], key=config["key"], help=config["help"]):
+                                if config["icon"] == "▶️":
+                                    with st.spinner(f"正在启动任务 {task['name']}..."):
+                                        config["callback"]()
+                                        record_task_run(task['name'], status="started")
+                                else:
+                                    config["callback"]()
             
             # 获取任务运行时数据
             runtime = get_task_runtime(task['name'])
