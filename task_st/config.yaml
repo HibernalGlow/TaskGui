@@ -1,6 +1,8 @@
 favorite_tags:
-- archive
 - convert
+- uuid
+- organize
+- classify
 background_settings:
   enabled: false
   sidebar_enabled: false
