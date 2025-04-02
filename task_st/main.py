@@ -26,7 +26,14 @@ from src.utils.selection_utils import (
     display_yaml_in_ui, validate_yaml, get_selected_tasks,
     load_background_settings, save_background_settings
 )
-
+# 导入Pillow增强插件
+try:
+    import pillow_avif
+    import pillow_jxl
+    AVIF_JXL_SUPPORT = True
+except ImportError:
+    AVIF_JXL_SUPPORT = False
+    print("提示：未找到AVIF或JXL支持库，建议安装：pip install pillow-avif-plugin pillow-jpegxl")
 # 添加当前目录到路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 

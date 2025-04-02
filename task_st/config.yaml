@@ -1,3 +1,12 @@
 favorite_tags:
 - archive
 - convert
+background_settings:
+  enabled: false
+  sidebar_enabled: false
+  header_banner_enabled: true
+  image_path: ''
+  sidebar_image_path: ''
+  header_banner_path: E:\1PIC\2503\2025音律联觉\2025音律联觉（3）.avif
+  opacity: 0.5
+  blur: 0
