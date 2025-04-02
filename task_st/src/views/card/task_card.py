@@ -34,17 +34,19 @@ def render_tags(tags):
     if not isinstance(tags, list) or not tags:
         return
     
-    # 创建标签容器
-    st.markdown('<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">', unsafe_allow_html=True)
+    # 创建一个完整的HTML字符串，一次性渲染所有标签
+    tags_container = '<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">'
     
-    # 为每个标签单独创建div并渲染
+    # 添加每个标签的HTML
     for tag in tags:
         bg_color = get_tag_color(tag)
-        tag_html = f'<div style="display: inline-block; background-color: {bg_color}; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500;">#{tag}</div>'
-        st.markdown(tag_html, unsafe_allow_html=True)
+        tags_container += f'<span style="display: inline-block; background-color: {bg_color}; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500;">#{tag}</span>'
     
     # 关闭容器
-    st.markdown('</div>', unsafe_allow_html=True)
+    tags_container += '</div>'
+    
+    # 一次性渲染整个容器
+    st.markdown(tags_container, unsafe_allow_html=True)
 
 def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_checkbox=False):
     """通用的任务卡片渲染函数，可在不同视图中复用
@@ -65,7 +67,7 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
         st.session_state[edit_key] = False
     
     # 在expander中显示卡片内容
-    with st.expander(f"{task['emoji']} {task['name']}", expanded=False):
+    with st.expander(f"{task['emoji']} {task['name']}", expanded=True):
         # 如果是编辑模式，显示编辑表单
         if st.session_state[edit_key]:
             # 定义返回按钮回调

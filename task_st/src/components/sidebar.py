@@ -185,23 +185,27 @@ def render_sidebar(current_taskfile):
         if st.session_state.favorite_tags:
             st.markdown("#### 常用标签")
             
-            # 渲染常用标签容器开始
-            st.markdown('<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">', unsafe_allow_html=True)
+            # 创建一个完整的HTML字符串，一次性渲染所有标签
+            tags_html = '<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">'
             
-            # 为每个标签单独渲染
+            # 为每个标签创建HTML
             for tag in sorted(st.session_state.favorite_tags):
                 is_active = tag in st.session_state.tags_filter
-                # 简化的标签样式，避免多行HTML导致的解析问题
+                # 简化的标签样式
+                bg_color = get_tag_color(tag)
+                
                 if is_active:
-                    bg_color = get_tag_color(tag)
-                    tag_html = f'<div style="cursor: pointer; display: inline-block; background-color: {bg_color}; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500; border: 2px solid #555;">✓ #{tag}</div>'
+                    tag_html = f'<span style="cursor: pointer; display: inline-block; background-color: {bg_color}; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500; border: 2px solid #555;">✓ #{tag}</span>'
                 else:
-                    bg_color = get_tag_color(tag)
-                    tag_html = f'<div style="cursor: pointer; display: inline-block; background-color: {bg_color}; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500;">#{tag}</div>'
-                st.markdown(tag_html, unsafe_allow_html=True)
+                    tag_html = f'<span style="cursor: pointer; display: inline-block; background-color: {bg_color}; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500;">#{tag}</span>'
+                
+                tags_html += tag_html
             
             # 关闭标签容器
-            st.markdown('</div>', unsafe_allow_html=True)
+            tags_html += '</div>'
+            
+            # 一次性渲染所有标签
+            st.markdown(tags_html, unsafe_allow_html=True)
             
             # 使用常规按钮作为后备方案
             st.markdown("##### 选择操作")
