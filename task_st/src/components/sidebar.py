@@ -7,6 +7,69 @@ import sys
 import subprocess
 import base64
 from src.components.preview_card import render_action_buttons
+import hashlib
+
+def get_tag_color(tag):
+    """为标签生成一致的颜色
+    
+    参数:
+        tag: 标签文本
+        
+    返回:
+        str: HSL颜色格式
+    """
+    # 使用标签文本的哈希值生成颜色
+    hash_obj = hashlib.md5(tag.encode())
+    hash_value = int(hash_obj.hexdigest(), 16)
+    
+    # 生成柔和的颜色（调整亮度和饱和度）
+    hue = hash_value % 360  # 0-359 色相
+    
+    # 返回HSL格式的颜色
+    return f"hsl({hue}, 70%, 85%)"
+
+def render_styled_tag(tag, is_active=False):
+    """渲染美化的标签
+    
+    参数:
+        tag: 标签文本
+        is_active: 是否为激活状态
+    
+    返回:
+        str: 标签的HTML代码
+    """
+    bg_color = get_tag_color(tag)
+    
+    # 激活状态使用稍深的颜色和边框
+    if is_active:
+        style = f"""
+            display: inline-block;
+            background-color: {bg_color};
+            color: #333;
+            padding: 2px 8px;
+            margin-right: 6px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 500;
+            border: 2px solid #555;
+        """
+        prefix = "✓ "
+    else:
+        style = f"""
+            display: inline-block;
+            background-color: {bg_color};
+            color: #333;
+            padding: 2px 8px;
+            margin-right: 6px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 500;
+        """
+        prefix = ""
+    
+    return f'<div style="{style}">{prefix}#{tag}</div>'
 
 def get_base64_encoded_image(image_path):
     """获取图片的base64编码"""
@@ -121,6 +184,27 @@ def render_sidebar(current_taskfile):
         # 显示收藏标签作为快速过滤器按钮
         if st.session_state.favorite_tags:
             st.markdown("#### 常用标签")
+            
+            # 渲染常用标签容器开始
+            st.markdown('<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">', unsafe_allow_html=True)
+            
+            # 为每个标签单独渲染
+            for tag in sorted(st.session_state.favorite_tags):
+                is_active = tag in st.session_state.tags_filter
+                # 简化的标签样式，避免多行HTML导致的解析问题
+                if is_active:
+                    bg_color = get_tag_color(tag)
+                    tag_html = f'<div style="cursor: pointer; display: inline-block; background-color: {bg_color}; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500; border: 2px solid #555;">✓ #{tag}</div>'
+                else:
+                    bg_color = get_tag_color(tag)
+                    tag_html = f'<div style="cursor: pointer; display: inline-block; background-color: {bg_color}; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500;">#{tag}</div>'
+                st.markdown(tag_html, unsafe_allow_html=True)
+            
+            # 关闭标签容器
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # 使用常规按钮作为后备方案
+            st.markdown("##### 选择操作")
             # 使用更紧凑的布局显示常用标签
             cols_per_row = 2
             for i in range(0, len(st.session_state.favorite_tags), cols_per_row):

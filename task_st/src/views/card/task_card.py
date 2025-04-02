@@ -34,24 +34,17 @@ def render_tags(tags):
     if not isinstance(tags, list) or not tags:
         return
     
-    # 为每个标签创建单独的元素，避免格式化问题
+    # 创建标签容器
+    st.markdown('<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">', unsafe_allow_html=True)
+    
+    # 为每个标签单独创建div并渲染
     for tag in tags:
         bg_color = get_tag_color(tag)
-        tag_html = f"""
-        <div style="
-            display: inline-block;
-            background-color: {bg_color};
-            color: #333;
-            padding: 2px 8px;
-            margin-right: 6px;
-            margin-bottom: 6px;
-            border-radius: 4px;
-            font-size: 0.85em;
-            font-weight: 500;
-        ">#{tag}</div>
-        """
-        # 一次只渲染一个标签元素，确保HTML被正确解析
+        tag_html = f'<div style="display: inline-block; background-color: {bg_color}; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500;">#{tag}</div>'
         st.markdown(tag_html, unsafe_allow_html=True)
+    
+    # 关闭容器
+    st.markdown('</div>', unsafe_allow_html=True)
 
 def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_checkbox=False):
     """通用的任务卡片渲染函数，可在不同视图中复用
@@ -72,19 +65,21 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
         st.session_state[edit_key] = False
     
     # 在expander中显示卡片内容
-    with st.expander(f"{task['emoji']} {task['name']}", expanded=True):
+    with st.expander(f"{task['emoji']} {task['name']}", expanded=False):
         # 如果是编辑模式，显示编辑表单
         if st.session_state[edit_key]:
-            # 添加返回按钮
-            if st.button("← 返回", key=f"back_from_edit_{prefix}"):
+            # 定义返回按钮回调
+            def back_button_callback():
                 st.session_state[edit_key] = False
                 st.rerun()
-                
+            
             # 渲染编辑表单
             render_task_edit_form(
                 task=task, 
                 taskfile_path=current_taskfile, 
-                on_save_callback=lambda: setattr(st.session_state, edit_key, False)
+                on_save_callback=lambda: setattr(st.session_state, edit_key, False),
+                with_back_button=True,
+                back_button_callback=back_button_callback
             )
         else:
             # 描述
@@ -93,10 +88,7 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
             # 显示标签（使用优化的标签样式）
             if isinstance(task['tags'], list) and task['tags']:
                 st.write("**标签**:")
-                # 创建容器以显示标签
-                tags_container = st.container()
-                with tags_container:
-                    render_tags(task['tags'])
+                render_tags(task['tags'])
             
             # 显示目录
             st.markdown(f"**目录**: `{task['directory']}`")

@@ -4,7 +4,7 @@ import os
 import shutil
 from datetime import datetime
 
-def render_task_edit_form(task, taskfile_path, on_save_callback=None):
+def render_task_edit_form(task, taskfile_path, on_save_callback=None, with_back_button=False, back_button_callback=None):
     """
     渲染任务编辑表单
     
@@ -12,6 +12,8 @@ def render_task_edit_form(task, taskfile_path, on_save_callback=None):
         task: 要编辑的任务数据
         taskfile_path: 任务文件路径
         on_save_callback: 保存成功后的回调函数
+        with_back_button: 是否显示返回按钮
+        back_button_callback: 返回按钮回调函数
     """
     # 创建一个任务的可编辑副本
     edited_task = task.copy()
@@ -21,7 +23,7 @@ def render_task_edit_form(task, taskfile_path, on_save_callback=None):
     
     # 编辑表单
     with st.form(key=f"edit_form_{edited_task['name']}"):
-        st.markdown(f"{edited_task['name']}")
+        st.markdown(f"### 编辑任务: {edited_task['name']}")
         
         # 组织编辑字段
         col1, col2 = st.columns(2)
@@ -47,8 +49,19 @@ def render_task_edit_form(task, taskfile_path, on_save_callback=None):
             # 适配可能使用command字段的情况
             edited_task['command'] = st.text_area("命令", value=edited_task.get('command', ''), height=100)
         
+        # 按钮区域 - 保存和返回按钮在同一行
+        col_btn1, col_btn2 = st.columns(2)
+        
         # 表单提交按钮
-        submit = st.form_submit_button("保存修改")
+        with col_btn1:
+            submit = st.form_submit_button("保存修改")
+        
+        # 返回按钮（如果需要）
+        with col_btn2:
+            if with_back_button:
+                back_button = st.form_submit_button("← 返回")
+                if back_button and back_button_callback:
+                    back_button_callback()
         
         if submit:
             # 保存修改
