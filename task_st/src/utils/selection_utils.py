@@ -9,8 +9,12 @@ from pathlib import Path
 _MEMORY_CACHE = None  # 内存缓存
 
 # 本地配置文件路径
-LOCAL_CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".glowtoolbox")
-LOCAL_CONFIG_FILE = os.path.join(LOCAL_CONFIG_DIR, "local_config.yaml")
+# LOCAL_CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".glowtoolbox")
+# LOCAL_CONFIG_FILE = os.path.join(LOCAL_CONFIG_DIR, "local_config.yaml")
+
+# 修改为脚本目录
+LOCAL_CONFIG_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+LOCAL_CONFIG_FILE = os.path.join(LOCAL_CONFIG_DIR, "config.yaml")
 
 # 确保配置目录存在
 def ensure_config_dir():
@@ -774,40 +778,6 @@ def display_yaml_in_ui(yaml_str):
     # 添加到UI
     st.markdown(markdown_yaml)
 
-def save_background_settings(settings):
-    """保存背景设置到本地配置，增加错误处理"""
-    try:
-        # 确保设置中包含所有必要的键
-        default_settings = {
-            'enabled': False,
-            'sidebar_enabled': False,
-            'header_banner_enabled': False,
-            'image_path': '',
-            'sidebar_image_path': '',
-            'header_banner_path': '',
-            'opacity': 0.5,
-            'blur': 0
-        }
-        
-        # 使用默认值填充缺失的键
-        for key, default_value in default_settings.items():
-            if key not in settings:
-                settings[key] = default_value
-        
-        # 验证所有路径
-        for path_key in ['image_path', 'sidebar_image_path', 'header_banner_path']:
-            if settings[path_key] and not os.path.isfile(settings[path_key]):
-                # 如果路径无效，记录警告但不阻止保存
-                print(f"警告: 保存的路径无效 {path_key}={settings[path_key]}")
-        
-        # 加载现有配置并更新
-        local_config = load_local_config()
-        local_config["background_settings"] = settings
-        return save_local_config(local_config)
-    except Exception as e:
-        print(f"保存背景设置时出错: {str(e)}")
-        return False
-
 def load_background_settings():
     """从本地配置加载背景设置，确保所有必要的键都存在"""
     try:
@@ -844,6 +814,14 @@ def load_background_settings():
             if key not in settings:
                 settings[key] = default_value
         
+        # 删除所有base64编码的图片数据
+        if 'image_base64' in settings:
+            del settings['image_base64']
+        if 'sidebar_image_base64' in settings:
+            del settings['sidebar_image_base64']
+        if 'header_banner_base64' in settings:
+            del settings['header_banner_base64']
+        
         # 验证所有路径，确保它们是有效的文件
         for path_key in ['image_path', 'sidebar_image_path', 'header_banner_path']:
             if settings[path_key] and not os.path.isfile(settings[path_key]):
@@ -868,3 +846,52 @@ def load_background_settings():
             'opacity': 0.5,
             'blur': 0
         }
+
+def save_background_settings(settings):
+    """保存背景设置到本地配置，增加错误处理"""
+    try:
+        # 确保设置中包含所有必要的键
+        default_settings = {
+            'enabled': False,
+            'sidebar_enabled': False,
+            'header_banner_enabled': False,
+            'image_path': '',
+            'sidebar_image_path': '',
+            'header_banner_path': '',
+            'opacity': 0.5,
+            'blur': 0
+        }
+        
+        # 使用默认值填充缺失的键
+        for key, default_value in default_settings.items():
+            if key not in settings:
+                settings[key] = default_value
+        
+        # 删除所有base64编码的图片数据，不保存到配置文件
+        settings_copy = settings.copy()
+        if 'image_base64' in settings_copy:
+            del settings_copy['image_base64']
+        if 'sidebar_image_base64' in settings_copy:
+            del settings_copy['sidebar_image_base64']
+        if 'header_banner_base64' in settings_copy:
+            del settings_copy['header_banner_base64']
+        if 'image_format' in settings_copy:
+            del settings_copy['image_format']
+        if 'sidebar_image_format' in settings_copy:
+            del settings_copy['sidebar_image_format']
+        if 'header_banner_format' in settings_copy:
+            del settings_copy['header_banner_format']
+        
+        # 验证所有路径
+        for path_key in ['image_path', 'sidebar_image_path', 'header_banner_path']:
+            if settings_copy[path_key] and not os.path.isfile(settings_copy[path_key]):
+                # 如果路径无效，记录警告但不阻止保存
+                print(f"警告: 保存的路径无效 {path_key}={settings_copy[path_key]}")
+        
+        # 加载现有配置并更新
+        local_config = load_local_config()
+        local_config["background_settings"] = settings_copy
+        return save_local_config(local_config)
+    except Exception as e:
+        print(f"保存背景设置时出错: {str(e)}")
+        return False

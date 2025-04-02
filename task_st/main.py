@@ -316,22 +316,22 @@ def main():
                     
                     if st.session_state.background_settings['enabled']:
                         # 选择背景图片
-                        uploaded_file = st.file_uploader(
-                            "选择背景图片",
-                            type=['png', 'jpg', 'jpeg', 'gif'],
-                            key="main_background_image"
+                        # 本地图片路径输入
+                        local_path = st.text_input(
+                            "输入本地图片路径",
+                            value=st.session_state.background_settings.get('image_path', ''),
+                            key="main_bg_local_path"
                         )
                         
-                        if uploaded_file is not None:
-                            # 保存图片到临时目录
-                            temp_dir = tempfile.gettempdir()
-                            temp_path = os.path.join(temp_dir, uploaded_file.name)
-                            with open(temp_path, "wb") as f:
-                                f.write(uploaded_file.getbuffer())
-                            st.session_state.background_settings['image_path'] = temp_path
-                            # 存储base64编码的图片
-                            st.session_state.background_settings['image_base64'] = get_base64_encoded_image(temp_path)
-                            st.session_state.background_settings['image_format'] = uploaded_file.name.split('.')[-1].lower()
+                        if local_path and os.path.isfile(local_path):
+                            try:
+                                st.session_state.background_settings['image_path'] = local_path
+                                # 预览图片
+                                st.image(local_path, caption="背景图片预览", width=300)
+                            except Exception as e:
+                                st.error(f"加载本地图片时出错: {str(e)}")
+                        elif local_path:
+                            st.warning("输入的文件路径不存在或不是有效的文件")
                         
                         # 透明度调节
                         st.session_state.background_settings['opacity'] = st.slider(
@@ -355,7 +355,7 @@ def main():
                         
                         # 应用背景设置
                         if st.button("应用主界面背景", key="apply_main_bg"):
-                            if 'image_path' in st.session_state.background_settings and os.path.exists(st.session_state.background_settings['image_path']):
+                            if 'image_path' in st.session_state.background_settings and os.path.isfile(st.session_state.background_settings['image_path']):
                                 # 应用背景
                                 success = set_background_image(
                                     st.session_state.background_settings['image_path'],
@@ -378,27 +378,26 @@ def main():
                     )
                     
                     if st.session_state.background_settings['sidebar_enabled']:
-                        # 选择侧边栏背景图片
-                        sidebar_uploaded_file = st.file_uploader(
-                            "选择侧边栏背景图片",
-                            type=['png', 'jpg', 'jpeg', 'gif'],
-                            key="sidebar_background_image"
+                        # 本地图片路径输入
+                        sidebar_local_path = st.text_input(
+                            "输入本地图片路径",
+                            value=st.session_state.background_settings.get('sidebar_image_path', ''),
+                            key="sidebar_bg_local_path"
                         )
                         
-                        if sidebar_uploaded_file is not None:
-                            # 保存图片到临时目录
-                            temp_dir = tempfile.gettempdir()
-                            sidebar_temp_path = os.path.join(temp_dir, sidebar_uploaded_file.name)
-                            with open(sidebar_temp_path, "wb") as f:
-                                f.write(sidebar_uploaded_file.getbuffer())
-                            st.session_state.background_settings['sidebar_image_path'] = sidebar_temp_path
-                            # 存储base64编码的图片
-                            st.session_state.background_settings['sidebar_image_base64'] = get_base64_encoded_image(sidebar_temp_path)
-                            st.session_state.background_settings['sidebar_image_format'] = sidebar_uploaded_file.name.split('.')[-1].lower()
+                        if sidebar_local_path and os.path.isfile(sidebar_local_path):
+                            try:
+                                st.session_state.background_settings['sidebar_image_path'] = sidebar_local_path
+                                # 预览图片
+                                st.image(sidebar_local_path, caption="侧边栏背景预览", width=250)
+                            except Exception as e:
+                                st.error(f"加载本地图片时出错: {str(e)}")
+                        elif sidebar_local_path:
+                            st.warning("输入的文件路径不存在或不是有效的文件")
                         
                         # 应用侧边栏背景设置
                         if st.button("应用侧边栏背景", key="apply_sidebar_bg"):
-                            if 'sidebar_image_path' in st.session_state.background_settings and os.path.exists(st.session_state.background_settings['sidebar_image_path']):
+                            if 'sidebar_image_path' in st.session_state.background_settings and os.path.isfile(st.session_state.background_settings['sidebar_image_path']):
                                 # 应用侧边栏背景
                                 success = set_sidebar_background(st.session_state.background_settings['sidebar_image_path'])
                                 if success:
@@ -417,45 +416,21 @@ def main():
                     )
                     
                     if st.session_state.background_settings['header_banner_enabled']:
-                        # 选择顶部横幅图片
-                        header_uploaded_file = st.file_uploader(
-                            "选择顶部横幅图片",
-                            type=['png', 'jpg', 'jpeg', 'gif'],
-                            key="header_banner_image"
-                        )
-                        
-                        if header_uploaded_file is not None:
-                            try:
-                                # 保存图片到临时目录
-                                temp_dir = tempfile.gettempdir()
-                                header_temp_path = os.path.join(temp_dir, header_uploaded_file.name)
-                                with open(header_temp_path, "wb") as f:
-                                    f.write(header_uploaded_file.getbuffer())
-                                st.session_state.background_settings['header_banner_path'] = header_temp_path
-                                # 存储base64编码的图片
-                                st.session_state.background_settings['header_banner_base64'] = get_base64_encoded_image(header_temp_path)
-                                st.session_state.background_settings['header_banner_format'] = header_uploaded_file.name.split('.')[-1].lower()
-                                
-                                # 预览图片
-                                st.image(header_temp_path, caption="顶部横幅预览", use_container_width=True)
-                            except Exception as e:
-                                st.error(f"处理上传图片时出错: {str(e)}")
-                        
                         # 本地图片路径输入
-                        local_path = st.text_input(
-                            "或输入本地图片路径",
+                        banner_local_path = st.text_input(
+                            "输入本地图片路径",
                             value=st.session_state.background_settings.get('header_banner_path', ''),
                             key="header_banner_local_path"
                         )
                         
-                        if local_path and os.path.isfile(local_path):
+                        if banner_local_path and os.path.isfile(banner_local_path):
                             try:
-                                st.session_state.background_settings['header_banner_path'] = local_path
+                                st.session_state.background_settings['header_banner_path'] = banner_local_path
                                 # 预览图片
-                                st.image(local_path, caption="顶部横幅预览", use_container_width=True)
+                                st.image(banner_local_path, caption="顶部横幅预览", use_container_width=True)
                             except Exception as e:
                                 st.error(f"加载本地图片时出错: {str(e)}")
-                        elif local_path:
+                        elif banner_local_path:
                             st.warning("输入的文件路径不存在或不是有效的文件")
                         
                         # 应用顶部横幅设置
