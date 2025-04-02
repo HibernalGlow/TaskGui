@@ -133,23 +133,31 @@ def get_nearest_taskfile(start_dir=None):
     taskfiles = find_taskfiles(start_dir)
     return taskfiles[0] if taskfiles else None
 
-# 打开文件
+# 打开文件或目录
 def open_file(file_path):
     """
-    使用系统默认程序打开文件
+    使用系统默认程序打开文件或目录
     
     参数:
-        file_path: 文件路径
+        file_path: 文件或目录路径
         
     返回:
         布尔值，表示是否成功打开
     """
+    if not file_path:
+        print("文件路径为空")
+        return False
+        
+    # 处理路径中的Taskfile变量
+    file_path = resolve_taskfile_variables(file_path)
+    
     if not os.path.exists(file_path):
+        print(f"路径不存在: {file_path}")
         return False
     
     try:
         if platform.system() == 'Windows':
-            os.startfile(file_path)
+            subprocess.run(['explorer', file_path], shell=True)
         elif platform.system() == 'Darwin':  # macOS
             subprocess.call(['open', file_path])
         else:  # Linux
@@ -170,7 +178,19 @@ def get_directory_files(directory):
     返回:
         文件名列表
     """
-    if not os.path.exists(directory) or not os.path.isdir(directory):
+    if not directory:
+        print("目录路径为空")
+        return []
+        
+    # 处理路径中的Taskfile变量
+    directory = resolve_taskfile_variables(directory)
+    
+    if not os.path.exists(directory):
+        print(f"目录不存在: {directory}")
+        return []
+        
+    if not os.path.isdir(directory):
+        print(f"路径不是目录: {directory}")
         return []
     
     try:
@@ -178,4 +198,34 @@ def get_directory_files(directory):
         return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
     except Exception as e:
         print(f"获取目录文件时出错: {str(e)}")
-        return [] 
+        return []
+
+# 解析Taskfile变量
+def resolve_taskfile_variables(path):
+    """
+    解析路径中的Taskfile变量，如{{.ROOT_DIR}}
+    
+    参数:
+        path: 包含变量的路径
+        
+    返回:
+        解析后的路径
+    """
+    if not path:
+        return path
+        
+    # 处理常见的Taskfile变量
+    if "{{.ROOT_DIR}}" in path:
+        # 获取Taskfile所在目录作为根目录
+        taskfile_path = get_nearest_taskfile()
+        if taskfile_path:
+            root_dir = os.path.dirname(taskfile_path)
+            return path.replace("{{.ROOT_DIR}}", root_dir)
+        else:
+            # 如果找不到Taskfile，使用当前工作目录
+            root_dir = os.getcwd()
+            return path.replace("{{.ROOT_DIR}}", root_dir)
+    
+    # 可以在这里添加更多变量的处理
+    
+    return path 

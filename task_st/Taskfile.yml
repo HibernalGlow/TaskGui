@@ -5,7 +5,7 @@ vars:
 tasks:
   artbook_dedup:
     desc:  🖼️ 艺术书去重工具 - 删除重复的艺术书图片
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - filter
     - dedup
@@ -13,7 +13,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\fliter\artbook_dedup.py"'
   auto_cover:
     desc: 📔 自动封面生成器 - 为漫画创建封面图片
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - comic
     - cover
@@ -22,7 +22,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\comic\uuid\auto_cover.py"'
   auto_recycle:
     desc: ♻️ 自动回收 - 清理并回收不需要的文件
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - folder
     - cleanup
@@ -30,7 +30,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\folder\auto_recycle.py"'
   auto_repack:
     desc: 📦 自动重打包 - 重新打包文件夹内容
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - folder
     - archive
@@ -38,7 +38,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\folder\auto_repack.py"'
   auto_unzip:
     desc: 📂 自动解压 - 解压缩存档文件
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - folder
     - archive
@@ -46,7 +46,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\folder\auto_unzip.py"'
   auto_uuid:
     desc: 🔖 自动UUID - 为漫画生成唯一标识符
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - comic
     - uuid
@@ -54,7 +54,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\comic\uuid\auto_uuid.py"'
   batch_img_filter:
     desc: 🎭 批量图像过滤器 - 处理大量图像文件
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - filter
     - batch
@@ -63,7 +63,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\fliter\batch_img_filter.py"'
   comic_low_width:
     desc: 📏 漫画低宽度检测 - 查找低分辨率漫画
-    dir: D:\1VSCODE
+    dir: '{{.GlowToolBox}}'
     tags:
     - comic
     - filter
@@ -72,7 +72,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\comic-low-width\main.py"'
   find_same_artist:
     desc: 👨‍🎨 查找相同艺术家 - 归类同一作者的作品
-    dir: D:\1VSCODE
+    dir: '{{.GlowToolBox}}'
     tags:
     - comic
     - classify
@@ -81,7 +81,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\comic\classify\find_same_artist.py"'
   gallery_finder:
     desc: 🔍 图库查找器 - 查找并组织图库资源
-    dir: D:\1VSCODE
+    dir: '{{.GlowToolBox}}'
     tags:
     - archive
     - finder
@@ -89,7 +89,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\nodes\archive\gallery_finder.py" -c -o'
   img_filter:
     desc: 🖼️ 图像过滤器 - 根据条件筛选图像
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - filter
     - image
@@ -97,7 +97,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\fliter\img_filter.py"'
   janai_monitor:
     desc: 🔭 Janai监控 - 监控Janai转换进度
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - comic
     - upscale
@@ -106,7 +106,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\comic\upscale\janai_monitor.py"'
   manga_archive_classifier:
     desc: 📚 漫画归档分类器 - 对漫画进行分类整理
-    dir: D:\1VSCODE\1ehv\archive
+    dir: '{{.GlowToolBox}}'
     tags:
     - comic
     - classifier
@@ -115,7 +115,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\comic\manga_archive_classifier.py" -c'
   merge_part_folders:
     desc: 🔀 合并部分文件夹 - 将分散的文件夹合并
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - folder
     - organize
@@ -123,7 +123,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\folder\merge_part_folders.py"'
   no_translate_find:
     desc: 🔤 查找未翻译内容 - 识别未翻译的文本
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - filter
     - translate
@@ -131,7 +131,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\fliter\no_translate_find.py" -c'
   one_name:
     desc: 📝 统一命名 - 标准化文件名称
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - comic
     - uuid
@@ -140,7 +140,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\comic\uuid\one_name.py"'
   organize_folder:
     desc: 📁 整理文件夹 - 结构化整理文件夹内容
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - folder
     - organize
@@ -149,7 +149,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\folder\organize_folder.py"'
   pics_convert:
     desc: 🎨 图片转换 - 转换图片格式或大小
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - pics
     - convert
@@ -157,7 +157,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\pics\pics_convert.py" -c'
   psd_convert_clipboard:
     desc: 📋 PSD剪贴板转换 - 将PSD内容转换至剪贴板
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - pics
     - psd
@@ -166,7 +166,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\pics\psd_convert.py" --clipboard'
   recruit_cover_filter:
     desc: 🕵️ 招募封面过滤 - 过滤特定类型的封面
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - filter
     - cover
@@ -174,7 +174,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\fliter\recruit_cover_filter.py"'
   rename_images:
     desc: 🏷️ 重命名图片 - 批量重命名图像文件
-    dir: D:\1VSCODE
+    dir: '{{.GlowToolBox}}'
     tags:
     - folder
     - image
@@ -183,16 +183,16 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\folder\rename_images.py"'
   restore_bak:
     desc: 🔄 恢复备份 - 从备份文件恢复
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - refactor
     - backup
     - restore
     cmds:
     - '"{{.PYTHON}}" "src\scripts\refactor\restore_bak.py"'
-  single_packer_cg:
+  single_packer:
     desc: 📦 单一打包CG - 打包特定CG内容
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - archive
     - packer
@@ -200,7 +200,7 @@ tasks:
     - '"{{.PYTHON}}" "src\nodes\archive\single_packer.py" -c -g'
   sn_fix:
     desc: 🔧 序列号修复 - 修复错误的序列号
-    dir: D:\1VSCODE
+    dir: '{{.GlowToolBox}}'
     tags:
     - refactor
     - fix
@@ -208,7 +208,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\refactor\sn_fix.py" -c'
   timestamps_record:
     desc: ⏱️ 时间戳记录 - 记录文件时间戳信息
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - folder
     - metadata
@@ -217,7 +217,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\folder\timestamps_record.py"'
   upscale_bus:
     desc: 🔍 图像放大总线 - 管理图像放大流程
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - filter
     - upscale
@@ -225,7 +225,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\fliter\upscale_bus.py"'
   video_format:
     desc: 🎬 视频格式转换 - 处理视频格式问题
-    dir: D:\1VSCODE
+    dir: '{{.GlowToolBox}}'
     tags:
     - folder
     - video
@@ -234,7 +234,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\folder\video_format.py" -c'
   width_filter:
     desc: 📏 宽度过滤器 - 基于宽度过滤图像
-    dir: '{{.ROOT_DIR}}'
+    dir: '{{.GlowToolBox}}'
     tags:
     - filter
     - dimension
@@ -242,7 +242,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\fliter\width_filter.py"'
   st:
     desc: 🚀 任务管理器 - 启动图形化任务管理界面
-    dir: '{{.ROOT_DIR}}\src\scripts\task\task_gui\task_st'
+    dir: '{{.GlowToolBox}}\src\scripts\task\task_gui\task_st'
     tags:
     - gui
     - task

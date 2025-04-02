@@ -133,17 +133,24 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
             with col2:
                 # 文件按钮 - 使用📁 (文件夹)图标
                 if st.button("📁", key=f"file_{prefix}", help="查看相关文件"):
-                    if task['directory'] and os.path.exists(task['directory']):
-                        files = get_directory_files(task['directory'])
-                        if files:
-                            st.markdown("##### 文件列表")
-                            for i, file in enumerate(files):
-                                file_path = os.path.join(task['directory'], file)
-                                if st.button(file, key=f"file_{prefix}_{i}"):
-                                    if open_file(file_path):
-                                        st.success(f"已打开: {file}")
+                    if task['directory']:
+                        # 直接尝试打开目录
+                        if open_file(task['directory']):
+                            st.success(f"已打开目录: {task['directory']}")
                         else:
-                            st.info("没有找到文件")
+                            # 如果打开目录失败，尝试显示文件列表
+                            files = get_directory_files(task['directory'])
+                            if files:
+                                st.markdown("##### 文件列表")
+                                for i, file in enumerate(files):
+                                    file_path = os.path.join(task['directory'], file)
+                                    if st.button(file, key=f"file_{prefix}_{i}"):
+                                        if open_file(file_path):
+                                            st.success(f"已打开: {file}")
+                            else:
+                                st.info("没有找到文件或无法打开目录")
+                    else:
+                        st.info("没有设置目录路径")
             
             with col3:
                 # 复制命令按钮 - 使用📋 (剪贴板)图标
