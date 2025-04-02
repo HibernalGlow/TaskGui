@@ -775,21 +775,96 @@ def display_yaml_in_ui(yaml_str):
     st.markdown(markdown_yaml)
 
 def save_background_settings(settings):
-    """保存背景设置到本地配置"""
-    local_config = load_local_config()
-    local_config["background_settings"] = settings
-    save_local_config(local_config)
+    """保存背景设置到本地配置，增加错误处理"""
+    try:
+        # 确保设置中包含所有必要的键
+        default_settings = {
+            'enabled': False,
+            'sidebar_enabled': False,
+            'header_banner_enabled': False,
+            'image_path': '',
+            'sidebar_image_path': '',
+            'header_banner_path': '',
+            'opacity': 0.5,
+            'blur': 0
+        }
+        
+        # 使用默认值填充缺失的键
+        for key, default_value in default_settings.items():
+            if key not in settings:
+                settings[key] = default_value
+        
+        # 验证所有路径
+        for path_key in ['image_path', 'sidebar_image_path', 'header_banner_path']:
+            if settings[path_key] and not os.path.isfile(settings[path_key]):
+                # 如果路径无效，记录警告但不阻止保存
+                print(f"警告: 保存的路径无效 {path_key}={settings[path_key]}")
+        
+        # 加载现有配置并更新
+        local_config = load_local_config()
+        local_config["background_settings"] = settings
+        return save_local_config(local_config)
+    except Exception as e:
+        print(f"保存背景设置时出错: {str(e)}")
+        return False
 
 def load_background_settings():
-    """从本地配置加载背景设置"""
-    local_config = load_local_config()
-    return local_config.get("background_settings", {
-        'enabled': False,
-        'sidebar_enabled': False,
-        'header_banner_enabled': False,  # 新增顶部横幅开关
-        'image_path': '',
-        'sidebar_image_path': '',
-        'header_banner_path': '',  # 新增顶部横幅图片路径
-        'opacity': 0.5,
-        'blur': 0
-    })
+    """从本地配置加载背景设置，确保所有必要的键都存在"""
+    try:
+        local_config = load_local_config()
+        if "background_settings" not in local_config:
+            return {
+                'enabled': False,
+                'sidebar_enabled': False,
+                'header_banner_enabled': False, 
+                'image_path': '',
+                'sidebar_image_path': '',
+                'header_banner_path': '',
+                'opacity': 0.5,
+                'blur': 0
+            }
+        
+        # 获取基本设置
+        settings = local_config["background_settings"]
+        
+        # 确保所有必要的字段存在
+        default_settings = {
+            'enabled': False,
+            'sidebar_enabled': False,
+            'header_banner_enabled': False,
+            'image_path': '',
+            'sidebar_image_path': '',
+            'header_banner_path': '',
+            'opacity': 0.5,
+            'blur': 0
+        }
+        
+        # 使用默认值填充缺失的键
+        for key, default_value in default_settings.items():
+            if key not in settings:
+                settings[key] = default_value
+        
+        # 验证所有路径，确保它们是有效的文件
+        for path_key in ['image_path', 'sidebar_image_path', 'header_banner_path']:
+            if settings[path_key] and not os.path.isfile(settings[path_key]):
+                # 如果路径无效，重置相关设置
+                related_enabled_key = 'enabled' if path_key == 'image_path' else \
+                                     'sidebar_enabled' if path_key == 'sidebar_image_path' else \
+                                     'header_banner_enabled'
+                settings[path_key] = ''
+                settings[related_enabled_key] = False
+        
+        return settings
+    except Exception as e:
+        print(f"加载背景设置时出错: {str(e)}")
+        # 出现任何错误时返回默认设置
+        return {
+            'enabled': False,
+            'sidebar_enabled': False,
+            'header_banner_enabled': False, 
+            'image_path': '',
+            'sidebar_image_path': '',
+            'header_banner_path': '',
+            'opacity': 0.5,
+            'blur': 0
+        }
