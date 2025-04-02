@@ -129,9 +129,9 @@ def apply_custom_css():
             padding-top: 2rem !important;
         }
         
-        [data-testid="stToolbar"] {
-            display: none !important;
-        }
+        # [data-testid="stToolbar"] {
+        #     display: none !important;
+        # }
         
         /* 主要内容区减少空白 */
         [data-testid="stAppViewContainer"] > .main .block-container {

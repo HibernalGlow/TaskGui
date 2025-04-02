@@ -146,7 +146,7 @@ def main():
             print(f"显示顶部横幅时出错：{str(e)}")
         
         # 渲染主界面操作按钮
-        # render_action_buttons(selected_tasks, default_taskfile, key_prefix="main_preview")
+        render_action_buttons(selected_tasks, default_taskfile, key_prefix="main_preview")
         
         # 使用字典存储页签标题和索引的映射，便于动态管理
         tab_names = ["📊 表格", "🗂️ 卡片", "🔍 预览", "📈 仪表盘", "⚙️ 设置", "🔧 状态"]

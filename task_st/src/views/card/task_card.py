@@ -118,52 +118,42 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
                     update_task_selection(task['name'], checkbox_value)
                     st.rerun()  # 立即刷新以更新预览
             
-            # 操作按钮 - 使用4列布局，增加编辑按钮
-            col1, col2, col3, col4 = st.columns(4)
+            # 操作按钮 - 使用动态列布局
+            # 定义按钮配置列表
+            button_configs = [
+                {
+                    "icon": "▶️",
+                    "key": f"run_{prefix}",
+                    "help": "运行此任务",
+                    "callback": lambda: run_task_via_cmd(task['name'], current_taskfile)
+                },
+                {
+                    "icon": "📋",
+                    "key": f"copy_{prefix}",
+                    "help": "复制任务命令",
+                    "callback": lambda: copy_to_clipboard(get_task_command(task['name'], current_taskfile))
+                },
+                {
+                    "icon": "✏️",
+                    "key": f"edit_{prefix}",
+                    "help": "编辑任务",
+                    "callback": lambda: setattr(st.session_state, edit_key, True) or st.rerun()
+                }
+            ]
             
-            with col1:
-                # 运行按钮 - 使用▶️ (播放)图标
-                if st.button("▶️", key=f"run_{prefix}", help="运行此任务"):
-                    with st.spinner(f"正在启动任务 {task['name']}..."):
-                        result = run_task_via_cmd(task['name'], current_taskfile)
-                        # 记录任务运行
-                        record_task_run(task['name'], status="started")
-                    # st.success(f"任务 {task['name']} 已在新窗口启动")
+            # 创建动态列布局
+            button_columns = st.columns(len(button_configs))
             
-            with col2:
-                # 文件按钮 - 使用📁 (文件夹)图标
-                if st.button("📁", key=f"file_{prefix}", help="查看相关文件"):
-                    if task['directory']:
-                        # 直接尝试打开目录
-                        if open_file(task['directory']):
-                            st.success(f"已打开目录: {task['directory']}")
+            # 动态渲染按钮
+            for idx, (col, config) in enumerate(zip(button_columns, button_configs)):
+                with col:
+                    if st.button(config["icon"], key=config["key"], help=config["help"]):
+                        if config["icon"] == "▶️":
+                            with st.spinner(f"正在启动任务 {task['name']}..."):
+                                config["callback"]()
+                                record_task_run(task['name'], status="started")
                         else:
-                            # 如果打开目录失败，尝试显示文件列表
-                            files = get_directory_files(task['directory'])
-                            if files:
-                                st.markdown("##### 文件列表")
-                                for i, file in enumerate(files):
-                                    file_path = os.path.join(task['directory'], file)
-                                    if st.button(file, key=f"file_{prefix}_{i}"):
-                                        if open_file(file_path):
-                                            st.success(f"已打开: {file}")
-                            else:
-                                st.info("没有找到文件或无法打开目录")
-                    else:
-                        st.info("没有设置目录路径")
-            
-            with col3:
-                # 复制命令按钮 - 使用📋 (剪贴板)图标
-                if st.button("📋", key=f"copy_{prefix}", help="复制任务命令"):
-                    cmd = get_task_command(task['name'], current_taskfile)
-                    copy_to_clipboard(cmd)
-                    # st.success("命令已复制")
-                    
-            with col4:
-                # 编辑按钮 - 使用✏️ (铅笔)图标
-                if st.button("✏️", key=f"edit_{prefix}", help="编辑任务"):
-                    st.session_state[edit_key] = True
-                    st.rerun()
+                            config["callback"]()
             
             # 获取任务运行时数据
             runtime = get_task_runtime(task['name'])

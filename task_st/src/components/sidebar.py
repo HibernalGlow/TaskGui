@@ -211,7 +211,7 @@ def render_sidebar(current_taskfile):
     #     st.markdown(f"## 已选择 {len(st.session_state.selected_tasks)} 个任务")
     
     # 添加系统操作部分
-    with st.expander("系统"):
+    with st.expander("系统", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
             if st.button("🔄 重启", help="重新启动任务管理器"):
