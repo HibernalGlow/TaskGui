@@ -26,7 +26,13 @@ def render_action_buttons(selected_tasks, current_taskfile, key_prefix="preview"
     
     with container:
         # 创建expander，在侧边栏或主界面中显示，使用更简洁的标题
-        with st.expander("📌 任务操作", expanded=True):
+        # 根据是否在侧边栏中决定expander的默认展开状态
+        # 决定扩展器是否默认展开 - 侧边栏默认展开，主界面默认折叠
+        expander_expanded = True if is_sidebar else False
+        # 如果用户手动设置过状态，则使用用户的设置
+        if "expander_state" in st.session_state:
+            expander_expanded = st.session_state.expander_state
+        with st.expander("📌 任务操作", expanded=expander_expanded):
             # 显示已选择的任务数量，更简洁的显示
             # st.markdown(f"### **选中{len(selected_tasks)}个任务**")
             
