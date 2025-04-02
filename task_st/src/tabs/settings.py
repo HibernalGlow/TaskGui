@@ -1,6 +1,6 @@
 import streamlit as st
 import os
-from src.utils.selection_utils import load_background_settings, save_background_settings
+from src.utils.selection_utils import load_background_settings, save_background_settings, get_card_view_settings, update_card_view_settings
 from src.components.sidebar import set_background_image, set_sidebar_background
 from src.ui.styles import reset_background_css
 
@@ -9,7 +9,7 @@ def render_settings_tab():
     st.markdown("## ⚙️ 系统设置")
     
     # 创建设置子标签页
-    settings_tabs = st.tabs(["基本设置", "🎨 背景设置"])
+    settings_tabs = st.tabs(["基本设置", "🎨 背景设置", "卡片设置"])
     
     # 基本设置标签页
     with settings_tabs[0]:
@@ -18,6 +18,10 @@ def render_settings_tab():
     # 背景设置标签页
     with settings_tabs[1]:
         render_background_settings()
+        
+    # 卡片设置标签页
+    with settings_tabs[2]:
+        render_card_settings()
 
 def render_basic_settings():
     """渲染基本设置"""
@@ -27,6 +31,61 @@ def render_basic_settings():
     
     st.subheader("任务执行")
     st.radio("默认运行模式", options=["顺序执行", "并行执行"], index=0, disabled=True)
+
+def render_card_settings():
+    """渲染卡片设置"""
+    st.subheader("卡片元素显示设置")
+    
+    # 获取当前卡片设置
+    card_settings = get_card_view_settings()
+    
+    # 创建设置表单
+    with st.form("card_view_settings_form"):
+        st.write("选择要在任务卡片中显示的元素：")
+        
+        # 描述显示选项
+        show_description = st.checkbox(
+            "显示任务描述", 
+            value=card_settings.get("show_description", True),
+            help="显示任务的详细描述"
+        )
+        
+        # 标签显示选项
+        show_tags = st.checkbox(
+            "显示任务标签", 
+            value=card_settings.get("show_tags", True),
+            help="显示任务的相关标签"
+        )
+        
+        # 目录显示选项
+        show_directory = st.checkbox(
+            "显示任务目录", 
+            value=card_settings.get("show_directory", True),
+            help="显示任务相关的目录路径"
+        )
+        
+        # 命令显示选项
+        show_command = st.checkbox(
+            "显示任务命令", 
+            value=card_settings.get("show_command", True),
+            help="显示执行任务的命令"
+        )
+        
+        # 提交按钮
+        submitted = st.form_submit_button("保存设置")
+        
+        if submitted:
+            # 更新设置
+            new_settings = {
+                "show_description": show_description,
+                "show_tags": show_tags,
+                "show_directory": show_directory,
+                "show_command": show_command
+            }
+            
+            # 保存设置
+            update_card_view_settings(new_settings)
+            st.success("卡片显示设置已更新！")
 
 def render_background_settings():
     """渲染背景设置"""

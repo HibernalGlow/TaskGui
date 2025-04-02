@@ -2,7 +2,7 @@ import streamlit as st
 import os
 from src.utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from src.services.task_runner import run_task_via_cmd
-from src.utils.selection_utils import update_task_selection, get_task_selection_state, record_task_run, get_task_runtime
+from src.utils.selection_utils import update_task_selection, get_task_selection_state, record_task_run, get_task_runtime, get_card_view_settings
 from src.views.card.task_card_editor import render_task_edit_form
 import hashlib
 
@@ -58,6 +58,9 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
         view_type: 视图类型，"preview"或"card"
         show_checkbox: 是否显示选择框
     """
+    # 获取卡片视图设置
+    card_settings = get_card_view_settings()
+    
     # 生成唯一前缀，用于区分不同视图的组件key
     prefix = f"{view_type}_{idx}_{task['name']}"
     
@@ -84,20 +87,23 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
                 back_button_callback=back_button_callback
             )
         else:
-            # 描述
-            st.markdown(f"**描述**: {task['description']}")
+            # 描述 - 根据设置显示
+            if card_settings.get("show_description", True):
+                st.markdown(f"**描述**: {task['description']}")
             
-            # 显示标签（使用优化的标签样式）
-            if isinstance(task['tags'], list) and task['tags']:
+            # 显示标签 - 根据设置显示
+            if card_settings.get("show_tags", True) and isinstance(task['tags'], list) and task['tags']:
                 st.write("**标签**:")
                 render_tags(task['tags'])
             
-            # 显示目录
-            st.markdown(f"**目录**: `{task['directory']}`")
+            # 显示目录 - 根据设置显示
+            if card_settings.get("show_directory", True):
+                st.markdown(f"**目录**: `{task['directory']}`")
             
-            # 显示命令
-            cmd = get_task_command(task['name'], current_taskfile)
-            st.code(cmd, language="bash")
+            # 显示命令 - 根据设置显示
+            if card_settings.get("show_command", True):
+                cmd = get_task_command(task['name'], current_taskfile)
+                st.code(cmd, language="bash")
             
             # 如果需要显示选择框
             if show_checkbox:

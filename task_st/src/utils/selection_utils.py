@@ -96,7 +96,13 @@ def create_default_state():
             },
             "ui_settings": {
                 "theme": "light",
-                "aggrid_group_by": None
+                "aggrid_group_by": None,
+                "card_view": {  # 添加卡片视图设置
+                    "show_description": True,
+                    "show_tags": True,
+                    "show_directory": True,
+                    "show_command": True
+                }
             }
         },
         "local": {  # 添加local键，用于存储本地配置
@@ -910,3 +916,45 @@ def save_background_settings(settings):
     except Exception as e:
         print(f"保存背景设置时出错: {str(e)}")
         return False
+
+def get_card_view_settings():
+    """获取卡片视图显示设置
+    
+    返回:
+        dict: 卡片视图设置字典
+    """
+    global_state = get_global_state()
+    # 确保设置存在
+    if "user_preferences" not in global_state:
+        global_state["user_preferences"] = {}
+    if "ui_settings" not in global_state["user_preferences"]:
+        global_state["user_preferences"]["ui_settings"] = {}
+    if "card_view" not in global_state["user_preferences"]["ui_settings"]:
+        global_state["user_preferences"]["ui_settings"]["card_view"] = {
+            "show_description": True,
+            "show_tags": True,
+            "show_directory": True,
+            "show_command": True
+        }
+    
+    return global_state["user_preferences"]["ui_settings"]["card_view"]
+
+def update_card_view_settings(settings):
+    """更新卡片视图显示设置
+    
+    参数:
+        settings (dict): 新的卡片视图设置
+    """
+    global_state = get_global_state()
+    
+    # 确保设置路径存在
+    if "user_preferences" not in global_state:
+        global_state["user_preferences"] = {}
+    if "ui_settings" not in global_state["user_preferences"]:
+        global_state["user_preferences"]["ui_settings"] = {}
+    
+    # 更新设置
+    global_state["user_preferences"]["ui_settings"]["card_view"] = settings
+    
+    # 保存更新后的全局状态
+    update_global_state(global_state)
