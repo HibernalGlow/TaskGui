@@ -14,7 +14,8 @@ from src.utils.selection_utils import get_selected_tasks, init_global_state
 
 # 导入自定义模块
 from src.views.table.aggrid_config import init_aggrid_settings
-from src.views.table.aggrid_ui import render_settings_ui
+# 移除下面的导入，不再在表格视图中显示设置
+# from src.views.table.aggrid_ui import render_settings_ui
 from src.views.table.aggrid_data import prepare_display_data, process_grid_selection_changes
 from src.views.table.aggrid_renderers import build_grid_options
 
@@ -30,8 +31,9 @@ def render_aggrid_table(filtered_df, current_taskfile):
     # 初始化AgGrid设置
     init_aggrid_settings()
     
-    # 渲染设置UI并获取设置值
-    settings = render_settings_ui()
+    # 不再调用render_settings_ui函数来显示设置UI
+    # 直接从session_state获取设置
+    settings = st.session_state.aggrid_settings
     
     # 准备表格数据
     display_df, filtered_df_copy = prepare_display_data(filtered_df)

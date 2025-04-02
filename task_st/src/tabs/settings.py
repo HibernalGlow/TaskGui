@@ -3,13 +3,14 @@ import os
 from src.utils.selection_utils import load_background_settings, save_background_settings, get_card_view_settings, update_card_view_settings
 from src.components.sidebar import set_background_image, set_sidebar_background
 from src.ui.styles import reset_background_css
+from src.views.table.aggrid_ui import render_settings_ui  # 导入AgGrid设置渲染函数
 
 def render_settings_tab():
     """渲染设置标签页"""
     st.markdown("## ⚙️ 系统设置")
     
     # 创建设置子标签页
-    settings_tabs = st.tabs(["基本设置", "🎨 背景设置", "卡片设置"])
+    settings_tabs = st.tabs(["基本设置", "🎨 背景设置", "卡片设置", "📊 表格设置"])
     
     # 基本设置标签页
     with settings_tabs[0]:
@@ -22,6 +23,10 @@ def render_settings_tab():
     # 卡片设置标签页
     with settings_tabs[2]:
         render_card_settings()
+        
+    # 表格设置标签页
+    with settings_tabs[3]:
+        render_table_settings()
 
 def render_basic_settings():
     """渲染基本设置"""
@@ -309,6 +314,13 @@ def render_sidebar_banner_settings():
                 st.error("无法应用设置：请先选择有效的图片文件")
                 # 如果路径无效，不启用横幅
                 st.session_state.background_settings['sidebar_banner_enabled'] = False
+
+def render_table_settings():
+    """渲染表格设置标签页"""
+    st.subheader("📊 表格显示设置")
+    
+    # 调用AgGrid高级设置UI渲染函数
+    render_settings_ui()
 
 def reset_all_background_settings():
     """重置所有背景设置"""
