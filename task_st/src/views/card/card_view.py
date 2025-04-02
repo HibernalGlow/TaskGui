@@ -17,7 +17,7 @@ def render_card_view(filtered_df, current_taskfile, key_prefix="card_view"):
     # 确保全局状态已初始化
     init_global_state()
     
-    st.markdown("### 任务卡片")
+    # st.markdown("### 任务卡片")
     
     # 添加每行卡片数量的滑动条
     cards_per_row = st.slider(

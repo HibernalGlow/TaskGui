@@ -17,21 +17,21 @@ def render_table_view(filtered_df, current_taskfile, show_sidebar=True):
     """
     # 添加表格标题和控制按钮
     col1, col2, col3 = st.columns([3, 1, 1])
-    with col1:
-        st.markdown("### 任务表格")
+    # with col1:
+    #     st.markdown("### 任务表格")
     
-    with col2:
-        # 保存表格变更按钮 - 用于手动触发保存
-        if st.button("保存变更", key="save_table_changes"):
-            with st.spinner("正在保存表格变更..."):
-                force_save_state()
-            st.success("变更已保存")
+    # with col2:
+    #     # 保存表格变更按钮 - 用于手动触发保存
+    #     if st.button("保存变更", key="save_table_changes"):
+    #         with st.spinner("正在保存表格变更..."):
+    #             force_save_state()
+    #         st.success("变更已保存")
     
-    with col3:
-        # 刷新表格按钮 - 用于手动刷新视图
-        if st.button("刷新表格", key="refresh_table"):
-            st.session_state._force_refresh_aggrid = True
-            st.rerun()
+    # with col3:
+    #     # 刷新表格按钮 - 用于手动刷新视图
+    #     if st.button("刷新表格", key="refresh_table"):
+    #         st.session_state._force_refresh_aggrid = True
+    #         st.rerun()
     
     # 使用AgGrid渲染表格
     # st.info("提示: 在表格中选中行后，可以在上方预览卡片中查看详情。点击'保存变更'按钮应用更改。")

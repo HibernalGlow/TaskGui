@@ -4,7 +4,7 @@ vars:
   ROOT_DIR: D:\1VSCODE\GlowToolBox
 tasks:
   artbook_dedup:
-    desc:  🖼️ 艺术书去重工具 - 删除重复的艺术书图片
+    desc: 🖼️ 艺术书去重工具 - 删除重复的艺术书图片
     dir: '{{.GlowToolBox}}'
     tags:
     - filter
@@ -17,7 +17,6 @@ tasks:
     tags:
     - comic
     - cover
-    - uuid
     cmds:
     - '"{{.PYTHON}}" "src\scripts\comic\uuid\auto_cover.py"'
   auto_recycle:
@@ -144,7 +143,6 @@ tasks:
     tags:
     - folder
     - organize
-    
     cmds:
     - '"{{.PYTHON}}" "src\scripts\folder\organize_folder.py"'
   pics_convert:
@@ -249,5 +247,6 @@ tasks:
     - manager
     cmds:
     - cmd: cmd.exe /c start "" "C:\Users\30902\Desktop\任务管理器.lnk"
-      platforms: [windows]
+      platforms:
+      - windows
     - '".venv\Scripts\python.exe" "run_task_manager.py" -noterm '

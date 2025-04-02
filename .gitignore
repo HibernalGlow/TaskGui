@@ -81,3 +81,4 @@ src/nodes/pics/convert/performance_config.json
 src/scripts/md/CxDownload
 /src/scripts/md/formatter/1_deduped.md
 /src/nodes/pics/filter/ocr_cache.json
+task_st/Taskfile.yml.bak.*
