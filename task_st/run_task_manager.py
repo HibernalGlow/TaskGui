@@ -44,6 +44,8 @@ def main():
         "--server.headless=true", 
         "--browser.serverAddress=localhost",
         "--server.runOnSave=false",
+        "--server.enableCORS=false",
+        "--server.enableXsrfProtection=false",
         f"--server.port={port}"
     ]
     

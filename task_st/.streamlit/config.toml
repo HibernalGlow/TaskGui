@@ -1,5 +1,12 @@
 [server]
 enableStaticServing = true
+enableCORS = false
+enableXsrfProtection = false
+maxUploadSize = 200
+maxMessageSize = 200
+
+[browser]
+gatherUsageStats = false
 
 [theme]
 primaryColor = "#39C5BB"
@@ -18,4 +25,7 @@ textColor = "#262730"
 # font = "霞鹜文楷"
 # url = ".streamlit/static/LXGWWenKaiMono-Medium.ttf"
 # weight = 700
-# style = "bold" 
+# style = "bold"
+
+[logger]
+level = "info" 

@@ -1,11 +1,12 @@
 import streamlit as st
 from src.services.taskfile import read_taskfile
 from streamlit_tags import st_tags
-from src.utils.selection_utils import save_favorite_tags, save_background_settings, load_background_settings
+from src.utils.selection_utils import save_favorite_tags, save_background_settings, load_background_settings, get_selected_tasks
 import os
 import sys
 import subprocess
 import base64
+from src.components.preview_card import render_action_buttons
 
 def get_base64_encoded_image(image_path):
     """获取图片的base64编码"""
@@ -104,12 +105,18 @@ def render_sidebar(current_taskfile):
     if 'tags_widget_key' not in st.session_state:
         st.session_state.tags_widget_key = 0
     
+
+    
     # 将搜索框放入expander中
     with st.expander("🔍 过滤任务", expanded=True):
         # 按名称搜索
         search_term = st.text_input("搜索任务名称:", key="search_task", placeholder="输入关键词...")
+    # 获取选中的任务
+    selected_tasks = get_selected_tasks()
     
-    # 将常用标签和标签筛选放入同一个expander中
+    # 如果有选中的任务，显示任务操作按钮
+    # if selected_tasks:
+    render_action_buttons(selected_tasks, current_taskfile, key_prefix="sidebar", is_sidebar=True)    # 将常用标签和标签筛选放入同一个expander中
     with st.expander("🏷️ 标签筛选", expanded=True):
         # 显示收藏标签作为快速过滤器按钮
         if st.session_state.favorite_tags:

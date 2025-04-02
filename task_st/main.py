@@ -214,7 +214,7 @@ def main():
         # 侧边栏内容
         with st.sidebar:
             # 在侧边栏顶部渲染操作按钮
-            render_action_buttons(selected_tasks, default_taskfile, key_prefix="sidebar", is_sidebar=True)
+            # render_action_buttons(selected_tasks, default_taskfile, key_prefix="sidebar", is_sidebar=True)
             
             # 渲染侧边栏
             render_sidebar(default_taskfile)

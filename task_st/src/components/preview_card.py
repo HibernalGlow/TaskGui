@@ -136,8 +136,8 @@ def render_shared_preview(filtered_df, current_taskfile):
         st.info("没有选中的任务。请从表格中选择要操作的任务。")
         return
     
-    # 在侧边栏中渲染操作按钮卡片 - 现在已包含expander
-    render_action_buttons(selected_tasks, current_taskfile, key_prefix="sidebar", is_sidebar=True)
+    # 不再需要在这里调用render_action_buttons，因为已经在sidebar.py中调用
+    # render_action_buttons(selected_tasks, current_taskfile, key_prefix="sidebar", is_sidebar=True)
     
     # 不再在主界面直接显示预览内容，而是通过外部的Tab系统显示
 
