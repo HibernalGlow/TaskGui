@@ -3,6 +3,9 @@ import glob
 import subprocess
 import platform
 import pyperclip
+import webbrowser
+from pathlib import Path
+import urllib.parse
 
 # 常量
 DEFAULT_TASKFILE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'Taskfile.yml')
@@ -156,16 +159,41 @@ def open_file(file_path):
         return False
     
     try:
-        if platform.system() == 'Windows':
-            subprocess.run(['explorer', file_path], shell=True)
-        elif platform.system() == 'Darwin':  # macOS
-            subprocess.call(['open', file_path])
-        else:  # Linux
-            subprocess.call(['xdg-open', file_path])
+        # 将路径转换为绝对路径
+        abs_path = os.path.abspath(file_path)
+        # 将路径转换为URL格式
+        file_url = Path(abs_path).as_uri()
+        
+        # 使用webbrowser模块打开文件或目录
+        webbrowser.open(file_url)
         return True
     except Exception as e:
-        print(f"打开文件时出错: {str(e)}")
-        return False
+        print(f"使用webbrowser打开失败: {str(e)}")
+        
+        # 备选方法1: 使用平台特定的命令
+        try:
+            if platform.system() == 'Windows':
+                os.system(f'start "" "{os.path.normpath(file_path)}"')
+            elif platform.system() == 'Darwin':  # macOS
+                os.system(f'open "{file_path}"')
+            else:  # Linux
+                os.system(f'xdg-open "{file_path}"')
+            return True
+        except Exception as e2:
+            print(f"备选方法1失败: {str(e2)}")
+            
+            # 备选方法2: 使用subprocess
+            try:
+                if platform.system() == 'Windows':
+                    subprocess.Popen(['explorer', os.path.normpath(file_path)])
+                elif platform.system() == 'Darwin':  # macOS
+                    subprocess.Popen(['open', file_path])
+                else:  # Linux
+                    subprocess.Popen(['xdg-open', file_path])
+                return True
+            except Exception as e3:
+                print(f"备选方法2失败: {str(e3)}")
+                return False
 
 # 获取目录下的文件
 def get_directory_files(directory):
@@ -204,6 +232,7 @@ def get_directory_files(directory):
 def resolve_taskfile_variables(path):
     """
     解析路径中的Taskfile变量，如{{.ROOT_DIR}}
+    从Taskfile.yml文件中读取变量定义
     
     参数:
         path: 包含变量的路径
@@ -213,19 +242,53 @@ def resolve_taskfile_variables(path):
     """
     if not path:
         return path
+    
+    if "{{." not in path:
+        return path
         
-    # 处理常见的Taskfile变量
-    if "{{.ROOT_DIR}}" in path:
-        # 获取Taskfile所在目录作为根目录
-        taskfile_path = get_nearest_taskfile()
-        if taskfile_path:
-            root_dir = os.path.dirname(taskfile_path)
-            return path.replace("{{.ROOT_DIR}}", root_dir)
-        else:
-            # 如果找不到Taskfile，使用当前工作目录
-            root_dir = os.getcwd()
-            return path.replace("{{.ROOT_DIR}}", root_dir)
+    # 获取Taskfile路径
+    taskfile_path = get_nearest_taskfile()
+    if not taskfile_path:
+        print("无法找到Taskfile.yml文件")
+        return path
     
-    # 可以在这里添加更多变量的处理
-    
-    return path 
+    try:
+        # 导入yaml模块
+        import yaml
+        
+        # 读取Taskfile内容
+        with open(taskfile_path, 'r', encoding='utf-8') as f:
+            taskfile_content = yaml.safe_load(f)
+        
+        # 提取变量定义
+        variables = {}
+        if 'vars' in taskfile_content and isinstance(taskfile_content['vars'], dict):
+            variables = taskfile_content['vars']
+            
+        # 获取根目录作为默认值
+        root_dir = os.path.dirname(taskfile_path)
+        
+        # 处理特殊变量
+        if 'ROOT_DIR' not in variables:
+            variables['ROOT_DIR'] = root_dir
+            
+        # 替换路径中的变量引用
+        result_path = path
+        for var_name, var_value in variables.items():
+            var_pattern = f"{{{{.{var_name}}}}}"
+            if var_pattern in result_path:
+                print(f"替换变量: {var_pattern} -> {var_value}")
+                result_path = result_path.replace(var_pattern, str(var_value))
+        
+        # 检查是否还有未解析的变量
+        if "{{." in result_path and "}}" in result_path:
+            import re
+            unresolved_vars = re.findall(r'{{\.([^}]+)}}', result_path)
+            if unresolved_vars:
+                print(f"警告: 未解析的变量: {unresolved_vars}")
+                
+        return result_path
+        
+    except Exception as e:
+        print(f"解析Taskfile变量时出错: {str(e)}")
+        return path 
