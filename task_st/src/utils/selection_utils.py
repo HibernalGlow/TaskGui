@@ -775,41 +775,21 @@ def display_yaml_in_ui(yaml_str):
     st.markdown(markdown_yaml)
 
 def save_background_settings(settings):
-    """保存背景设置到用户偏好"""
-    user_prefs = get_user_preferences()
-    if 'ui_settings' not in user_prefs:
-        user_prefs['ui_settings'] = {}
-    user_prefs['ui_settings']['background'] = settings
-    global_state = get_global_state()
-    global_state['user_preferences'] = user_prefs
-    update_global_state(global_state)
+    """保存背景设置到本地配置"""
+    local_config = load_local_config()
+    local_config["background_settings"] = settings
+    save_local_config(local_config)
 
 def load_background_settings():
-    """从用户偏好加载背景设置"""
-    user_prefs = get_user_preferences()
-    if 'ui_settings' in user_prefs and 'background' in user_prefs['ui_settings']:
-        settings = user_prefs['ui_settings']['background']
-        # 确保包含所有必要字段
-        if 'enabled' not in settings:
-            settings['enabled'] = False
-        if 'sidebar_enabled' not in settings:
-            settings['sidebar_enabled'] = False
-        if 'image_path' not in settings:
-            settings['image_path'] = ''
-        if 'sidebar_image_path' not in settings:
-            settings['sidebar_image_path'] = ''
-        if 'opacity' not in settings:
-            settings['opacity'] = 0.5
-        if 'blur' not in settings:
-            settings['blur'] = 0
-        # 返回加载的设置
-        return settings
-    # 返回默认设置
-    return {
+    """从本地配置加载背景设置"""
+    local_config = load_local_config()
+    return local_config.get("background_settings", {
         'enabled': False,
         'sidebar_enabled': False,
+        'header_banner_enabled': False,  # 新增顶部横幅开关
         'image_path': '',
         'sidebar_image_path': '',
+        'header_banner_path': '',  # 新增顶部横幅图片路径
         'opacity': 0.5,
         'blur': 0
-    }
+    })

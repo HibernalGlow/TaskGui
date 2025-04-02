@@ -225,6 +225,17 @@ def main():
         # 过滤任务
         filtered_df = filter_tasks(tasks_df)
         
+        # 显示顶部横幅图片
+        if 'background_settings' not in st.session_state:
+            st.session_state.background_settings = load_background_settings()
+            
+        # 如果启用了顶部横幅图片，则显示
+        if st.session_state.background_settings.get('header_banner_enabled', False) and \
+           st.session_state.background_settings.get('header_banner_path', '') and \
+           os.path.exists(st.session_state.background_settings.get('header_banner_path', '')):
+            banner_path = st.session_state.background_settings.get('header_banner_path', '')
+            st.image(banner_path, use_container_width=True)
+        
         # 渲染主界面操作按钮
         render_action_buttons(selected_tasks, default_taskfile, key_prefix="main_preview")
         
@@ -283,8 +294,8 @@ def main():
                 if 'background_settings' not in st.session_state:
                     st.session_state.background_settings = load_background_settings()
                 
-                # 拆分为主背景和侧边栏背景设置
-                bg_tabs = st.tabs(["主界面背景", "侧边栏背景"])
+                # 拆分为主背景、侧边栏背景和顶部横幅设置
+                bg_tabs = st.tabs(["主界面背景", "侧边栏背景", "顶部横幅"])
                 
                 with bg_tabs[0]:  # 主界面背景设置
                     # 启用/禁用背景
@@ -388,13 +399,63 @@ def main():
                             else:
                                 st.error("请先选择有效的侧边栏背景图片")
                 
+                with bg_tabs[2]:  # 顶部横幅设置
+                    # 启用/禁用顶部横幅
+                    st.session_state.background_settings['header_banner_enabled'] = st.checkbox(
+                        "启用顶部横幅图片",
+                        value=st.session_state.background_settings.get('header_banner_enabled', False),
+                        key="header_banner_enabled"
+                    )
+                    
+                    if st.session_state.background_settings['header_banner_enabled']:
+                        # 选择顶部横幅图片
+                        header_uploaded_file = st.file_uploader(
+                            "选择顶部横幅图片",
+                            type=['png', 'jpg', 'jpeg', 'gif'],
+                            key="header_banner_image"
+                        )
+                        
+                        if header_uploaded_file is not None:
+                            # 保存图片到临时目录
+                            temp_dir = tempfile.gettempdir()
+                            header_temp_path = os.path.join(temp_dir, header_uploaded_file.name)
+                            with open(header_temp_path, "wb") as f:
+                                f.write(header_uploaded_file.getbuffer())
+                            st.session_state.background_settings['header_banner_path'] = header_temp_path
+                            # 存储base64编码的图片
+                            st.session_state.background_settings['header_banner_base64'] = get_base64_encoded_image(header_temp_path)
+                            st.session_state.background_settings['header_banner_format'] = header_uploaded_file.name.split('.')[-1].lower()
+                            
+                            # 预览图片
+                            st.image(header_temp_path, caption="顶部横幅预览", use_container_width=True)
+                        
+                        # 本地图片路径输入
+                        local_path = st.text_input(
+                            "或输入本地图片路径",
+                            value=st.session_state.background_settings.get('header_banner_path', ''),
+                            key="header_banner_local_path"
+                        )
+                        
+                        if local_path and os.path.exists(local_path):
+                            st.session_state.background_settings['header_banner_path'] = local_path
+                            # 预览图片
+                            st.image(local_path, caption="顶部横幅预览", use_container_width=True)
+                        
+                        # 应用顶部横幅设置
+                        if st.button("应用顶部横幅设置", key="apply_header_banner"):
+                            # 保存设置
+                            save_background_settings(st.session_state.background_settings)
+                            st.success("顶部横幅设置已应用")
+                
                 # 重置背景设置按钮
                 if st.button("重置所有背景设置", key="reset_all_bg"):
                     st.session_state.background_settings = {
                         'enabled': False,
                         'sidebar_enabled': False,
+                        'header_banner_enabled': False,
                         'image_path': '',
                         'sidebar_image_path': '',
+                        'header_banner_path': '',
                         'opacity': 0.5,
                         'blur': 0
                     }
