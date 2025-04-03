@@ -85,36 +85,38 @@ def set_sidebar_background(image_path):
         st.error(f"设置侧边栏背景失败: {str(e)}")
         return False
 
-def render_sidebar(current_taskfile):
-    """渲染侧边栏控件"""
-    # 移除with st.sidebar:包装，直接渲染侧边栏内容
-    # st.title("任务管理器")
-    
-    # 加载卡片设置
-    card_settings = get_card_view_settings()
-    
-    # 确保use_sidebar_editor在session_state中
-    if 'use_sidebar_editor' not in st.session_state:
-        st.session_state.use_sidebar_editor = card_settings.get("use_sidebar_editor", True)
-    
-    # 获取所有标签
-    all_tags = get_all_tags(current_taskfile)
-    
-    # 初始化常用标签和筛选状态
-    if 'favorite_tags' not in st.session_state:
-        st.session_state.favorite_tags = []
-        
-    # 确保tags_filter存在于session_state中
-    if 'tags_filter' not in st.session_state:
-        st.session_state.tags_filter = []
-    
-    # 确保tags_widget_key存在，用于控制st_tags组件的刷新
-    if 'tags_widget_key' not in st.session_state:
-        st.session_state.tags_widget_key = 0
-    
+def get_all_tags(taskfile_path):
+    """获取所有可用的标签"""
+    try:
+        tasks_df = read_taskfile(taskfile_path)
+        all_tags = []
+        for tags in tasks_df["tags"]:
+            if isinstance(tags, list):
+                all_tags.extend(tags)
+        return sorted(list(set(all_tags)))
+    except Exception as e:
+        return []
 
+def restart_application():
+    """重启应用程序"""
+    run_script = "run_task_manager.py"
     
-    # 将搜索框放入expander中
+    # 启动新实例
+    if os.path.exists(run_script):
+        subprocess.Popen([sys.executable, run_script])
+    else:
+        st.error(f"找不到启动脚本: {run_script}")
+        return
+        
+    # 退出当前实例
+    os._exit(0)
+
+def exit_application():
+    """完全退出应用程序"""
+    os._exit(0)
+
+def render_filter_tasks_expander(current_taskfile):
+    """渲染过滤任务expander"""
     with st.expander("🔍 过滤任务", expanded=True):
         # 获取任务列表用于过滤
         try:
@@ -140,10 +142,9 @@ def render_sidebar(current_taskfile):
         except Exception as e:
             st.error(f"加载任务失败: {str(e)}")
             st.session_state.filtered_tasks = []
-    
-    # 获取选中的任务
-    selected_tasks = get_selected_tasks()
-    
+
+def render_edit_task_expander(current_taskfile):
+    """渲染编辑任务expander"""
     # 确保编辑expander状态存在
     if 'edit_task_expander_state' not in st.session_state:
         st.session_state.edit_task_expander_state = {}
@@ -202,7 +203,6 @@ def render_sidebar(current_taskfile):
                 st.markdown("<hr style='margin:0.8rem 0;'>", unsafe_allow_html=True)
             
             # 从当前taskfile获取所有任务
-            # st.markdown("<div style='font-size:0.9rem; margin-bottom:0.5rem;'>或从所有任务中选择:</div>", unsafe_allow_html=True)
             try:
                 tasks_df = read_taskfile(current_taskfile)
                 task_names = tasks_df["name"].tolist()
@@ -259,16 +259,14 @@ def render_sidebar(current_taskfile):
                 with_back_button=True,
                 back_button_callback=back_button_callback
             )
+
+def render_tag_filters_expander(current_taskfile):
+    """渲染标签筛选expander"""
+    all_tags = get_all_tags(current_taskfile)
     
-    # 如果有选中的任务，显示任务操作按钮
-    # if selected_tasks:
-    render_action_buttons(selected_tasks, current_taskfile, key_prefix="sidebar", is_sidebar=True)
-    
-    # 将常用标签和标签筛选放入同一个expander中
     with st.expander("🏷️ 标签筛选", expanded=True):
         # 显示收藏标签作为快速过滤器按钮
         if st.session_state.favorite_tags:
-            # st.markdown("#### 常用标签")
             # 使用更紧凑的布局显示常用标签
             cols_per_row = 2
             for i in range(0, len(st.session_state.favorite_tags), cols_per_row):
@@ -293,9 +291,6 @@ def render_sidebar(current_taskfile):
                                 # 增加key值以强制刷新st_tags组件
                                 st.session_state.tags_widget_key += 1
                                 st.rerun()
-        
-        # 标签过滤器部分
-        # st.markdown("### 从列表选择标签")
         
         # 添加一个多选组件，用于快速选择标签
         if all_tags:
@@ -322,10 +317,6 @@ def render_sidebar(current_taskfile):
                 # 增加key值以强制刷新st_tags组件
                 st.session_state.tags_widget_key += 1
                 st.rerun()
-        
-        # 使用分隔线和标题替代嵌套的expander
-        # st.markdown("---")
-        # st.markdown("#### 管理常用标签")
         
         # 添加一个折叠按钮来模拟expander功能
         if 'show_tag_manager' not in st.session_state:
@@ -363,12 +354,9 @@ def render_sidebar(current_taskfile):
             if tags_changed:
                 save_favorite_tags(st.session_state.favorite_tags)
                 st.success("常用标签已保存")
-    
-    # 显示已选任务数量
-    # if 'selected_tasks' in st.session_state and st.session_state.selected_tasks:
-    #     st.markdown(f"## 已选择 {len(st.session_state.selected_tasks)} 个任务")
-    
-    # 添加系统操作部分
+
+def render_system_expander(current_taskfile):
+    """渲染系统expander"""
     with st.expander("系统", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
@@ -378,35 +366,74 @@ def render_sidebar(current_taskfile):
         with col2:
             if st.button("❌ 退出", help="完全关闭任务管理器"):
                 exit_application()
-    
-    # 背景设置部分已移动到主界面设置标签页
 
-def get_all_tags(taskfile_path):
-    """获取所有可用的标签"""
-    try:
-        tasks_df = read_taskfile(taskfile_path)
-        all_tags = []
-        for tags in tasks_df["tags"]:
-            if isinstance(tags, list):
-                all_tags.extend(tags)
-        return sorted(list(set(all_tags)))
-    except Exception as e:
-        return []
-
-def restart_application():
-    """重启应用程序"""
-    run_script = "run_task_manager.py"
+def render_sidebar(current_taskfile):
+    """渲染侧边栏控件"""
+    # 移除with st.sidebar:包装，直接渲染侧边栏内容
+    # st.title("任务管理器")
     
-    # 启动新实例
-    if os.path.exists(run_script):
-        subprocess.Popen([sys.executable, run_script])
-    else:
-        st.error(f"找不到启动脚本: {run_script}")
-        return
+    # 加载卡片设置
+    card_settings = get_card_view_settings()
+    
+    # 获取侧边栏设置
+    sidebar_settings = card_settings.get("sidebar_settings", {})
+    
+    # 确保use_sidebar_editor在session_state中
+    if 'use_sidebar_editor' not in st.session_state:
+        st.session_state.use_sidebar_editor = sidebar_settings.get("use_sidebar_editor", True)
+    
+    # 获取所有标签
+    all_tags = get_all_tags(current_taskfile)
+    
+    # 初始化常用标签和筛选状态
+    if 'favorite_tags' not in st.session_state:
+        st.session_state.favorite_tags = []
         
-    # 退出当前实例
-    os._exit(0)
-
-def exit_application():
-    """完全退出应用程序"""
-    os._exit(0)
+    # 确保tags_filter存在于session_state中
+    if 'tags_filter' not in st.session_state:
+        st.session_state.tags_filter = []
+    
+    # 确保tags_widget_key存在，用于控制st_tags组件的刷新
+    if 'tags_widget_key' not in st.session_state:
+        st.session_state.tags_widget_key = 0
+    
+    # 定义expander组件
+    expander_components = {
+        "filter_tasks": {
+            "name": "🔍 任务过滤",
+            "function": render_filter_tasks_expander,
+            "enabled": sidebar_settings.get("filter_tasks_enabled", True)
+        },
+        "edit_task": {
+            "name": "✏️ 任务编辑",
+            "function": render_edit_task_expander,
+            "enabled": sidebar_settings.get("edit_task_enabled", True)
+        },
+        "tag_filters": {
+            "name": "🏷️ 标签筛选",
+            "function": render_tag_filters_expander,
+            "enabled": sidebar_settings.get("tag_filters_enabled", True)
+        },
+        "system": {
+            "name": "🔄 系统控制",
+            "function": render_system_expander,
+            "enabled": sidebar_settings.get("system_enabled", True)
+        }
+    }
+    
+    # 默认expander顺序
+    default_order = ["filter_tasks", "edit_task", "tag_filters", "system"]
+    
+    # 获取用户设置的顺序
+    expander_order = sidebar_settings.get("expander_order", default_order)
+    
+    # 获取选中的任务
+    selected_tasks = get_selected_tasks()
+    
+    # 渲染action按钮（保持在固定位置）
+    render_action_buttons(selected_tasks, current_taskfile, key_prefix="sidebar", is_sidebar=True)
+    
+    # 按配置的顺序渲染各个expander
+    for expander_id in expander_order:
+        if expander_id in expander_components and expander_components[expander_id]["enabled"]:
+            expander_components[expander_id]["function"](current_taskfile)
