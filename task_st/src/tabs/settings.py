@@ -303,41 +303,6 @@ def render_card_settings():
             update_card_view_settings(new_settings)
             st.success("卡片显示设置已更新！")
 
-def load_background_color_settings():
-    """从config.toml文件加载背景色透明度设置"""
-    try:
-        config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".streamlit", "config.toml")
-        
-        if os.path.exists(config_path):
-            with open(config_path, "r", encoding="utf-8") as f:
-                config_content = f.read()
-            
-            # 使用正则表达式提取背景色透明度
-            import re
-            # 提取主背景色透明度
-            main_bg_match = re.search(r'backgroundColor\s*=\s*"rgba\([^,]+,[^,]+,[^,]+,\s*([0-9.]+)\)"', config_content)
-            main_bg_alpha = float(main_bg_match.group(1)) if main_bg_match else 1.0
-            
-            # 提取次要背景色透明度
-            sec_bg_match = re.search(r'secondaryBackgroundColor\s*=\s*"rgba\([^,]+,[^,]+,[^,]+,\s*([0-9.]+)\)"', config_content)
-            sec_bg_alpha = float(sec_bg_match.group(1)) if sec_bg_match else 1.0
-            
-            return {
-                'main_bg_alpha': main_bg_alpha,
-                'secondary_bg_alpha': sec_bg_alpha
-            }
-        
-        return {
-            'main_bg_alpha': 1.0,
-            'secondary_bg_alpha': 1.0
-        }
-    except Exception as e:
-        print(f"读取背景色透明度设置时出错: {str(e)}")
-        return {
-            'main_bg_alpha': 1.0,
-            'secondary_bg_alpha': 1.0
-        }
-
 def render_background_settings():
     """渲染背景设置"""
     st.subheader("🎨 背景设置")
@@ -345,118 +310,6 @@ def render_background_settings():
     # 初始化背景设置
     if 'background_settings' not in st.session_state:
         st.session_state.background_settings = load_background_settings()
-    
-    # 添加背景色透明度快速调整部分
-    st.write("### 背景色透明度快速调整")
-    
-    # 如果不存在toml设置，从config.toml文件加载
-    if 'toml_bg_settings' not in st.session_state:
-        st.session_state.toml_bg_settings = load_background_color_settings()
-    
-    # 创建两列布局
-    col1, col2 = st.columns(2)
-    
-    # 在第一列显示预览和主背景透明度滑块
-    with col1:
-        st.markdown("#### 主背景色透明度")
-        main_alpha = st.slider(
-            "主背景透明度", 
-            min_value=0.0, 
-            max_value=1.0, 
-            value=st.session_state.toml_bg_settings.get('main_bg_alpha', 0.7),
-            step=0.1,
-            key="main_bg_alpha"
-        )
-        st.session_state.toml_bg_settings['main_bg_alpha'] = main_alpha
-        
-        # 主背景色预览
-        r, g, b = 240, 242, 246  # 默认背景色RGB值
-        st.markdown(
-            f"""
-            <div style="
-                background-color: rgba({r}, {g}, {b}, {main_alpha}); 
-                padding: 20px; 
-                border-radius: 5px; 
-                text-align: center;
-                border: 1px solid #ddd;
-                margin-top: 10px;
-            ">
-                主背景色预览 (透明度: {main_alpha})
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
-    
-    # 在第二列显示预览和次要背景透明度滑块
-    with col2:
-        st.markdown("#### 次要背景色透明度")
-        secondary_alpha = st.slider(
-            "次要背景透明度", 
-            min_value=0.0, 
-            max_value=1.0,
-            value=st.session_state.toml_bg_settings.get('secondary_bg_alpha', 0.7),
-            step=0.1,
-            key="secondary_bg_alpha"
-        )
-        st.session_state.toml_bg_settings['secondary_bg_alpha'] = secondary_alpha
-        
-        # 次要背景色预览
-        r, g, b = 240, 242, 246  # 默认次要背景色RGB值
-        st.markdown(
-            f"""
-            <div style="
-                background-color: rgba({r}, {g}, {b}, {secondary_alpha}); 
-                padding: 20px; 
-                border-radius: 5px; 
-                text-align: center;
-                border: 1px solid #ddd;
-                margin-top: 10px;
-            ">
-                次要背景色预览 (透明度: {secondary_alpha})
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
-    
-    # 添加应用按钮
-    if st.button("应用背景色透明度", key="apply_bg_alpha"):
-        try:
-            # 读取当前的config.toml文件
-            config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".streamlit", "config.toml")
-            
-            if os.path.exists(config_path):
-                with open(config_path, "r", encoding="utf-8") as f:
-                    config_content = f.read()
-                
-                # 使用正则表达式替换背景色设置
-                import re
-                # 替换主背景色
-                config_content = re.sub(
-                    r'backgroundColor\s*=\s*"[^"]*"', 
-                    f'backgroundColor = "rgba(240, 242, 246, {main_alpha})"', 
-                    config_content
-                )
-                # 替换次要背景色
-                config_content = re.sub(
-                    r'secondaryBackgroundColor\s*=\s*"[^"]*"', 
-                    f'secondaryBackgroundColor = "rgba(240, 242, 246, {secondary_alpha})"', 
-                    config_content
-                )
-                
-                # 保存更新后的配置文件
-                with open(config_path, "w", encoding="utf-8") as f:
-                    f.write(config_content)
-                
-                st.success("背景色透明度设置已应用，请刷新页面查看效果")
-                # 添加刷新按钮
-                if st.button("刷新页面", key="refresh_after_bg_change"):
-                    st.rerun()
-            else:
-                st.error("无法找到配置文件：.streamlit/config.toml")
-        except Exception as e:
-            st.error(f"应用背景色透明度时出错: {str(e)}")
-    
-    st.markdown("---")
     
     # 拆分为主背景、侧边栏背景、顶部横幅和侧边栏横幅设置
     bg_tabs = st.tabs(["主界面背景", "侧边栏背景", "顶部横幅", "侧边栏横幅"])
@@ -702,51 +555,10 @@ def reset_all_background_settings():
     }
     save_background_settings(st.session_state.background_settings)
     
-    # 重置背景色透明度
-    try:
-        config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".streamlit", "config.toml")
-        
-        if os.path.exists(config_path):
-            with open(config_path, "r", encoding="utf-8") as f:
-                config_content = f.read()
-            
-            # 使用正则表达式替换背景色设置为默认值
-            import re
-            # 替换主背景色
-            config_content = re.sub(
-                r'backgroundColor\s*=\s*"[^"]*"', 
-                'backgroundColor = "rgba(255, 255, 255, 1.0)"', 
-                config_content
-            )
-            # 替换次要背景色
-            config_content = re.sub(
-                r'secondaryBackgroundColor\s*=\s*"[^"]*"', 
-                'secondaryBackgroundColor = "rgba(240, 242, 246, 1.0)"', 
-                config_content
-            )
-            
-            # 保存更新后的配置文件
-            with open(config_path, "w", encoding="utf-8") as f:
-                f.write(config_content)
-                
-            # 重置toml背景色设置
-            if 'toml_bg_settings' in st.session_state:
-                st.session_state.toml_bg_settings = {
-                    'main_bg_alpha': 1.0,
-                    'secondary_bg_alpha': 1.0
-                }
-    except Exception as e:
-        st.error(f"重置背景色透明度时出错: {str(e)}")
-    
     # 重置CSS
     reset_background_css()
     
     st.success("所有背景设置已重置")
-    
-    # 提示用户刷新页面
-    st.info("请刷新页面以查看变更效果")
-    if st.button("刷新页面", key="refresh_after_reset"):
-        st.rerun()
 
 def render_sidebar_settings():
     """渲染侧边栏设置标签页"""
