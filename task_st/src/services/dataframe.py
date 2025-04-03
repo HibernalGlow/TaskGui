@@ -52,6 +52,12 @@ def filter_tasks(df: pd.DataFrame) -> pd.DataFrame:
         mask = filtered_df['search_text'].str.contains(search_term, na=False)
         filtered_df = filtered_df[mask]
     
+    # 应用过滤任务名称
+    if 'filtered_tasks' in st.session_state and st.session_state.filtered_tasks:
+        filtered_task_names = st.session_state.filtered_tasks
+        if filtered_task_names:
+            filtered_df = filtered_df[filtered_df['name'].isin(filtered_task_names)]
+    
     # 应用标签过滤
     if 'tags_filter' in st.session_state and st.session_state.tags_filter:
         tags_to_filter = st.session_state.tags_filter
