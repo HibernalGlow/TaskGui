@@ -27,7 +27,6 @@ def render_task_edit_form(task, taskfile_path, on_save_callback=None, with_back_
         .task-edit-header {
             font-size: 1.5rem;
             margin-bottom: 1rem;
-            color: #1E88E5;
         }
         </style>
     """, unsafe_allow_html=True)

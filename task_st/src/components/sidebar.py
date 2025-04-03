@@ -233,7 +233,7 @@ def render_edit_task_expander(current_taskfile):
                 st.error(f"加载任务列表失败: {str(e)}")
         else:
             # 显示当前正在编辑的任务名称
-            st.markdown(f"<div style='font-size:1rem; font-weight:bold; color:#1E88E5; margin-bottom:0.5rem;'>当前编辑: {st.session_state.edit_task_in_sidebar.get('name', '')}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-size:1rem; font-weight:bold; margin-bottom:0.5rem;'>当前编辑: {st.session_state.edit_task_in_sidebar.get('name', '')}</div>", unsafe_allow_html=True)
             
             # 使用task_card_editor中的函数渲染编辑表单
             from src.views.card.task_card_editor import render_task_edit_form
@@ -265,33 +265,6 @@ def render_tag_filters_expander(current_taskfile):
     all_tags = get_all_tags(current_taskfile)
     
     with st.expander("🏷️ 标签筛选", expanded=True):
-        # 显示收藏标签作为快速过滤器按钮
-        # if st.session_state.favorite_tags:
-            # 使用更紧凑的布局显示常用标签
-            # cols_per_row = 2
-            # for i in range(0, len(st.session_state.favorite_tags), cols_per_row):
-            #     fav_tag_cols = st.columns(cols_per_row)
-            #     for j in range(cols_per_row):
-            #         if i + j < len(st.session_state.favorite_tags):
-            #             tag = sorted(st.session_state.favorite_tags)[i + j]
-            #             with fav_tag_cols[j]:
-            #                 # 创建按钮，点击时添加或移除该标签的过滤
-            #                 is_active = tag in st.session_state.tags_filter
-            #                 btn_label = f"✓ #{tag}" if is_active else f"#{tag}"
-            #                 btn_type = "primary" if is_active else "secondary"
-                            
-            #                 if st.button(btn_label, key=f"quick_{tag}", type=btn_type):
-            #                     # 切换标签的状态
-            #                     if tag in st.session_state.tags_filter:
-            #                         # 移除标签
-            #                         st.session_state.tags_filter.remove(tag)
-            #                     else:
-            #                         # 添加标签
-            #                         st.session_state.tags_filter.append(tag)
-            #                     # 增加key值以强制刷新st_tags组件
-            #                     st.session_state.tags_widget_key += 1
-            #                     st.rerun()
-        
         # 添加一个多选组件，用于快速选择标签
         if all_tags:
             # 转换现有标签过滤器为集合，方便比较
