@@ -266,94 +266,109 @@ def render_tag_filters_expander(current_taskfile):
     
     with st.expander("🏷️ 标签筛选", expanded=True):
         # 显示收藏标签作为快速过滤器按钮
-        if st.session_state.favorite_tags:
+        # if st.session_state.favorite_tags:
             # 使用更紧凑的布局显示常用标签
-            cols_per_row = 2
-            for i in range(0, len(st.session_state.favorite_tags), cols_per_row):
-                fav_tag_cols = st.columns(cols_per_row)
-                for j in range(cols_per_row):
-                    if i + j < len(st.session_state.favorite_tags):
-                        tag = sorted(st.session_state.favorite_tags)[i + j]
-                        with fav_tag_cols[j]:
-                            # 创建按钮，点击时添加或移除该标签的过滤
-                            is_active = tag in st.session_state.tags_filter
-                            btn_label = f"✓ #{tag}" if is_active else f"#{tag}"
-                            btn_type = "primary" if is_active else "secondary"
+            # cols_per_row = 2
+            # for i in range(0, len(st.session_state.favorite_tags), cols_per_row):
+            #     fav_tag_cols = st.columns(cols_per_row)
+            #     for j in range(cols_per_row):
+            #         if i + j < len(st.session_state.favorite_tags):
+            #             tag = sorted(st.session_state.favorite_tags)[i + j]
+            #             with fav_tag_cols[j]:
+            #                 # 创建按钮，点击时添加或移除该标签的过滤
+            #                 is_active = tag in st.session_state.tags_filter
+            #                 btn_label = f"✓ #{tag}" if is_active else f"#{tag}"
+            #                 btn_type = "primary" if is_active else "secondary"
                             
-                            if st.button(btn_label, key=f"quick_{tag}", type=btn_type):
-                                # 切换标签的状态
-                                if tag in st.session_state.tags_filter:
-                                    # 移除标签
-                                    st.session_state.tags_filter.remove(tag)
-                                else:
-                                    # 添加标签
-                                    st.session_state.tags_filter.append(tag)
-                                # 增加key值以强制刷新st_tags组件
-                                st.session_state.tags_widget_key += 1
-                                st.rerun()
+            #                 if st.button(btn_label, key=f"quick_{tag}", type=btn_type):
+            #                     # 切换标签的状态
+            #                     if tag in st.session_state.tags_filter:
+            #                         # 移除标签
+            #                         st.session_state.tags_filter.remove(tag)
+            #                     else:
+            #                         # 添加标签
+            #                         st.session_state.tags_filter.append(tag)
+            #                     # 增加key值以强制刷新st_tags组件
+            #                     st.session_state.tags_widget_key += 1
+            #                     st.rerun()
         
         # 添加一个多选组件，用于快速选择标签
         if all_tags:
             # 转换现有标签过滤器为集合，方便比较
             current_tags_set = set(st.session_state.tags_filter)
             
+            # 获取收藏的标签并排序
+            favorite_tags = sorted(st.session_state.favorite_tags)
+            
+            # 创建一个包含所有标签的列表，但将收藏标签置顶
+            other_tags = sorted([tag for tag in all_tags if tag not in set(favorite_tags)])
+            
+            # 如果有收藏标签，添加一个分隔符
+            sorted_tags = []
+            if favorite_tags:
+                # 添加收藏标签（标记为收藏）
+                sorted_tags.extend([f"⭐ {tag}" for tag in favorite_tags])
+                # 添加其他标签
+                sorted_tags.extend(other_tags)
+            else:
+                sorted_tags = other_tags
+            
+            # 转换当前已选择的标签以匹配格式
+            default_tags = []
+            for tag in sorted(list(current_tags_set)):
+                if tag in favorite_tags:
+                    default_tags.append(f"⭐ {tag}")
+                else:
+                    default_tags.append(tag)
+            
             # 使用多选组件替代下拉框
             selected_tags = st.multiselect(
                 "选择要筛选的标签:",
-                options=sorted(all_tags),
-                default=sorted(list(current_tags_set)),
+                options=sorted_tags,
+                default=default_tags,
                 key="tags_multiselect"
             )
             
+            # 转换选中的标签（移除星号前缀）
+            processed_tags = [tag.replace("⭐ ", "") if tag.startswith("⭐ ") else tag for tag in selected_tags]
+            
             # 更新标签过滤器
-            if set(selected_tags) != current_tags_set:
+            if set(processed_tags) != current_tags_set:
                 # 清空当前标签筛选
                 st.session_state.tags_filter = []
                 
                 # 添加选中的标签
-                if selected_tags:
-                    st.session_state.tags_filter.extend(selected_tags)
+                if processed_tags:
+                    st.session_state.tags_filter.extend(processed_tags)
                 
                 # 增加key值以强制刷新st_tags组件
                 st.session_state.tags_widget_key += 1
                 st.rerun()
         
-        # 添加一个折叠按钮来模拟expander功能
-        if 'show_tag_manager' not in st.session_state:
-            st.session_state.show_tag_manager = False
+        # 标签管理部分 - 使用multiselect代替checkbox
+        if all_tags:
+            # 获取当前收藏的标签
+            favorite_tags = st.session_state.favorite_tags
             
-        show_manager = st.checkbox("显示/隐藏标签管理", value=st.session_state.show_tag_manager, key="show_tag_manager_toggle")
-        st.session_state.show_tag_manager = show_manager
-        
-        # 只有当选择显示时才显示标签管理内容
-        if st.session_state.show_tag_manager:
-            # 初始化标记，用于检测常用标签是否有变化
-            tags_changed = False
+            # 使用multiselect组件，预选中已收藏的标签
+            selected_favorite_tags = st.multiselect(
+                "选择收藏的标签:",
+                options=sorted(all_tags),
+                default=sorted(favorite_tags),
+                key="favorite_tags_multiselect",
+                help="选择要添加到收藏的标签，方便快速筛选"
+            )
             
-            # 创建一个多列布局，用于显示所有标签的checkbox
-            if all_tags:
-                all_tag_cols = st.columns(3)
-                for i, tag in enumerate(sorted(all_tags)):
-                    with all_tag_cols[i % 3]:
-                        # 创建checkbox来添加/移除收藏标签
-                        was_selected = tag in st.session_state.favorite_tags
-                        is_selected = st.checkbox(tag, value=was_selected, key=f"fav_{tag}")
-                        
-                        # 检测是否发生变化
-                        if was_selected != is_selected:
-                            tags_changed = True
-                            
-                            if is_selected and tag not in st.session_state.favorite_tags:
-                                st.session_state.favorite_tags.append(tag)
-                            elif not is_selected and tag in st.session_state.favorite_tags:
-                                st.session_state.favorite_tags.remove(tag)
-            else:
-                st.info("没有找到标签")
-            
-            # 如果常用标签有变化，保存到本地
-            if tags_changed:
-                save_favorite_tags(st.session_state.favorite_tags)
-                st.success("常用标签已保存")
+            # 检测是否发生变化
+            if set(selected_favorite_tags) != set(favorite_tags):
+                # 更新收藏标签
+                st.session_state.favorite_tags = selected_favorite_tags
+                
+                # 保存到本地
+                save_favorite_tags(selected_favorite_tags)
+                st.success("常用标签已更新")
+        else:
+            st.info("没有找到标签")
 
 def render_system_expander(current_taskfile):
     """渲染系统expander"""
