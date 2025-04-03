@@ -116,9 +116,31 @@ def render_sidebar(current_taskfile):
     
     # 将搜索框放入expander中
     with st.expander("🔍 过滤任务", expanded=True):
-        # 按名称搜索
-        search_term = st.text_input("搜索任务名称:", key="search_task", placeholder="输入关键词...")
-        
+        # 获取任务列表用于过滤
+        try:
+            tasks_df = read_taskfile(current_taskfile)
+            task_names = tasks_df["name"].tolist()
+            
+            # 使用多选组件进行任务筛选
+            filtered_tasks = st.multiselect(
+                "搜索任务名称:",
+                options=sorted(task_names),
+                default=[],
+                key="search_task_multiselect",
+                help="输入关键词搜索或直接选择要过滤的任务"
+            )
+            
+            # 将选定的任务存储到session中供其他组件使用
+            if 'filtered_tasks' not in st.session_state:
+                st.session_state.filtered_tasks = []
+            
+            # 只有当选择发生变化时才更新
+            if set(filtered_tasks) != set(st.session_state.filtered_tasks):
+                st.session_state.filtered_tasks = filtered_tasks
+        except Exception as e:
+            st.error(f"加载任务失败: {str(e)}")
+            st.session_state.filtered_tasks = []
+    
     # 获取选中的任务
     selected_tasks = get_selected_tasks()
     
@@ -180,35 +202,29 @@ def render_sidebar(current_taskfile):
                 st.markdown("<hr style='margin:0.8rem 0;'>", unsafe_allow_html=True)
             
             # 从当前taskfile获取所有任务
-            st.markdown("<div style='font-size:0.9rem; margin-bottom:0.5rem;'>或从所有任务中选择:</div>", unsafe_allow_html=True)
+            # st.markdown("<div style='font-size:0.9rem; margin-bottom:0.5rem;'>或从所有任务中选择:</div>", unsafe_allow_html=True)
             try:
                 tasks_df = read_taskfile(current_taskfile)
                 task_names = tasks_df["name"].tolist()
                 
-                # 添加搜索框来过滤任务
-                search_key = "task_editor_search"
-                if search_key not in st.session_state:
-                    st.session_state[search_key] = ""
+                # 合并搜索和选择为一个多选组件
+                selected_tasks_to_edit = st.multiselect(
+                    "搜索并选择要编辑的任务:",
+                    options=sorted(task_names),
+                    default=[],
+                    key="edit_tasks_multiselect",
+                    help="输入关键词筛选或直接从列表中选择一个任务进行编辑"
+                )
+                
+                # 当选择了任务时
+                if selected_tasks_to_edit:
+                    # 取第一个选择的任务进行编辑
+                    selected_task = selected_tasks_to_edit[0]
                     
-                search_term = st.text_input("搜索任务:", 
-                                         value=st.session_state[search_key], 
-                                         key=search_key+"_input", 
-                                         placeholder="输入关键词过滤任务...")
-                
-                # 过滤任务列表
-                filtered_tasks = []
-                if search_term:
-                    filtered_tasks = [name for name in task_names if search_term.lower() in name.lower()]
-                else:
-                    filtered_tasks = task_names
-                
-                # 下拉选择要编辑的任务
-                selected_task = st.selectbox("选择要编辑的任务:", 
-                                        options=[""] + filtered_tasks, 
-                                        index=0,
-                                        help="从下拉列表中选择一个任务进行编辑")
-                
-                if selected_task:
+                    # 如果选择了多个任务，提示用户
+                    if len(selected_tasks_to_edit) > 1:
+                        st.info(f"将编辑第一个选择的任务: {selected_task}")
+                    
                     # 设置要编辑的任务
                     task_row = tasks_df[tasks_df["name"] == selected_task].iloc[0]
                     st.session_state.edit_task_in_sidebar = task_row.to_dict()

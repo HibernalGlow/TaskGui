@@ -38,18 +38,18 @@ def render_task_edit_form(task, taskfile_path, on_save_callback=None, with_back_
         
         # 添加任务名称字段
         original_name = edited_task['name']
-        edited_task['name'] = st.text_input("任务名称", value=original_name, help="任务的唯一标识符，用于引用该任务")
+        edited_task['name'] = st.text_area("任务名称", value=original_name, help="任务的唯一标识符，用于引用该任务", height=70)
         
         # 组织编辑字段
         col1, col2 = st.columns(2)
         
         with col1:
-            edited_task['emoji'] = st.text_input("任务图标", value=edited_task.get('emoji', '📋'), help="用于显示的表情符号")
-            edited_task['description'] = st.text_area("任务描述", value=edited_task.get('description', ''), help="任务的详细描述")
+            edited_task['emoji'] = st.text_area("任务图标", value=edited_task.get('emoji', '📋'), help="用于显示的表情符号", height=70)
+            edited_task['description'] = st.text_area("任务描述", value=edited_task.get('description', ''), help="任务的详细描述", height=100)
         
         with col2:
-            edited_task['directory'] = st.text_input("任务目录", value=edited_task.get('directory', ''), help="任务执行的目录路径")
-            new_tags_str = st.text_input("标签 (逗号分隔)", value=tags_str, help="使用逗号分隔的标签列表，用于分类和筛选")
+            edited_task['directory'] = st.text_area("任务目录", value=edited_task.get('directory', ''), help="任务执行的目录路径", height=70)
+            new_tags_str = st.text_area("标签 (逗号分隔)", value=tags_str, help="使用逗号分隔的标签列表，用于分类和筛选", height=70)
             # 将标签字符串转换回列表
             edited_task['tags'] = [tag.strip() for tag in new_tags_str.split(',') if tag.strip()]
         

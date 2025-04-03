@@ -61,10 +61,33 @@ def apply_custom_css():
             font-size: 14px !important;
             line-height: 1.5 !important;
             padding: 12px !important;
-            background-color: #1e1e1e !important;
-            color: #d4d4d4 !important;
-            border: 1px solid #3e3e3e !important;
+            background-color: white !important;
+            color: black !important;
+            border: 1px solid #cccccc !important;
             border-radius: 4px !important;
+        }
+        
+        /* 统一表单控件样式 */
+        .stTextInput input,
+        .stSelectbox [data-baseweb="select"] div,
+        .stMultiSelect [data-baseweb="select"] div {
+            background-color: white !important;
+            color: black !important;
+        }
+        
+        /* 多选框选中的项也保持可读性 */
+        .stMultiSelect [data-baseweb="tag"] {
+            background-color: #e6f3ff !important;
+            color: black !important;
+        }
+        
+        /* 下拉选项保持可读性 */
+        .stMultiSelect [role="listbox"] li {
+            background-color: white !important;
+            color: black !important;
+        }
+        .stMultiSelect [role="listbox"] li:hover {
+            background-color: #f0f0f0 !important;
         }
         
         /* 字段标签隐藏 */
