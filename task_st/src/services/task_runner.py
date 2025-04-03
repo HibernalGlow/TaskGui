@@ -22,10 +22,10 @@ def run_task_via_cmd(task_name, taskfile_path=None):
             command = f'task {task_name}'
         
         # 根据操作系统确定如何运行命令
-        if platform.system() == 'Windows':
-            # 在Windows上使用cmd运行
+        if 1:
+            # 在Windows上使用Windows Terminal (wt.exe)运行PowerShell
             process = subprocess.Popen(
-                f'start cmd.exe /k "{command}"',
+                f'wt.exe new-tab --title "{task_name}" powershell.exe -NoExit -Command "{command}"',
                 shell=True
             )
         else:
