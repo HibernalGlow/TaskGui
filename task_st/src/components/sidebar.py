@@ -24,27 +24,25 @@ def set_background_image(image_path, opacity=0.5, blur=0):
         # 获取图片的base64编码
         img_base64 = get_base64_encoded_image(image_path)
         
-        # 应用CSS样式
+        # 应用CSS样式 - 使用伪元素添加背景图片，这样不会覆盖背景色
         st.markdown(
             f"""
             <style>
-            .stApp {{
+            .stApp::after {{
+                content: '';
                 background-image: url(data:image/{img_format};base64,{img_base64});
                 background-size: cover;
                 background-position: center;
                 background-repeat: no-repeat;
                 background-attachment: fixed;
-            }}
-            .stApp::before {{
-                content: '';
+                opacity: {opacity};
                 position: fixed;
                 top: 0;
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background: inherit;
-                filter: blur({blur}px) brightness({1 - opacity});
                 z-index: -1;
+                pointer-events: none;
             }}
             </style>
             """,
@@ -66,15 +64,24 @@ def set_sidebar_background(image_path):
         # 获取图片的base64编码
         img_base64 = get_base64_encoded_image(image_path)
         
-        # 应用CSS样式
+        # 应用CSS样式 - 使用伪元素添加背景图片，这样不会覆盖背景色
         st.markdown(
             f"""
             <style>
-            [data-testid="stSidebar"] > div:first-child {{
+            [data-testid="stSidebar"] > div:first-child::after {{
+                content: '';
                 background-image: url(data:image/{img_format};base64,{img_base64});
                 background-size: cover;
                 background-position: center;
                 background-repeat: no-repeat;
+                opacity: 0.7;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: -1;
+                pointer-events: none;
             }}
             </style>
             """,

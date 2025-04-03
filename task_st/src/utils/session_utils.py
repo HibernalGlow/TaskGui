@@ -78,27 +78,6 @@ def setup_css():
         border-radius: 0 0 4px 4px;
         border-top: none;
     }
-
-    /* 背景图片样式 */
-    .main {
-        background-image: var(--background-image);
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        min-height: 100vh;
-    }
-    .main::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: inherit;
-        filter: blur(var(--background-blur)) brightness(var(--background-brightness));
-        z-index: -1;
-    }
     </style>
     """, unsafe_allow_html=True)
     
