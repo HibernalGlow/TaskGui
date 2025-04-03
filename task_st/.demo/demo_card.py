@@ -341,7 +341,6 @@ with tab3:
                 this.eGui = document.createElement('div');
                 this.eGui.classList.add('custom-card');
                 this.eGui.style.padding = '10px';
-                this.eGui.style.backgroundColor = '#ffffff';
                 this.eGui.style.borderRadius = '10px';
                 this.eGui.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
                 this.eGui.style.height = '100%';

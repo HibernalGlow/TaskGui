@@ -10,8 +10,8 @@ gatherUsageStats = false
 
 [theme]
 primaryColor = "#39C5BB"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
+backgroundColor = "rgba(240, 242, 246, 0.7)"
+secondaryBackgroundColor = "rgba(240, 242, 246, 0.7)"
 textColor = "#262730"
 # font = "霞鹜文楷"
 

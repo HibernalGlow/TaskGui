@@ -5,14 +5,17 @@ def apply_custom_css():
     # 添加自定义CSS
     st.markdown("""
     <style>
+        /* 确保所有组件使用全局背景色设置 */
+        
+        /* 标签样式，但不设置背景色 */
         .tag {
-            background-color: #f0f2f6;
             border-radius: 10px;
             padding: 2px 8px;
             margin: 2px;
             display: inline-block;
             font-size: 0.8em;
         }
+        
         .stButton>button {
             width: 100%;
         }
@@ -30,13 +33,11 @@ def apply_custom_css():
         
         /* 主要页签样式 */
         .main-tabs [data-baseweb="tab"] {
-            background-color: #f0f2f6;
             font-weight: bold;
         }
         
         /* 预览区域样式 */
         .preview-card {
-            background-color: #f8f9fa;
             border-radius: 5px;
             padding: 15px;
             margin-top: 20px;
@@ -47,7 +48,6 @@ def apply_custom_css():
         .yaml-editor {
             font-family: monospace;
             border-radius: 4px;
-            background-color: #282c34;
             color: #e6e6e6;
             padding: 16px;
             border: 1px solid #444;
@@ -67,27 +67,21 @@ def apply_custom_css():
             border-radius: 4px !important;
         }
         
-        /* 统一表单控件样式 */
+        /* 统一表单控件样式，但不设置背景色 */
         .stTextInput input,
         .stSelectbox [data-baseweb="select"] div,
         .stMultiSelect [data-baseweb="select"] div {
-            background-color: white !important;
             color: black !important;
         }
         
-        /* 多选框选中的项也保持可读性 */
+        /* 多选框选中的项保持可读性，但不设置背景色 */
         .stMultiSelect [data-baseweb="tag"] {
-            background-color: #e6f3ff !important;
             color: black !important;
         }
         
-        /* 下拉选项保持可读性 */
+        /* 下拉选项保持可读性，但不设置背景色 */
         .stMultiSelect [role="listbox"] li {
-            background-color: white !important;
             color: black !important;
-        }
-        .stMultiSelect [role="listbox"] li:hover {
-            background-color: #f0f0f0 !important;
         }
         
         /* 字段标签隐藏 */
@@ -97,7 +91,6 @@ def apply_custom_css():
         
         /* 语法高亮区域 */
         .yaml-preview {
-            background-color: #282c34;
             border-radius: 5px;
             padding: 10px;
             margin-top: 10px;
@@ -111,7 +104,6 @@ def apply_custom_css():
             top: 5px;
             right: 5px;
             padding: 5px 10px;
-            background-color: #4a4a4a;
             color: white;
             border: none;
             border-radius: 3px;
@@ -119,14 +111,9 @@ def apply_custom_css():
             font-size: 12px;
         }
         
-        .copy-button:hover {
-            background-color: #616161;
-        }
-        
         /* markdown代码块样式增强 */
         pre {
             position: relative;
-            background-color: #282c34 !important;
             padding: 15px !important;
             border-radius: 5px !important;
             margin-bottom: 15px !important;

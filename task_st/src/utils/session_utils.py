@@ -45,7 +45,6 @@ def setup_css():
         border-radius: 5px;
         padding: 10px;
         margin-bottom: 10px;
-        background-color: white;
         box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
         transition: all 0.3s cubic-bezier(.25,.8,.25,1);
     }
@@ -68,7 +67,6 @@ def setup_css():
     }
     
     .stTabs [role="tab"][aria-selected="true"] {
-        background-color: white;
         border: 1px solid #e0e0e0;
         border-bottom: none;
         font-weight: bold;
@@ -79,7 +77,6 @@ def setup_css():
         border: 1px solid #e0e0e0;
         border-radius: 0 0 4px 4px;
         border-top: none;
-        background-color: white;
     }
 
     /* 背景图片样式 */

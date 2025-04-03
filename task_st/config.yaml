@@ -4,15 +4,15 @@ favorite_tags:
 - uuid
 - organize
 background_settings:
-  enabled: false
+  enabled: true
   sidebar_enabled: false
   header_banner_enabled: false
   sidebar_banner_enabled: true
-  image_path: ''
+  image_path: E:\1PIC\2503\Music!!!!!_128400400_Criin.avif
   sidebar_image_path: ''
   header_banner_path: ''
   sidebar_banner_path: E:\1PIC\2503\2025音律联觉\2025音律联觉（2）.avif
-  opacity: 0.5
+  opacity: 0.2
   blur: 0
 user_preferences:
   ui_settings:
