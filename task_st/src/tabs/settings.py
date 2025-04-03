@@ -808,7 +808,8 @@ def render_sidebar_settings():
         {"id": "filter_tasks", "name": "🔍 过滤任务", "enabled": True},
         {"id": "edit_task", "name": "✏️ 编辑任务", "enabled": True},
         {"id": "tag_filters", "name": "🏷️ 标签筛选", "enabled": True},
-        {"id": "system", "name": "系统", "enabled": True}
+        {"id": "system", "name": "系统", "enabled": True},
+        {"id": "appearance", "name": "🎨 外观设置", "enabled": True}
     ]
     
     # 确保expander_order存在于session_state中

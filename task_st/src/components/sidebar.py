@@ -366,6 +366,57 @@ def render_system_expander(current_taskfile):
             if st.button("⏳ 刷新", help="刷新当前页面"):
                 st.rerun()
 
+def render_appearance_expander(current_taskfile):
+    """渲染外观设置expander"""
+    # 导入背景设置相关函数
+    from src.utils.selection_utils import load_background_settings, save_background_settings
+    
+    # 获取当前背景设置
+    if 'background_settings' not in st.session_state:
+        st.session_state.background_settings = load_background_settings()
+    
+    with st.expander("🎨 外观设置", expanded=True):
+        # 主背景图片设置
+        st.write("##### 主背景")
+        main_bg_enabled = st.checkbox("启用主背景图片", 
+                                    value=st.session_state.background_settings.get('enabled', False),
+                                    key="sidebar_main_bg_enabled")
+        
+        # 侧边栏背景设置
+        st.write("##### 侧边栏背景")
+        sidebar_bg_enabled = st.checkbox("启用侧边栏背景", 
+                                        value=st.session_state.background_settings.get('sidebar_enabled', False),
+                                        key="sidebar_sidebar_bg_enabled")
+        
+        # 顶部横幅设置
+        st.write("##### 顶部横幅")
+        header_banner_enabled = st.checkbox("启用顶部横幅", 
+                                          value=st.session_state.background_settings.get('header_banner_enabled', False),
+                                          key="sidebar_header_banner_enabled")
+        
+        # 侧边栏横幅设置
+        st.write("##### 侧边栏横幅")
+        sidebar_banner_enabled = st.checkbox("启用侧边栏横幅", 
+                                           value=st.session_state.background_settings.get('sidebar_banner_enabled', False),
+                                           key="sidebar_sidebar_banner_enabled")
+        
+        # 应用按钮
+        if st.button("应用外观设置", key="apply_appearance_settings"):
+            # 更新设置
+            st.session_state.background_settings['enabled'] = main_bg_enabled
+            st.session_state.background_settings['sidebar_enabled'] = sidebar_bg_enabled
+            st.session_state.background_settings['header_banner_enabled'] = header_banner_enabled
+            st.session_state.background_settings['sidebar_banner_enabled'] = sidebar_banner_enabled
+            
+            # 保存设置
+            save_background_settings(st.session_state.background_settings)
+            
+            # 提示用户刷新页面
+            st.success("外观设置已更新，刷新页面查看效果")
+            # 添加刷新按钮
+            if st.button("刷新页面", key="refresh_after_appearance_change"):
+                st.rerun()
+
 def render_sidebar(current_taskfile):
     """渲染侧边栏控件"""
     # 移除with st.sidebar:包装，直接渲染侧边栏内容
@@ -417,14 +468,23 @@ def render_sidebar(current_taskfile):
             "name": "🔄 系统控制",
             "function": render_system_expander,
             "enabled": sidebar_settings.get("system_enabled", True)
+        },
+        "appearance": {
+            "name": "🎨 外观设置",
+            "function": render_appearance_expander,
+            "enabled": True
         }
     }
     
     # 默认expander顺序
-    default_order = ["filter_tasks", "edit_task", "tag_filters", "system"]
+    default_order = ["filter_tasks", "edit_task", "tag_filters", "system", "appearance"]
     
     # 获取用户设置的顺序
     expander_order = sidebar_settings.get("expander_order", default_order)
+    
+    # 添加新的外观设置组件到顺序中(如果不存在)
+    if "appearance" not in expander_order:
+        expander_order.append("appearance")
     
     # 获取选中的任务
     selected_tasks = get_selected_tasks()

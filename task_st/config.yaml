@@ -1,10 +1,11 @@
 favorite_tags:
 - classify
 - filter
-- uuid
 - organize
+- uuid
+- upscale
 background_settings:
-  enabled: true
+  enabled: false
   sidebar_enabled: false
   header_banner_enabled: false
   sidebar_banner_enabled: true
