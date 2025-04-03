@@ -122,40 +122,91 @@ def render_sidebar(current_taskfile):
     # 获取选中的任务
     selected_tasks = get_selected_tasks()
     
+    # 确保编辑expander状态存在
+    if 'edit_task_expander_state' not in st.session_state:
+        st.session_state.edit_task_expander_state = {}
+    
+    # 确保edit_task_in_sidebar存在于session_state中
+    if 'edit_task_in_sidebar' not in st.session_state:
+        st.session_state.edit_task_in_sidebar = None
+    
+    # 确定编辑任务expander的初始展开状态
+    edit_expander_key = "✏️ 编辑任务"
+    edit_expander_expanded = st.session_state.edit_task_expander_state.get(edit_expander_key, False)
+    
     # 添加任务编辑expander
-    with st.expander("✏️ 编辑任务", expanded=False):
-        if 'edit_task_in_sidebar' not in st.session_state:
+    with st.expander(edit_expander_key, expanded=edit_expander_expanded):
+        # 获取当前expander展开状态，如果已折叠但有编辑中的任务，则清除
+        if not st.session_state.edit_task_expander_state.get(edit_expander_key, False) and st.session_state.edit_task_in_sidebar is not None:
             st.session_state.edit_task_in_sidebar = None
-            
+        
+        # 更新expander状态（这个必须在每次渲染时都更新）
+        st.session_state.edit_task_expander_state[edit_expander_key] = True
+        
         # 如果没有选中要编辑的任务，显示任务选择
         if st.session_state.edit_task_in_sidebar is None:
             # 检查是否有任务被选中，优先从已选任务中选择
             selected_tasks = get_selected_tasks()
+            
+            # 添加一个小标题
+            st.markdown("<div style='font-size:1rem; font-weight:bold; margin-bottom:0.5rem;'>选择要编辑的任务</div>", unsafe_allow_html=True)
+            
             if selected_tasks:
-                st.write("从已选任务中选择:")
-                selected_task_cols = st.columns(min(3, len(selected_tasks)))
-                for i, task_name in enumerate(selected_tasks):
-                    with selected_task_cols[i % min(3, len(selected_tasks))]:
-                        if st.button(f"✏️ {task_name}", key=f"edit_btn_{task_name}"):
-                            # 查找任务数据
-                            try:
-                                tasks_df = read_taskfile(current_taskfile)
-                                task_row = tasks_df[tasks_df["name"] == task_name].iloc[0]
-                                st.session_state.edit_task_in_sidebar = task_row.to_dict()
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"加载任务数据失败: {str(e)}")
+                st.markdown("<div style='font-size:0.9rem; margin-bottom:0.5rem;'>从已选任务中选择:</div>", unsafe_allow_html=True)
                 
-                st.markdown("---")
+                # 确定每行显示的按钮数量
+                buttons_per_row = min(3, len(selected_tasks))
+                
+                # 为每个选中的任务创建一个按钮
+                for i in range(0, len(selected_tasks), buttons_per_row):
+                    selected_task_cols = st.columns(buttons_per_row)
+                    for j in range(buttons_per_row):
+                        col_index = j
+                        task_index = i + j
+                        
+                        if task_index < len(selected_tasks):
+                            task_name = selected_tasks[task_index]
+                            with selected_task_cols[col_index]:
+                                if st.button(f"✏️ {task_name}", key=f"edit_btn_{task_name}", help=f"编辑任务 {task_name}"):
+                                    # 查找任务数据
+                                    try:
+                                        tasks_df = read_taskfile(current_taskfile)
+                                        task_row = tasks_df[tasks_df["name"] == task_name].iloc[0]
+                                        st.session_state.edit_task_in_sidebar = task_row.to_dict()
+                                        st.rerun()
+                                    except Exception as e:
+                                        st.error(f"加载任务数据失败: {str(e)}")
+                
+                st.markdown("<hr style='margin:0.8rem 0;'>", unsafe_allow_html=True)
             
             # 从当前taskfile获取所有任务
-            st.write("或从所有任务中选择:")
+            st.markdown("<div style='font-size:0.9rem; margin-bottom:0.5rem;'>或从所有任务中选择:</div>", unsafe_allow_html=True)
             try:
                 tasks_df = read_taskfile(current_taskfile)
                 task_names = tasks_df["name"].tolist()
                 
+                # 添加搜索框来过滤任务
+                search_key = "task_editor_search"
+                if search_key not in st.session_state:
+                    st.session_state[search_key] = ""
+                    
+                search_term = st.text_input("搜索任务:", 
+                                         value=st.session_state[search_key], 
+                                         key=search_key+"_input", 
+                                         placeholder="输入关键词过滤任务...")
+                
+                # 过滤任务列表
+                filtered_tasks = []
+                if search_term:
+                    filtered_tasks = [name for name in task_names if search_term.lower() in name.lower()]
+                else:
+                    filtered_tasks = task_names
+                
                 # 下拉选择要编辑的任务
-                selected_task = st.selectbox("选择要编辑的任务:", options=[""] + task_names, index=0)
+                selected_task = st.selectbox("选择要编辑的任务:", 
+                                        options=[""] + filtered_tasks, 
+                                        index=0,
+                                        help="从下拉列表中选择一个任务进行编辑")
                 
                 if selected_task:
                     # 设置要编辑的任务
@@ -166,15 +217,17 @@ def render_sidebar(current_taskfile):
                 st.error(f"加载任务列表失败: {str(e)}")
         else:
             # 显示当前正在编辑的任务名称
-            st.markdown(f"### 正在编辑: {st.session_state.edit_task_in_sidebar.get('name', '')}")
+            st.markdown(f"<div style='font-size:1rem; font-weight:bold; color:#1E88E5; margin-bottom:0.5rem;'>当前编辑: {st.session_state.edit_task_in_sidebar.get('name', '')}</div>", unsafe_allow_html=True)
             
             # 使用task_card_editor中的函数渲染编辑表单
             from src.views.card.task_card_editor import render_task_edit_form
             
             # 定义保存后的回调函数
             def on_save_callback():
+                # 获取最新的任务名称（可能已更改）
+                task_name = st.session_state.edit_task_in_sidebar.get('name', '')
                 st.session_state.edit_task_in_sidebar = None
-                st.success("任务已保存")
+                st.success(f"任务 '{task_name}' 已保存")
                 st.rerun()
             
             # 定义返回按钮回调

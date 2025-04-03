@@ -173,6 +173,14 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
                                 if 'use_sidebar_editor' in st.session_state and st.session_state.use_sidebar_editor:
                                     # 将任务设置到侧边栏编辑状态
                                     st.session_state.edit_task_in_sidebar = task.copy()
+                                    
+                                    # 设置编辑expander为展开状态
+                                    if 'edit_task_expander_state' not in st.session_state:
+                                        st.session_state.edit_task_expander_state = {}
+                                    
+                                    # 将编辑expander标记为展开
+                                    st.session_state.edit_task_expander_state["✏️ 编辑任务"] = True
+                                    
                                     st.rerun()
                                 else:
                                     # 使用原来的内联编辑模式
