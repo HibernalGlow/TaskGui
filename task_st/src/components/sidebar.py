@@ -1,7 +1,7 @@
 import streamlit as st
 from src.services.taskfile import read_taskfile
 from streamlit_tags import st_tags
-from src.utils.selection_utils import save_favorite_tags, save_background_settings, load_background_settings, get_selected_tasks
+from src.utils.selection_utils import save_favorite_tags, save_background_settings, load_background_settings, get_selected_tasks, get_card_view_settings
 import os
 import sys
 import subprocess
@@ -90,6 +90,13 @@ def render_sidebar(current_taskfile):
     # 移除with st.sidebar:包装，直接渲染侧边栏内容
     # st.title("任务管理器")
     
+    # 加载卡片设置
+    card_settings = get_card_view_settings()
+    
+    # 确保use_sidebar_editor在session_state中
+    if 'use_sidebar_editor' not in st.session_state:
+        st.session_state.use_sidebar_editor = card_settings.get("use_sidebar_editor", True)
+    
     # 获取所有标签
     all_tags = get_all_tags(current_taskfile)
     
@@ -111,12 +118,84 @@ def render_sidebar(current_taskfile):
     with st.expander("🔍 过滤任务", expanded=True):
         # 按名称搜索
         search_term = st.text_input("搜索任务名称:", key="search_task", placeholder="输入关键词...")
+        
     # 获取选中的任务
     selected_tasks = get_selected_tasks()
     
+    # 添加任务编辑expander
+    with st.expander("✏️ 编辑任务", expanded=False):
+        if 'edit_task_in_sidebar' not in st.session_state:
+            st.session_state.edit_task_in_sidebar = None
+            
+        # 如果没有选中要编辑的任务，显示任务选择
+        if st.session_state.edit_task_in_sidebar is None:
+            # 检查是否有任务被选中，优先从已选任务中选择
+            selected_tasks = get_selected_tasks()
+            if selected_tasks:
+                st.write("从已选任务中选择:")
+                selected_task_cols = st.columns(min(3, len(selected_tasks)))
+                for i, task_name in enumerate(selected_tasks):
+                    with selected_task_cols[i % min(3, len(selected_tasks))]:
+                        if st.button(f"✏️ {task_name}", key=f"edit_btn_{task_name}"):
+                            # 查找任务数据
+                            try:
+                                tasks_df = read_taskfile(current_taskfile)
+                                task_row = tasks_df[tasks_df["name"] == task_name].iloc[0]
+                                st.session_state.edit_task_in_sidebar = task_row.to_dict()
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"加载任务数据失败: {str(e)}")
+                
+                st.markdown("---")
+            
+            # 从当前taskfile获取所有任务
+            st.write("或从所有任务中选择:")
+            try:
+                tasks_df = read_taskfile(current_taskfile)
+                task_names = tasks_df["name"].tolist()
+                
+                # 下拉选择要编辑的任务
+                selected_task = st.selectbox("选择要编辑的任务:", options=[""] + task_names, index=0)
+                
+                if selected_task:
+                    # 设置要编辑的任务
+                    task_row = tasks_df[tasks_df["name"] == selected_task].iloc[0]
+                    st.session_state.edit_task_in_sidebar = task_row.to_dict()
+                    st.rerun()
+            except Exception as e:
+                st.error(f"加载任务列表失败: {str(e)}")
+        else:
+            # 显示当前正在编辑的任务名称
+            st.markdown(f"### 正在编辑: {st.session_state.edit_task_in_sidebar.get('name', '')}")
+            
+            # 使用task_card_editor中的函数渲染编辑表单
+            from src.views.card.task_card_editor import render_task_edit_form
+            
+            # 定义保存后的回调函数
+            def on_save_callback():
+                st.session_state.edit_task_in_sidebar = None
+                st.success("任务已保存")
+                st.rerun()
+            
+            # 定义返回按钮回调
+            def back_button_callback():
+                st.session_state.edit_task_in_sidebar = None
+                st.rerun()
+            
+            # 渲染编辑表单
+            render_task_edit_form(
+                task=st.session_state.edit_task_in_sidebar,
+                taskfile_path=current_taskfile,
+                on_save_callback=on_save_callback,
+                with_back_button=True,
+                back_button_callback=back_button_callback
+            )
+    
     # 如果有选中的任务，显示任务操作按钮
     # if selected_tasks:
-    render_action_buttons(selected_tasks, current_taskfile, key_prefix="sidebar", is_sidebar=True)    # 将常用标签和标签筛选放入同一个expander中
+    render_action_buttons(selected_tasks, current_taskfile, key_prefix="sidebar", is_sidebar=True)
+    
+    # 将常用标签和标签筛选放入同一个expander中
     with st.expander("🏷️ 标签筛选", expanded=True):
         # 显示收藏标签作为快速过滤器按钮
         if st.session_state.favorite_tags:

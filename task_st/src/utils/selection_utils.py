@@ -101,7 +101,8 @@ def create_default_state():
                     "show_description": True,
                     "show_tags": True,
                     "show_directory": True,
-                    "show_command": True
+                    "show_command": True,
+                    "use_sidebar_editor": True
                 }
             }
         },
@@ -935,6 +936,10 @@ def get_card_view_settings():
     
     # 如果本地配置有效，直接返回本地设置
     if local_card_settings:
+        # 确保use_sidebar_editor选项存在
+        if "use_sidebar_editor" not in local_card_settings:
+            local_card_settings["use_sidebar_editor"] = True
+            
         # 同时更新全局状态以保持一致
         global_state = get_global_state()
         if "user_preferences" not in global_state:
@@ -960,7 +965,8 @@ def get_card_view_settings():
             "show_description": True,
             "show_tags": True,
             "show_directory": True,
-            "show_command": True
+            "show_command": True,
+            "use_sidebar_editor": True
         }
         
         # 更新全局状态
@@ -975,6 +981,11 @@ def get_card_view_settings():
         
         local_config["user_preferences"]["ui_settings"]["card_view"] = global_state["user_preferences"]["ui_settings"]["card_view"]
         save_local_config(local_config)
+    else:
+        # 确保use_sidebar_editor选项存在
+        if "use_sidebar_editor" not in global_state["user_preferences"]["ui_settings"]["card_view"]:
+            global_state["user_preferences"]["ui_settings"]["card_view"]["use_sidebar_editor"] = True
+            update_global_state(global_state)
     
     return global_state["user_preferences"]["ui_settings"]["card_view"]
 

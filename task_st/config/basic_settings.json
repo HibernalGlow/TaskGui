@@ -1,0 +1,10 @@
+{
+    "dark_mode": false,
+    "auto_load_recent": true,
+    "run_mode": "sequential",
+    "auto_backup": true,
+    "backup_interval": 30,
+    "show_welcome": true,
+    "max_log_files": 10,
+    "notify_on_completion": true
+}

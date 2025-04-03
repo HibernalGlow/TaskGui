@@ -9,8 +9,19 @@ tasks:
     tags:
     - filter
     - dedup
+    - artbook
     cmds:
     - '"{{.PYTHON}}" "src\scripts\fliter\artbook_dedup.py"'
+  artist_classify:
+    desc: 🖼️ 艺术家分类工具 - 根据艺术家分类图片
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - filter
+    - classify
+    - artist
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\comic\classify\artist_classify.py"'
+
   auto_cover:
     desc: 📔 自动封面生成器 - 为漫画创建封面图片
     dir: '{{.GlowToolBox}}'
@@ -108,7 +119,7 @@ tasks:
     dir: '{{.GlowToolBox}}'
     tags:
     - comic
-    - classifier
+    - classify
     - archive
     cmds:
     - '"{{.PYTHON}}" "src\scripts\comic\manga_archive_classifier.py" -c'

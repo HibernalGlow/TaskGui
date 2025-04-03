@@ -1,9 +1,14 @@
 import streamlit as st
 import os
+import json
 from src.utils.selection_utils import load_background_settings, save_background_settings, get_card_view_settings, update_card_view_settings
 from src.components.sidebar import set_background_image, set_sidebar_background
 from src.ui.styles import reset_background_css
 from src.views.table.aggrid_ui import render_settings_ui  # 导入AgGrid设置渲染函数
+
+# 设置文件路径
+SETTINGS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "config")
+BASIC_SETTINGS_FILE = os.path.join(SETTINGS_DIR, "basic_settings.json")
 
 def render_settings_tab():
     """渲染设置标签页"""
@@ -28,14 +33,124 @@ def render_settings_tab():
     with settings_tabs[3]:
         render_table_settings()
 
+def load_basic_settings():
+    """加载基本设置"""
+    # 确保设置目录存在
+    os.makedirs(SETTINGS_DIR, exist_ok=True)
+    
+    # 默认设置
+    default_settings = {
+        "dark_mode": False,
+        "auto_load_recent": True,
+        "run_mode": "sequential",
+        "auto_backup": True,
+        "backup_interval": 30,
+        "show_welcome": True,
+        "max_log_files": 10,
+        "notify_on_completion": True
+    }
+    
+    # 如果设置文件存在，则加载它
+    if os.path.exists(BASIC_SETTINGS_FILE):
+        try:
+            with open(BASIC_SETTINGS_FILE, "r", encoding="utf-8") as f:
+                settings = json.load(f)
+                # 合并缺失的默认值
+                for key, value in default_settings.items():
+                    if key not in settings:
+                        settings[key] = value
+                return settings
+        except Exception as e:
+            st.error(f"加载设置时出错: {str(e)}")
+            return default_settings
+    else:
+        # 如果文件不存在，返回默认设置
+        return default_settings
+
+def save_basic_settings(settings):
+    """保存基本设置"""
+    # 确保设置目录存在
+    os.makedirs(SETTINGS_DIR, exist_ok=True)
+    
+    try:
+        with open(BASIC_SETTINGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(settings, f, indent=4, ensure_ascii=False)
+        return True
+    except Exception as e:
+        st.error(f"保存设置时出错: {str(e)}")
+        return False
+
 def render_basic_settings():
     """渲染基本设置"""
-    st.subheader("界面设置")
-    st.checkbox("启用深色模式", value=False, disabled=True)
-    st.checkbox("自动加载最近的任务文件", value=True, disabled=True)
+    # 初始化或获取设置
+    if 'basic_settings' not in st.session_state:
+        st.session_state.basic_settings = load_basic_settings()
     
-    st.subheader("任务执行")
-    st.radio("默认运行模式", options=["顺序执行", "并行执行"], index=0, disabled=True)
+    with st.form("basic_settings_form"):
+        st.subheader("界面设置")
+        dark_mode = st.checkbox("启用深色模式", 
+                               value=st.session_state.basic_settings.get("dark_mode", False),
+                               help="切换深色模式显示")
+        
+        auto_load = st.checkbox("自动加载最近的任务文件", 
+                              value=st.session_state.basic_settings.get("auto_load_recent", True),
+                              help="程序启动时自动加载最近打开的任务文件")
+        
+        show_welcome = st.checkbox("显示欢迎界面", 
+                                 value=st.session_state.basic_settings.get("show_welcome", True),
+                                 help="程序启动时显示欢迎页面")
+        
+        st.subheader("任务执行")
+        run_mode = st.radio("默认运行模式", 
+                          options=["顺序执行", "并行执行"], 
+                          index=0 if st.session_state.basic_settings.get("run_mode", "sequential") == "sequential" else 1,
+                          help="选择默认任务执行模式")
+        
+        notify_completion = st.checkbox("任务完成通知", 
+                                      value=st.session_state.basic_settings.get("notify_on_completion", True),
+                                      help="任务完成时发送系统通知")
+        
+        st.subheader("数据管理")
+        auto_backup = st.checkbox("自动备份数据", 
+                                value=st.session_state.basic_settings.get("auto_backup", True),
+                                help="自动备份任务数据和设置")
+        
+        backup_interval = st.slider("备份间隔（分钟）", 
+                                  min_value=5, 
+                                  max_value=120, 
+                                  value=st.session_state.basic_settings.get("backup_interval", 30),
+                                  step=5,
+                                  help="设置自动备份的时间间隔")
+        
+        max_logs = st.slider("最大日志文件数", 
+                           min_value=5, 
+                           max_value=50, 
+                           value=st.session_state.basic_settings.get("max_log_files", 10),
+                           step=5,
+                           help="保留的最大日志文件数量，超过将自动清理")
+        
+        # 提交按钮
+        submitted = st.form_submit_button("保存设置")
+        
+        if submitted:
+            # 更新设置
+            new_settings = {
+                "dark_mode": dark_mode,
+                "auto_load_recent": auto_load,
+                "run_mode": "sequential" if run_mode == "顺序执行" else "parallel",
+                "auto_backup": auto_backup,
+                "backup_interval": backup_interval,
+                "show_welcome": show_welcome,
+                "max_log_files": max_logs,
+                "notify_on_completion": notify_completion
+            }
+            
+            # 保存到session_state
+            st.session_state.basic_settings = new_settings
+            
+            # 保存到文件
+            if save_basic_settings(new_settings):
+                st.success("基本设置已保存")
 
 def render_card_settings():
     """渲染卡片设置"""
@@ -43,6 +158,10 @@ def render_card_settings():
     
     # 获取当前卡片设置
     card_settings = get_card_view_settings()
+    
+    # 确保use_sidebar_editor存在于session_state中
+    if 'use_sidebar_editor' not in st.session_state:
+        st.session_state.use_sidebar_editor = card_settings.get("use_sidebar_editor", True)
     
     # 创建设置表单
     with st.form("card_view_settings_form"):
@@ -76,6 +195,13 @@ def render_card_settings():
             help="显示执行任务的命令"
         )
         
+        # 添加侧边栏编辑选项
+        use_sidebar_editor = st.checkbox(
+            "在侧边栏中编辑任务", 
+            value=st.session_state.use_sidebar_editor,
+            help="在侧边栏中编辑任务，而不是直接在卡片内编辑"
+        )
+        
         # 提交按钮
         submitted = st.form_submit_button("保存设置")
         
@@ -85,8 +211,12 @@ def render_card_settings():
                 "show_description": show_description,
                 "show_tags": show_tags,
                 "show_directory": show_directory,
-                "show_command": show_command
+                "show_command": show_command,
+                "use_sidebar_editor": use_sidebar_editor
             }
+            
+            # 更新session_state
+            st.session_state.use_sidebar_editor = use_sidebar_editor
             
             # 保存设置
             update_card_view_settings(new_settings)

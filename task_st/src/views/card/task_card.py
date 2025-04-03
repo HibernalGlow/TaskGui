@@ -169,8 +169,15 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
                         # 编辑按钮
                         elif "edit_" in btn_key:
                             if st.button(config["icon"], key=btn_key, help=config["help"], type=button_type):
-                                st.session_state[edit_key] = True
-                                st.rerun() # 编辑模式需要重新加载
+                                # 修改：检查是否启用侧边栏编辑
+                                if 'use_sidebar_editor' in st.session_state and st.session_state.use_sidebar_editor:
+                                    # 将任务设置到侧边栏编辑状态
+                                    st.session_state.edit_task_in_sidebar = task.copy()
+                                    st.rerun()
+                                else:
+                                    # 使用原来的内联编辑模式
+                                    st.session_state[edit_key] = True
+                                    st.rerun() # 编辑模式需要重新加载
             
             # 获取任务运行时数据
             runtime = get_task_runtime(task['name'])
