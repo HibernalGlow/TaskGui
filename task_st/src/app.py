@@ -32,7 +32,7 @@ from src.utils.selection_utils import (
 # 导入新的模块化组件
 from src.ui.config import setup_page_config
 from src.ui.styles import apply_custom_css, add_clipboard_js
-from src.tabs.settings import render_settings_tab
+from src.tabs.settings import render_settings_tab, load_basic_settings
 from src.tabs.preview_tab import render_preview_tab
 
 # 导入Pillow增强插件
@@ -55,6 +55,10 @@ def main():
         
         # 初始化全局状态
         init_global_state()
+        
+        # 初始化AgGrid设置
+        from src.views.table.aggrid_config import init_aggrid_settings
+        init_aggrid_settings()
         
         # 加载背景设置
         if 'background_settings' not in st.session_state:
@@ -148,36 +152,60 @@ def main():
         # 渲染主界面操作按钮
         # render_action_buttons(selected_tasks, default_taskfile, key_prefix="main_preview")
         
+        # 加载基本设置以确定要显示哪些标签页
+        if 'basic_settings' not in st.session_state:
+            st.session_state.basic_settings = load_basic_settings()
+        
         # 使用字典存储页签标题和索引的映射，便于动态管理
-        tab_names = ["🗂️ 卡片", "📊 表格", "🔍 预览", "📈 仪表盘", "⚙️ 设置", "🔧 状态"]
+        all_tab_names = ["🗂️ 卡片", "📊 表格", "🔍 预览", "📈 仪表盘", "⚙️ 设置", "🔧 状态"]
+        all_tab_features = ["show_card_tab", "show_table_tab", "show_preview_tab", "show_dashboard_tab", "show_settings_tab", "show_state_tab"]
+        
+        # 根据设置决定要显示哪些标签页
+        tab_names = []
+        for i, tab_name in enumerate(all_tab_names):
+            feature_name = all_tab_features[i]
+            if st.session_state.basic_settings.get(feature_name, True):
+                tab_names.append(tab_name)
+        
+        # 如果没有启用任何标签页，默认至少启用设置页
+        if len(tab_names) == 0:
+            tab_names = ["⚙️ 设置"]
+        
+        # 创建索引映射
         tab_indices = {name: idx for idx, name in enumerate(tab_names)}
         
         # 创建页签
         tabs = st.tabs(tab_names)
         
         # 表格视图
-        with tabs[tab_indices["📊 表格"]]:
-            render_table_view(filtered_df, default_taskfile, show_sidebar=False)  # 关闭右侧预览
+        if "📊 表格" in tab_indices:
+            with tabs[tab_indices["📊 表格"]]:
+                render_table_view(filtered_df, default_taskfile, show_sidebar=False)  # 关闭右侧预览
         
         # 卡片视图
-        with tabs[tab_indices["🗂️ 卡片"]]:
-            render_card_view(filtered_df, default_taskfile)
+        if "🗂️ 卡片" in tab_indices:
+            with tabs[tab_indices["🗂️ 卡片"]]:
+                render_card_view(filtered_df, default_taskfile)
         
         # 预览页签
-        with tabs[tab_indices["🔍 预览"]]:
-            render_preview_tab(filtered_df, default_taskfile)
+        if "🔍 预览" in tab_indices:
+            with tabs[tab_indices["🔍 预览"]]:
+                render_preview_tab(filtered_df, default_taskfile)
         
         # 仪表盘页签
-        with tabs[tab_indices["📈 仪表盘"]]:
-            render_dashboard()
+        if "📈 仪表盘" in tab_indices:
+            with tabs[tab_indices["📈 仪表盘"]]:
+                render_dashboard()
             
         # 设置页签
-        with tabs[tab_indices["⚙️ 设置"]]:
-            render_settings_tab()
+        if "⚙️ 设置" in tab_indices:
+            with tabs[tab_indices["⚙️ 设置"]]:
+                render_settings_tab()
         
         # 状态管理页签
-        with tabs[tab_indices["🔧 状态"]]:
-            render_state_manager()
+        if "🔧 状态" in tab_indices:
+            with tabs[tab_indices["🔧 状态"]]:
+                render_state_manager()
             
     except Exception as e:
         st.error(f"发生错误: {str(e)}")

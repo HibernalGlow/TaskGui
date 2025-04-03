@@ -51,7 +51,14 @@ def load_basic_settings():
         "backup_interval": 30,
         "show_welcome": True,
         "max_log_files": 10,
-        "notify_on_completion": True
+        "notify_on_completion": True,
+        # 添加标签页显示默认设置
+        "show_card_tab": True,
+        "show_table_tab": True,
+        "show_preview_tab": True,
+        "show_dashboard_tab": True,
+        "show_settings_tab": True,
+        "show_state_tab": True
     }
     
     # 如果设置文件存在，则加载它
@@ -104,6 +111,53 @@ def render_basic_settings():
                                  value=st.session_state.basic_settings.get("show_welcome", True),
                                  help="程序启动时显示欢迎页面")
         
+        # 添加标签页显示设置
+        st.subheader("标签页显示设置")
+        st.write("选择要在应用中显示的标签页:")
+        st.info("更改标签页显示设置后，请刷新页面以应用更改。")
+        
+        # 显示当前启用的标签页
+        enabled_tabs = []
+        if st.session_state.basic_settings.get("show_card_tab", True):
+            enabled_tabs.append("卡片视图")
+        if st.session_state.basic_settings.get("show_table_tab", True):
+            enabled_tabs.append("表格视图") 
+        if st.session_state.basic_settings.get("show_preview_tab", True):
+            enabled_tabs.append("预览")
+        if st.session_state.basic_settings.get("show_dashboard_tab", True):
+            enabled_tabs.append("仪表盘")
+        if st.session_state.basic_settings.get("show_settings_tab", True):
+            enabled_tabs.append("设置")
+        if st.session_state.basic_settings.get("show_state_tab", True):
+            enabled_tabs.append("状态")
+            
+        st.write(f"当前已启用: {', '.join(enabled_tabs)}")
+        
+        show_card_tab = st.checkbox("显示卡片视图", 
+                                  value=st.session_state.basic_settings.get("show_card_tab", True),
+                                  help="启用或禁用卡片视图标签页")
+        
+        show_table_tab = st.checkbox("显示表格视图", 
+                                   value=st.session_state.basic_settings.get("show_table_tab", True),
+                                   help="启用或禁用表格视图标签页")
+        
+        show_preview_tab = st.checkbox("显示预览标签页", 
+                                     value=st.session_state.basic_settings.get("show_preview_tab", True),
+                                     help="启用或禁用预览标签页")
+        
+        show_dashboard_tab = st.checkbox("显示仪表盘", 
+                                       value=st.session_state.basic_settings.get("show_dashboard_tab", True),
+                                       help="启用或禁用仪表盘标签页")
+        
+        show_settings_tab = st.checkbox("显示设置标签页", 
+                                       value=st.session_state.basic_settings.get("show_settings_tab", True),
+                                       help="启用或禁用设置标签页", 
+                                       disabled=True)  # 设置页面不能禁用，因为用户需要通过它来恢复其他标签页
+        
+        show_state_tab = st.checkbox("显示状态标签页", 
+                                    value=st.session_state.basic_settings.get("show_state_tab", True),
+                                    help="启用或禁用状态管理标签页")
+        
         st.subheader("任务执行")
         run_mode = st.radio("默认运行模式", 
                           options=["顺序执行", "并行执行"], 
@@ -137,6 +191,14 @@ def render_basic_settings():
         submitted = st.form_submit_button("保存设置")
         
         if submitted:
+            # 检查标签页设置是否发生变化
+            tabs_changed = False
+            for tab_setting in ["show_card_tab", "show_table_tab", "show_preview_tab", 
+                               "show_dashboard_tab", "show_settings_tab", "show_state_tab"]:
+                if st.session_state.basic_settings.get(tab_setting, True) != locals()[tab_setting]:
+                    tabs_changed = True
+                    break
+            
             # 更新设置
             new_settings = {
                 "dark_mode": dark_mode,
@@ -146,7 +208,14 @@ def render_basic_settings():
                 "backup_interval": backup_interval,
                 "show_welcome": show_welcome,
                 "max_log_files": max_logs,
-                "notify_on_completion": notify_completion
+                "notify_on_completion": notify_completion,
+                # 添加标签页显示设置
+                "show_card_tab": show_card_tab,
+                "show_table_tab": show_table_tab,
+                "show_preview_tab": show_preview_tab,
+                "show_dashboard_tab": show_dashboard_tab,
+                "show_settings_tab": True,  # 设置页始终启用
+                "show_state_tab": show_state_tab
             }
             
             # 保存到session_state
@@ -155,6 +224,14 @@ def render_basic_settings():
             # 保存到文件
             if save_basic_settings(new_settings):
                 st.success("基本设置已保存")
+                
+                # 如果标签页设置发生变化，提示刷新页面
+                if tabs_changed:
+                    st.warning("标签页设置已更改，请刷新页面以应用新设置")
+                    # 添加一个刷新按钮
+                    refresh_btn = st.button("刷新页面")
+                    if refresh_btn:
+                        st.rerun()
 
 def render_card_settings():
     """渲染卡片设置"""
@@ -452,6 +529,12 @@ def render_sidebar_banner_settings():
 def render_table_settings():
     """渲染表格设置标签页"""
     st.subheader("📊 表格显示设置")
+    
+    # 导入必要的函数来初始化AgGrid设置
+    from src.views.table.aggrid_config import init_aggrid_settings
+    
+    # 初始化AgGrid设置
+    init_aggrid_settings()
     
     # 调用AgGrid高级设置UI渲染函数
     render_settings_ui()
