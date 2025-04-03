@@ -281,22 +281,32 @@ def render_sidebar(current_taskfile):
         # 标签过滤器部分
         # st.markdown("### 从列表选择标签")
         
-        # 添加一个下拉框，用于快速选择标签
+        # 添加一个多选组件，用于快速选择标签
         if all_tags:
-            tag_dropdown = st.selectbox(
-                "从列表选择标签:",
-                options=[""] + sorted(all_tags),  # 添加空选项作为默认值
-                index=0,  # 默认选择第一个（空选项）
-                key="tag_dropdown"
+            # 转换现有标签过滤器为集合，方便比较
+            current_tags_set = set(st.session_state.tags_filter)
+            
+            # 使用多选组件替代下拉框
+            selected_tags = st.multiselect(
+                "选择要筛选的标签:",
+                options=sorted(all_tags),
+                default=sorted(list(current_tags_set)),
+                key="tags_multiselect"
             )
             
-            # 如果用户从下拉框选择了一个非空标签，添加到标签过滤器中
-            if tag_dropdown and tag_dropdown not in st.session_state.tags_filter:
-                st.session_state.tags_filter.append(tag_dropdown)
+            # 更新标签过滤器
+            if set(selected_tags) != current_tags_set:
+                # 清空当前标签筛选
+                st.session_state.tags_filter = []
+                
+                # 添加选中的标签
+                if selected_tags:
+                    st.session_state.tags_filter.extend(selected_tags)
+                
                 # 增加key值以强制刷新st_tags组件
                 st.session_state.tags_widget_key += 1
                 st.rerun()
-            
+        
         # 使用分隔线和标题替代嵌套的expander
         # st.markdown("---")
         # st.markdown("#### 管理常用标签")
