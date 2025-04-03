@@ -172,7 +172,7 @@ def render_edit_task_expander(current_taskfile):
             selected_tasks = get_selected_tasks()
             
             # 添加一个小标题
-            st.markdown("<div style='font-size:1rem; font-weight:bold; margin-bottom:0.5rem;'>选择要编辑的任务</div>", unsafe_allow_html=True)
+            # st.markdown("<div style='font-size:1rem; font-weight:bold; margin-bottom:0.5rem;'>选择要编辑的任务</div>", unsafe_allow_html=True)
             
             if selected_tasks:
                 st.markdown("<div style='font-size:0.9rem; margin-bottom:0.5rem;'>从已选任务中选择:</div>", unsafe_allow_html=True)

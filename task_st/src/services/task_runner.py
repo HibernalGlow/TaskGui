@@ -27,7 +27,7 @@ def run_task_via_cmd(task_name, taskfile_path=None):
             # 在Windows上使用Windows Terminal (wt.exe)运行PowerShell
             current_time = datetime.datetime.now().strftime("%H:%M:%S")
             process = subprocess.Popen(
-                f'wt.exe new-tab --title "{task_name} {current_time}" powershell.exe -NoExit -Command "{command}"',
+                f'wt.exe new-tab --title "{task_name} {current_time}" powershell.exe  -Command "{command}"',
                 shell=True
             )
         else:
