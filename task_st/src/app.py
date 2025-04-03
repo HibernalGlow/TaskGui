@@ -149,7 +149,7 @@ def main():
         render_action_buttons(selected_tasks, default_taskfile, key_prefix="main_preview")
         
         # 使用字典存储页签标题和索引的映射，便于动态管理
-        tab_names = ["📊 表格", "🗂️ 卡片", "🔍 预览", "📈 仪表盘", "⚙️ 设置", "🔧 状态"]
+        tab_names = ["🗂️ 卡片", "📊 表格", "🔍 预览", "📈 仪表盘", "⚙️ 设置", "🔧 状态"]
         tab_indices = {name: idx for idx, name in enumerate(tab_names)}
         
         # 创建页签

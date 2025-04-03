@@ -346,7 +346,7 @@ def render_tag_filters_expander(current_taskfile):
 def render_system_expander(current_taskfile):
     """渲染系统expander"""
     with st.expander("系统", expanded=True):
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
             if st.button("🔄 重启", help="重新启动任务管理器"):
                 restart_application()
@@ -354,6 +354,10 @@ def render_system_expander(current_taskfile):
         with col2:
             if st.button("❌ 退出", help="完全关闭任务管理器"):
                 exit_application()
+                
+        with col3:
+            if st.button("⏳ 刷新", help="刷新当前页面"):
+                st.rerun()
 
 def render_sidebar(current_taskfile):
     """渲染侧边栏控件"""

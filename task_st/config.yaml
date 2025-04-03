@@ -16,14 +16,8 @@ background_settings:
 user_preferences:
   ui_settings:
     card_view:
-      sidebar_settings:
-        expander_order:
-        - filter_tasks
-        - edit_task
-        - tag_filters
-        - system
-        use_sidebar_editor: true
-        filter_tasks_enabled: true
-        edit_task_enabled: true
-        tag_filters_enabled: true
-        system_enabled: true
+      show_description: false
+      show_tags: true
+      show_directory: false
+      show_command: false
+      use_sidebar_editor: true

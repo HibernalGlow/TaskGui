@@ -24,7 +24,7 @@ def render_card_view(filtered_df, current_taskfile, key_prefix="card_view"):
         "每行显示卡片数量", 
         min_value=1, 
         max_value=4, 
-        value=4, 
+        value=3, 
         step=1,
         key=f"{key_prefix}_cards_per_row"
     )
