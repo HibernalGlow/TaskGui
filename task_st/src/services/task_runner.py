@@ -2,6 +2,7 @@ import os
 import subprocess
 import platform
 import threading
+import datetime
 
 def run_task_via_cmd(task_name, taskfile_path=None):
     """
@@ -24,8 +25,9 @@ def run_task_via_cmd(task_name, taskfile_path=None):
         # 根据操作系统确定如何运行命令
         if 1:
             # 在Windows上使用Windows Terminal (wt.exe)运行PowerShell
+            current_time = datetime.datetime.now().strftime("%H:%M:%S")
             process = subprocess.Popen(
-                f'wt.exe new-tab --title "{task_name}" powershell.exe -NoExit -Command "{command}"',
+                f'wt.exe new-tab --title "{task_name} {current_time}" powershell.exe -NoExit -Command "{command}"',
                 shell=True
             )
         else:
