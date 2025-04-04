@@ -169,6 +169,42 @@ def apply_custom_css():
             margin-top: 5px !important;
             padding: 10px !important;
         }
+        
+        /* 恢复侧边栏的响应式行为 */
+        @media (max-width: 992px) {
+            section[data-testid="stSidebar"] {
+                position: fixed !important;
+                left: -21rem !important;
+                width: 21rem !important;
+                transition: left 0.3s ease-in-out !important;
+                z-index: 1000 !important;
+                height: 100% !important;
+                top: 0 !important;
+                background-color: white !important;
+                box-shadow: 0 0 10px rgba(0,0,0,0.2) !important;
+            }
+            
+            section[data-testid="stSidebar"]:hover,
+            section[data-testid="stSidebar"]:focus,
+            section[data-testid="stSidebar"]:active {
+                left: 0 !important;
+            }
+            
+            /* 添加一个图标提示 */
+            section[data-testid="stSidebar"]::before {
+                content: "≡";
+                position: fixed;
+                left: 0;
+                top: 50%;
+                background-color: white;
+                padding: 10px 5px;
+                border-radius: 0 5px 5px 0;
+                box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+                font-size: 20px;
+                z-index: 1001;
+                cursor: pointer;
+            }
+        }
     </style>
     """, unsafe_allow_html=True)
 

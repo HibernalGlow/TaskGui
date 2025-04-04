@@ -6,5 +6,5 @@ def setup_page_config():
         page_title="任务管理器",
         page_icon="🔧",
         layout="wide",
-        initial_sidebar_state="expanded"
+        initial_sidebar_state="auto"
     ) 
