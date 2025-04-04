@@ -190,20 +190,6 @@ def apply_custom_css():
                 left: 0 !important;
             }
             
-            /* 添加一个图标提示 */
-            section[data-testid="stSidebar"]::before {
-                content: "≡";
-                position: fixed;
-                left: 0;
-                top: 50%;
-                background-color: white;
-                padding: 10px 5px;
-                border-radius: 0 5px 5px 0;
-                box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-                font-size: 20px;
-                z-index: 1001;
-                cursor: pointer;
-            }
         }
     </style>
     """, unsafe_allow_html=True)
