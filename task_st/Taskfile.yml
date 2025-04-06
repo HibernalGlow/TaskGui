@@ -89,6 +89,15 @@ tasks:
     - artist
     cmds:
     - '"{{.PYTHON}}" "src\scripts\comic\classify\find_same_artist.py"'
+  folder_extract_tool:
+    desc: 📂 文件夹提取工具 - 整理文件夹结构和压缩包
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - folder
+    - organize
+    - archive
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\folder\folder_extract_tool.py" -c -a -f -r'    
   gallery_finder:
     desc: 🔍 图库查找器 - 查找并组织图库资源
     dir: '{{.GlowToolBox}}'
@@ -260,7 +269,7 @@ tasks:
     - cmd: cmd.exe /c start "" "C:\Users\30902\Desktop\任务管理器.lnk"
       platforms:
       - windows
-    - '".venv\Scripts\python.exe" "run_task_manager.py" -noterm '
+    - '"{{.PYTHON}}" "run_task_manager.py" -noterm '
   wf:uname:
     desc: 🔄 工作流管理器 - 管理工作流任务
     dir: '{{.GlowToolBox}}'
@@ -284,3 +293,12 @@ tasks:
     - task: rename_images
     - task: video_format
     - task: organize_folder
+  wf:cofi:
+    desc: 🔄 工作流管理器 - 管理工作流任务
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - workflow
+    - filter
+    cmds:
+    - '"{{.PYTHON}}" "src/scripts/fliter/recruit_cover_filter.py" -c -ht 16 -fn 3 -bn 0 --duplicate-filter-mode watermark'
+    - '"{{.PYTHON}}" "src/scripts/fliter/recruit_cover_filter.py -c -ht 16 -fn 3 -bn 5 --duplicate-filter-mode hash'
