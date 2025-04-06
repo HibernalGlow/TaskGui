@@ -2,8 +2,9 @@ favorite_tags:
 - classify
 - filter
 - organize
-- uuid
 - upscale
+- uuid
+- workflow
 background_settings:
   enabled: false
   sidebar_enabled: false

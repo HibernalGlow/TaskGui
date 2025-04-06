@@ -261,3 +261,25 @@ tasks:
       platforms:
       - windows
     - '".venv\Scripts\python.exe" "run_task_manager.py" -noterm '
+  wf:uname:
+    desc: 🔄 工作流管理器 - 管理工作流任务
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - workflow
+    - uuid
+    cmds:
+    - task: one_name
+    - task: auto_uuid
+  wf:cono:
+    desc: 🔄 工作流管理器 - 管理工作流任务
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - workflow
+    - organize
+    cmds:
+    - task: merge_part_folders
+    - task: psd_convert_clipboard
+    - task: auto_repack
+    - task: single_packer
+    - task: rename_images
+    - task: organize_folder
