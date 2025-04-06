@@ -282,4 +282,5 @@ tasks:
     - task: auto_repack
     - task: single_packer
     - task: rename_images
+    - task: video_format
     - task: organize_folder
