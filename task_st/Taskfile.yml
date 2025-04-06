@@ -293,6 +293,7 @@ tasks:
     - task: rename_images
     - task: video_format
     - task: organize_folder
+    - task: sn_fix
   wf:cofi:
     desc: 🔄 工作流管理器 - 管理工作流任务
     dir: '{{.GlowToolBox}}'
