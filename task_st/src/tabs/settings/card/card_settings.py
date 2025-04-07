@@ -1,5 +1,5 @@
 import streamlit as st
-from src.utils.selection_utils import get_card_view_settings, update_card_view_settings
+from src.utils.selection_utils import get_card_view_settings, update_card_view_settings, load_local_config, save_local_config
 from src.tabs.settings.basic.basic_settings import load_basic_settings, save_basic_settings
 from src.components.tag_filters import get_all_tags
 from src.utils.file_utils import get_nearest_taskfile
@@ -74,13 +74,13 @@ def render_card_settings():
             update_card_view_settings(new_settings)
             st.success("卡片显示设置已更新！")
 
-    # 加载当前设置
-    settings = load_basic_settings()
+    # 加载当前配置
+    config = load_local_config()
     
     # 卡片分组设置
     card_group_by_tag = st.checkbox(
         "按第一个标签分组显示卡片",
-        value=settings.get('card_group_by_tag', False),
+        value=config.get('card_group_by_tag', False),
         help="启用后，卡片将按照第一个标签进行分组显示"
     )
     
@@ -94,13 +94,13 @@ def render_card_settings():
     pinned_tags = st.multiselect(
         "置顶标签（优先显示）",
         options=all_tags,
-        default=settings.get('pinned_tags', []),
+        default=config.get('pinned_tags', []),
         help="选择要优先显示的标签，这些标签会显示在分组的最前面"
     )
     
     # 保存设置
-    if card_group_by_tag != settings.get('card_group_by_tag', False) or pinned_tags != settings.get('pinned_tags', []):
-        settings['card_group_by_tag'] = card_group_by_tag
-        settings['pinned_tags'] = pinned_tags
-        save_basic_settings(settings)
+    if card_group_by_tag != config.get('card_group_by_tag', False) or pinned_tags != config.get('pinned_tags', []):
+        config['card_group_by_tag'] = card_group_by_tag
+        config['pinned_tags'] = pinned_tags
+        save_local_config(config)
         st.success("设置已保存") 

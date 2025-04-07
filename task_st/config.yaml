@@ -24,3 +24,8 @@ user_preferences:
       show_directory: false
       show_command: false
       use_sidebar_editor: true
+card_group_by_tag: true
+pinned_tags:
+- workflow
+- filter
+- organize

@@ -3,9 +3,8 @@ import os
 from src.utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
 from src.services.task_runner import run_task_via_cmd
 from src.components.batch_operations import render_batch_operations
-from src.utils.selection_utils import update_task_selection, get_task_selection_state, init_global_state, record_task_run
+from src.utils.selection_utils import update_task_selection, get_task_selection_state, init_global_state, record_task_run, load_local_config
 from src.views.card.task_card import render_task_card
-from src.tabs.settings.basic.basic_settings import load_basic_settings
 
 def group_tasks_by_first_tag(tasks_df):
     """按第一个标签对任务进行分组
@@ -69,10 +68,10 @@ def render_card_view(filtered_df, current_taskfile, key_prefix="card_view"):
     # 确保全局状态已初始化
     init_global_state()
     
-    # 加载基本设置
-    settings = load_basic_settings()
-    group_by_tag = settings.get('card_group_by_tag', False)
-    pinned_tags = settings.get('pinned_tags', [])
+    # 加载设置
+    config = load_local_config()
+    group_by_tag = config.get('card_group_by_tag', False)
+    pinned_tags = config.get('pinned_tags', [])
     
     # 添加每行卡片数量的滑动条
     cards_per_row = st.slider(
