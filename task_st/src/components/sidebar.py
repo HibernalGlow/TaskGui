@@ -141,7 +141,7 @@ def render_outline_expander(current_taskfile):
     pinned_tags = config.get('pinned_tags', [])
     
     with st.expander("📑 分组大纲", expanded=True):
-        st.write("快速跳转到标签分组:")
+        # st.write("快速跳转到标签分组:")
         
         # 加载任务数据以获取所有分组
         tasks_df = read_taskfile(current_taskfile)
@@ -152,21 +152,81 @@ def render_outline_expander(current_taskfile):
             # 排序分组
             sorted_groups = sort_grouped_tasks(grouped_tasks, pinned_tags)
             
-            # 为每个分组创建跳转链接
-            for tag, _ in sorted_groups:
-                # 创建锚点链接
-                tag_id = tag.replace(" ", "_").lower()
-                
-                # 根据标签类型添加不同的样式
-                if tag in pinned_tags:
-                    # 置顶标签使用醒目样式
-                    st.markdown(f"⭐ [{tag}](#tag_{tag_id})")
-                elif tag == "未分类":
-                    # 未分类使用普通样式
-                    st.markdown(f"• [{tag}](#tag_{tag_id})")
-                else:
-                    # 其他标签
-                    st.markdown(f"◦ [{tag}](#tag_{tag_id})")
+            # 分割标签组为两部分以便双列显示
+            total_groups = len(sorted_groups)
+            first_half = sorted_groups[:total_groups // 2 + total_groups % 2]
+            second_half = sorted_groups[total_groups // 2 + total_groups % 2:]
+            
+            # 创建统一的标签样式CSS
+            st.markdown("""
+            <style>
+            .tag-outline {
+                display: inline-block;
+                padding: 2px 8px;
+                margin: 2px 0;
+                border-radius: 4px;
+                background-color: #f0f2f6;
+                font-size: 0.85em;
+                white-space: nowrap;
+                text-decoration: none;
+                color: #262730;
+            }
+            .tag-outline:hover {
+                background-color: #e0e2e6;
+                text-decoration: none;
+            }
+            .tag-outline-pinned {
+                background-color: #ffd166;
+                font-weight: 500;
+            }
+            .tag-outline-pinned:hover {
+                background-color: #ffba08;
+            }
+            .tag-outline-unclassified {
+                background-color: #e9ecef;
+                color: #495057;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            # 创建双列布局
+            col1, col2 = st.columns(2)
+            
+            # 渲染第一列标签
+            with col1:
+                for tag, tasks in first_half:
+                    # 创建锚点链接
+                    tag_id = tag.replace(" ", "_").lower()
+                    count = len(tasks)
+                    
+                    # 根据标签类型添加不同的样式
+                    if tag in pinned_tags:
+                        # 置顶标签使用醒目样式
+                        st.markdown(f'<a href="#tag_{tag_id}" class="tag-outline tag-outline-pinned">⭐ {tag} ({count})</a>', unsafe_allow_html=True)
+                    elif tag == "未分类":
+                        # 未分类使用普通样式
+                        st.markdown(f'<a href="#tag_{tag_id}" class="tag-outline tag-outline-unclassified">🔹 {tag} ({count})</a>', unsafe_allow_html=True)
+                    else:
+                        # 其他标签
+                        st.markdown(f'<a href="#tag_{tag_id}" class="tag-outline">🔸 {tag} ({count})</a>', unsafe_allow_html=True)
+            
+            # 渲染第二列标签
+            with col2:
+                for tag, tasks in second_half:
+                    # 创建锚点链接
+                    tag_id = tag.replace(" ", "_").lower()
+                    count = len(tasks)
+                    
+                    # 根据标签类型添加不同的样式
+                    if tag in pinned_tags:
+                        # 置顶标签使用醒目样式
+                        st.markdown(f'<a href="#tag_{tag_id}" class="tag-outline tag-outline-pinned">⭐ {tag} ({count})</a>', unsafe_allow_html=True)
+                    elif tag == "未分类":
+                        # 未分类使用普通样式
+                        st.markdown(f'<a href="#tag_{tag_id}" class="tag-outline tag-outline-unclassified">🔹 {tag} ({count})</a>', unsafe_allow_html=True)
+                    else:
+                        # 其他标签
+                        st.markdown(f'<a href="#tag_{tag_id}" class="tag-outline">🔸 {tag} ({count})</a>', unsafe_allow_html=True)
 
 def render_filter_tasks_expander(current_taskfile):
     """渲染任务过滤expander"""
