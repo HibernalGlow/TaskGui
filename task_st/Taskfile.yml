@@ -105,14 +105,6 @@ tasks:
     - finder
     cmds:
     - '"{{.PYTHON}}" "src\scripts\nodes\archive\gallery_finder.py" -c -o'
-  img_filter:
-    desc: 🖼️ 图像过滤器 - 根据条件筛选图像
-    dir: '{{.GlowToolBox}}'
-    tags:
-    - filter
-    - image
-    cmds:
-    - '"{{.PYTHON}}" "src\scripts\fliter\img_filter.py"'
   janai_monitor:
     desc: 🔭 Janai监控 - 监控Janai转换进度
     dir: '{{.GlowToolBox}}'

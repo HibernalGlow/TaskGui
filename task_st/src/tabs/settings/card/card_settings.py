@@ -2,6 +2,7 @@ import streamlit as st
 from src.utils.selection_utils import get_card_view_settings, update_card_view_settings
 from src.tabs.settings.basic.basic_settings import load_basic_settings, save_basic_settings
 from src.components.tag_filters import get_all_tags
+from src.utils.file_utils import get_nearest_taskfile
 
 def render_card_settings():
     """渲染卡片设置"""
@@ -83,8 +84,11 @@ def render_card_settings():
         help="启用后，卡片将按照第一个标签进行分组显示"
     )
     
+    # 获取当前任务文件路径
+    default_taskfile = get_nearest_taskfile()
+    
     # 获取所有可用标签
-    all_tags = get_all_tags()
+    all_tags = get_all_tags(default_taskfile) if default_taskfile else []
     
     # 置顶标签设置
     pinned_tags = st.multiselect(
