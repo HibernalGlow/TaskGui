@@ -1,6 +1,5 @@
 import streamlit as st
 from src.services.taskfile import read_taskfile, load_taskfile
-from streamlit_tags import st_tags
 from src.utils.selection_utils import save_favorite_tags, save_background_settings, load_background_settings, get_selected_tasks, get_card_view_settings, load_local_config, update_global_state, get_global_state, get_task_selection_state, update_task_selection, record_task_run
 import os
 import sys

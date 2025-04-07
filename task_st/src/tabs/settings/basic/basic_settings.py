@@ -1,15 +1,15 @@
 import streamlit as st
 import os
 import json
+import yaml
 
-# 设置文件路径
-SETTINGS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "config")
-BASIC_SETTINGS_FILE = os.path.join(SETTINGS_DIR, "basic_settings.json")
+# 设置文件路径 - 直接使用根目录下的config.yaml
+CONFIG_FILE = "config.yaml"  # 配置文件直接位于项目根目录
 
 def load_basic_settings():
-    """加载基本设置"""
-    # 确保设置目录存在
-    os.makedirs(SETTINGS_DIR, exist_ok=True)
+    """从统一的config.yaml加载基本设置"""
+    # 确保配置文件所在目录存在
+    os.makedirs(os.path.dirname(CONFIG_FILE) or '.', exist_ok=True)
     
     # 默认设置
     default_settings = {
@@ -30,31 +30,65 @@ def load_basic_settings():
         "show_state_tab": True
     }
     
-    # 如果设置文件存在，则加载它
-    if os.path.exists(BASIC_SETTINGS_FILE):
+    # 如果配置文件存在，则加载它
+    if os.path.exists(CONFIG_FILE):
         try:
-            with open(BASIC_SETTINGS_FILE, "r", encoding="utf-8") as f:
-                settings = json.load(f)
-                # 合并缺失的默认值
-                for key, value in default_settings.items():
-                    if key not in settings:
-                        settings[key] = value
-                return settings
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f)
+                
+                # 检查是否存在basic_settings节点
+                if config is None:
+                    config = {}
+                
+                # 如果不存在basic_settings节点，创建它
+                if "basic_settings" not in config:
+                    config["basic_settings"] = default_settings
+                    # 保存更新后的配置
+                    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                        yaml.dump(config, f, sort_keys=False, allow_unicode=True, indent=2)
+                else:
+                    # 合并缺失的默认值
+                    for key, value in default_settings.items():
+                        if key not in config["basic_settings"]:
+                            config["basic_settings"][key] = value
+                    
+                    # 保存更新后的配置（如果有默认值被添加）
+                    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                        yaml.dump(config, f, sort_keys=False, allow_unicode=True, indent=2)
+                
+                return config["basic_settings"]
         except Exception as e:
             st.error(f"加载设置时出错: {str(e)}")
             return default_settings
     else:
-        # 如果文件不存在，返回默认设置
-        return default_settings
+        # 如果文件不存在，创建一个带有基本设置的新配置文件
+        try:
+            config = {"basic_settings": default_settings}
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                yaml.dump(config, f, sort_keys=False, allow_unicode=True, indent=2)
+            return default_settings
+        except Exception as e:
+            st.error(f"创建设置文件时出错: {str(e)}")
+            return default_settings
 
 def save_basic_settings(settings):
-    """保存基本设置"""
-    # 确保设置目录存在
-    os.makedirs(SETTINGS_DIR, exist_ok=True)
+    """保存基本设置到统一的config.yaml"""
+    # 确保配置文件所在目录存在
+    os.makedirs(os.path.dirname(CONFIG_FILE) or '.', exist_ok=True)
     
     try:
-        with open(BASIC_SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(settings, f, indent=4, ensure_ascii=False)
+        # 首先读取现有配置
+        config = {}
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f) or {}
+        
+        # 更新基本设置
+        config["basic_settings"] = settings
+        
+        # 保存更新后的配置
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            yaml.dump(config, f, sort_keys=False, allow_unicode=True, indent=2)
         return True
     except Exception as e:
         st.error(f"保存设置时出错: {str(e)}")
@@ -197,7 +231,7 @@ def render_basic_settings():
                 # 如果标签页设置发生变化，提示刷新页面
                 if tabs_changed:
                     st.warning("标签页设置已更改，请刷新页面以应用新设置")
-                    # 添加一个刷新按钮
-                    refresh_btn = st.button("刷新页面")
-                    if refresh_btn:
-                        st.rerun() 
+    
+    # 表单外部添加刷新按钮
+    if 'basic_settings' in st.session_state and st.button("刷新页面"):
+        st.rerun() 
