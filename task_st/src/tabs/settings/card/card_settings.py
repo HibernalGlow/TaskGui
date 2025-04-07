@@ -1,5 +1,6 @@
 import streamlit as st
 from src.utils.selection_utils import get_card_view_settings, update_card_view_settings
+from src.tabs.settings.basic.basic_settings import load_basic_settings, save_basic_settings
 
 def render_card_settings():
     """渲染卡片设置"""
@@ -69,4 +70,20 @@ def render_card_settings():
             
             # 保存设置
             update_card_view_settings(new_settings)
-            st.success("卡片显示设置已更新！") 
+            st.success("卡片显示设置已更新！")
+
+    # 加载当前设置
+    settings = load_basic_settings()
+    
+    # 卡片分组设置
+    card_group_by_tag = st.checkbox(
+        "按第一个标签分组显示卡片",
+        value=settings.get('card_group_by_tag', False),
+        help="启用后，卡片将按照第一个标签进行分组显示"
+    )
+    
+    # 保存设置
+    if card_group_by_tag != settings.get('card_group_by_tag', False):
+        settings['card_group_by_tag'] = card_group_by_tag
+        save_basic_settings(settings)
+        st.success("设置已保存") 

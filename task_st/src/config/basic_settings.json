@@ -12,5 +12,6 @@
     "show_preview_tab": false,
     "show_dashboard_tab": true,
     "show_settings_tab": true,
-    "show_state_tab": true
+    "show_state_tab": true,
+    "card_group_by_tag": true
 }
