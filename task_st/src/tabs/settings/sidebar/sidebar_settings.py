@@ -14,6 +14,7 @@ def render_sidebar_settings():
     
     # 默认的expander列表及其图标
     default_expanders = [
+        {"id": "outline", "name": "📑 分组大纲", "enabled": True},
         {"id": "filter_tasks", "name": "🔍 过滤任务", "enabled": True},
         {"id": "edit_task", "name": "✏️ 编辑任务", "enabled": True},
         {"id": "tag_filters", "name": "🏷️ 标签筛选", "enabled": True},

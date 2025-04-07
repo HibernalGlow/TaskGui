@@ -92,8 +92,8 @@ tasks:
     desc: 📂 文件夹提取工具 - 整理文件夹结构和压缩包
     dir: '{{.GlowToolBox}}'
     tags:
-    - folder
     - organize
+    - folder
     - archive
     cmds:
     - '"{{.PYTHON}}" "src\scripts\folder\folder_extract_tool.py" -c -a -f -r'
@@ -127,8 +127,8 @@ tasks:
     desc: 🔀 合并部分文件夹 - 将分散的文件夹合并
     dir: '{{.GlowToolBox}}'
     tags:
-    - folder
     - organize
+    - folder
     cmds:
     - '"{{.PYTHON}}" "src\scripts\folder\merge_part_folders.py"'
   no_translate_find:
@@ -152,8 +152,8 @@ tasks:
     desc: 📁 整理文件夹 - 结构化整理文件夹内容
     dir: '{{.GlowToolBox}}'
     tags:
-    - folder
     - organize
+    - folder
     cmds:
     - '"{{.PYTHON}}" "src\scripts\folder\organize_folder.py"'
   pics_convert:
@@ -304,7 +304,6 @@ tasks:
     - workflow
     - upscale
     cmds:
+    - task: pics_convert
     - task: janai_monitor
-    - task: pics_convert
-    - task: pics_convert
     - task: organize_folder

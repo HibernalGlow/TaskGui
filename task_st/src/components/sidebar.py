@@ -1,12 +1,17 @@
 import streamlit as st
-from src.services.taskfile import read_taskfile
+from src.services.taskfile import read_taskfile, load_taskfile
 from streamlit_tags import st_tags
-from src.utils.selection_utils import save_favorite_tags, save_background_settings, load_background_settings, get_selected_tasks, get_card_view_settings
+from src.utils.selection_utils import save_favorite_tags, save_background_settings, load_background_settings, get_selected_tasks, get_card_view_settings, load_local_config, update_global_state, get_global_state, get_task_selection_state, update_task_selection, record_task_run
 import os
 import sys
 import subprocess
 import base64
 from src.components.preview_card import render_action_buttons
+import pandas as pd
+from src.utils.file_utils import get_directory_files, get_task_command
+from src.services.task_runner import run_task_via_cmd
+from src.views.card.card_view import group_tasks_by_first_tag, sort_grouped_tasks
+from src.utils.file_utils import copy_to_clipboard
 
 def get_base64_encoded_image(image_path):
     """获取图片的base64编码"""
@@ -122,33 +127,81 @@ def exit_application():
     """完全退出应用程序"""
     os._exit(0)
 
-def render_filter_tasks_expander(current_taskfile):
-    """渲染过滤任务expander"""
-    with st.expander("🔍 过滤任务", expanded=True):
-        # 获取任务列表用于过滤
-        try:
-            tasks_df = read_taskfile(current_taskfile)
-            task_names = tasks_df["name"].tolist()
+def render_outline_expander(current_taskfile):
+    """渲染大纲expander，用于快速跳转到分组"""
+    # 加载配置来检查是否启用了分组
+    config = load_local_config()
+    group_by_tag = config.get('card_group_by_tag', False)
+    
+    # 如果未启用分组，不显示大纲
+    if not group_by_tag:
+        return
+    
+    # 获取置顶标签
+    pinned_tags = config.get('pinned_tags', [])
+    
+    with st.expander("📑 分组大纲", expanded=True):
+        st.write("快速跳转到标签分组:")
+        
+        # 加载任务数据以获取所有分组
+        tasks_df = read_taskfile(current_taskfile)
+        if tasks_df is not None and not tasks_df.empty:
+            # 分组任务
+            grouped_tasks = group_tasks_by_first_tag(tasks_df)
             
-            # 使用多选组件进行任务筛选
-            filtered_tasks = st.multiselect(
-                "搜索任务名称:",
-                options=sorted(task_names),
-                default=[],
-                key="search_task_multiselect",
-                help="输入关键词搜索或直接选择要过滤的任务"
+            # 排序分组
+            sorted_groups = sort_grouped_tasks(grouped_tasks, pinned_tags)
+            
+            # 为每个分组创建跳转链接
+            for tag, _ in sorted_groups:
+                # 创建锚点链接
+                tag_id = tag.replace(" ", "_").lower()
+                
+                # 根据标签类型添加不同的样式
+                if tag in pinned_tags:
+                    # 置顶标签使用醒目样式
+                    st.markdown(f"⭐ [{tag}](#tag_{tag_id})")
+                elif tag == "未分类":
+                    # 未分类使用普通样式
+                    st.markdown(f"• [{tag}](#tag_{tag_id})")
+                else:
+                    # 其他标签
+                    st.markdown(f"◦ [{tag}](#tag_{tag_id})")
+
+def render_filter_tasks_expander(current_taskfile):
+    """渲染任务过滤expander"""
+    with st.expander("🔍 任务过滤", expanded=True):
+        # 任务搜索框
+        search_term = st.text_input("搜索任务:", 
+                                  placeholder="输入关键词搜索",
+                                  key="sidebar_search")
+        
+        # 目录筛选
+        # 获取所有任务目录
+        tasks_df = read_taskfile(current_taskfile)
+        if tasks_df is not None and not tasks_df.empty:
+            all_dirs = tasks_df["directory"].unique().tolist()
+            all_dirs = [d for d in all_dirs if d]  # 排除空目录
+            all_dirs.sort()
+            
+            # 添加"全部"选项
+            dir_options = ["全部"] + all_dirs
+            
+            # 初始化目录筛选状态
+            if 'directory_filter' not in st.session_state:
+                st.session_state.directory_filter = "全部"
+            
+            # 目录下拉框
+            selected_dir = st.selectbox(
+                "按目录筛选:",
+                options=dir_options,
+                index=dir_options.index(st.session_state.directory_filter),
+                key="sidebar_directory"
             )
             
-            # 将选定的任务存储到session中供其他组件使用
-            if 'filtered_tasks' not in st.session_state:
-                st.session_state.filtered_tasks = []
-            
-            # 只有当选择发生变化时才更新
-            if set(filtered_tasks) != set(st.session_state.filtered_tasks):
-                st.session_state.filtered_tasks = filtered_tasks
-        except Exception as e:
-            st.error(f"加载任务失败: {str(e)}")
-            st.session_state.filtered_tasks = []
+            # 更新目录筛选状态
+            if selected_dir != st.session_state.directory_filter:
+                st.session_state.directory_filter = selected_dir
 
 def render_edit_task_expander(current_taskfile):
     """渲染编辑任务expander"""
@@ -449,6 +502,11 @@ def render_sidebar(current_taskfile):
     
     # 定义expander组件
     expander_components = {
+        "outline": {
+            "name": "📑 分组大纲",
+            "function": render_outline_expander,
+            "enabled": True
+        },
         "filter_tasks": {
             "name": "🔍 任务过滤",
             "function": render_filter_tasks_expander,
@@ -477,10 +535,14 @@ def render_sidebar(current_taskfile):
     }
     
     # 默认expander顺序
-    default_order = ["filter_tasks", "edit_task", "tag_filters", "system", "appearance"]
+    default_order = ["outline", "filter_tasks", "edit_task", "tag_filters", "system", "appearance"]
     
     # 获取用户设置的顺序
     expander_order = sidebar_settings.get("expander_order", default_order)
+    
+    # 添加新的分组大纲组件到顺序中(如果不存在)
+    if "outline" not in expander_order:
+        expander_order.insert(0, "outline")
     
     # 添加新的外观设置组件到顺序中(如果不存在)
     if "appearance" not in expander_order:

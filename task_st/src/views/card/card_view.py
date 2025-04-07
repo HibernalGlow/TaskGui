@@ -92,8 +92,17 @@ def render_card_view(filtered_df, current_taskfile, key_prefix="card_view"):
         
         # 遍历每个标签组
         for tag, tasks in sorted_groups:
-            # 显示标签标题
-            st.markdown(f"### {tag}")
+            # 创建标签锚点ID
+            tag_id = tag.replace(" ", "_").lower()
+            
+            # 创建锚点和标题
+            st.markdown(f'<div id="tag_{tag_id}"></div>', unsafe_allow_html=True)
+            
+            # 显示带样式的标签标题
+            if tag in pinned_tags:
+                st.markdown(f"### ⭐ {tag}")
+            else:
+                st.markdown(f"### {tag}")
             
             # 创建行
             for i in range(0, len(tasks), cards_per_row):
