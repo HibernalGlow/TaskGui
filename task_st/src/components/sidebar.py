@@ -12,6 +12,26 @@ from src.utils.file_utils import get_directory_files, get_task_command
 from src.services.task_runner import run_task_via_cmd
 from src.views.card.card_view import group_tasks_by_first_tag, sort_grouped_tasks
 from src.utils.file_utils import copy_to_clipboard
+import hashlib
+
+def get_tag_color(tag):
+    """为标签生成一致的颜色
+    
+    参数:
+        tag: 标签文本
+        
+    返回:
+        str: HSL颜色代码
+    """
+    # 使用标签文本的哈希值生成颜色
+    hash_obj = hashlib.md5(tag.encode())
+    hash_value = int(hash_obj.hexdigest(), 16)
+    
+    # 生成柔和的颜色（调整亮度和饱和度）
+    hue = hash_value % 360  # 0-359 色相
+    
+    # 返回HSL格式的颜色
+    return f"hsl({hue}, 70%, 85%)"
 
 def get_base64_encoded_image(image_path):
     """获取图片的base64编码"""
@@ -141,8 +161,6 @@ def render_outline_expander(current_taskfile):
     pinned_tags = config.get('pinned_tags', [])
     
     with st.expander("📑 分组大纲", expanded=True):
-        # st.write("快速跳转到标签分组:")
-        
         # 加载任务数据以获取所有分组
         tasks_df = read_taskfile(current_taskfile)
         if tasks_df is not None and not tasks_df.empty:
@@ -157,37 +175,8 @@ def render_outline_expander(current_taskfile):
             first_half = sorted_groups[:total_groups // 2 + total_groups % 2]
             second_half = sorted_groups[total_groups // 2 + total_groups % 2:]
             
-            # 创建统一的标签样式CSS
-            st.markdown("""
-            <style>
-            .tag-outline {
-                display: inline-block;
-                padding: 2px 8px;
-                margin: 2px 0;
-                border-radius: 4px;
-                background-color: #f0f2f6;
-                font-size: 0.85em;
-                white-space: nowrap;
-                text-decoration: none;
-                color: #262730;
-            }
-            .tag-outline:hover {
-                background-color: #e0e2e6;
-                text-decoration: none;
-            }
-            .tag-outline-pinned {
-                background-color: #ffd166;
-                font-weight: 500;
-            }
-            .tag-outline-pinned:hover {
-                background-color: #ffba08;
-            }
-            .tag-outline-unclassified {
-                background-color: #e9ecef;
-                color: #495057;
-            }
-            </style>
-            """, unsafe_allow_html=True)
+            # 创建标签容器样式
+            tags_container = '<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">'
             
             # 创建双列布局
             col1, col2 = st.columns(2)
@@ -199,16 +188,23 @@ def render_outline_expander(current_taskfile):
                     tag_id = tag.replace(" ", "_").lower()
                     count = len(tasks)
                     
-                    # 根据标签类型添加不同的样式
-                    if tag in pinned_tags:
-                        # 置顶标签使用醒目样式
-                        st.markdown(f'<a href="#tag_{tag_id}" class="tag-outline tag-outline-pinned">⭐ {tag} ({count})</a>', unsafe_allow_html=True)
-                    elif tag == "未分类":
-                        # 未分类使用普通样式
-                        st.markdown(f'<a href="#tag_{tag_id}" class="tag-outline tag-outline-unclassified">🔹 {tag} ({count})</a>', unsafe_allow_html=True)
-                    else:
-                        # 其他标签
-                        st.markdown(f'<a href="#tag_{tag_id}" class="tag-outline">🔸 {tag} ({count})</a>', unsafe_allow_html=True)
+                    # 获取标签颜色
+                    bg_color = get_tag_color(tag)
+                    
+                    # 为置顶标签添加特殊图标和前缀
+                    prefix = "⭐" if tag in pinned_tags else ""
+                    
+                    # 创建标签容器
+                    col1_tags = f'<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">'
+                    
+                    # 添加标签
+                    col1_tags += f'<a href="#tag_{tag_id}" style="display: inline-block; background-color: {bg_color}; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500; text-decoration: none;">{prefix} {tag} ({count})</a>'
+                    
+                    # 关闭容器
+                    col1_tags += '</div>'
+                    
+                    # 渲染标签容器
+                    st.markdown(col1_tags, unsafe_allow_html=True)
             
             # 渲染第二列标签
             with col2:
@@ -217,16 +213,23 @@ def render_outline_expander(current_taskfile):
                     tag_id = tag.replace(" ", "_").lower()
                     count = len(tasks)
                     
-                    # 根据标签类型添加不同的样式
-                    if tag in pinned_tags:
-                        # 置顶标签使用醒目样式
-                        st.markdown(f'<a href="#tag_{tag_id}" class="tag-outline tag-outline-pinned">⭐ {tag} ({count})</a>', unsafe_allow_html=True)
-                    elif tag == "未分类":
-                        # 未分类使用普通样式
-                        st.markdown(f'<a href="#tag_{tag_id}" class="tag-outline tag-outline-unclassified">🔹 {tag} ({count})</a>', unsafe_allow_html=True)
-                    else:
-                        # 其他标签
-                        st.markdown(f'<a href="#tag_{tag_id}" class="tag-outline">🔸 {tag} ({count})</a>', unsafe_allow_html=True)
+                    # 获取标签颜色
+                    bg_color = get_tag_color(tag)
+                    
+                    # 为置顶标签添加特殊图标和前缀
+                    prefix = "⭐" if tag in pinned_tags else ""
+                    
+                    # 创建标签容器
+                    col2_tags = f'<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">'
+                    
+                    # 添加标签
+                    col2_tags += f'<a href="#tag_{tag_id}" style="display: inline-block; background-color: {bg_color}; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500; text-decoration: none;">{prefix} {tag} ({count})</a>'
+                    
+                    # 关闭容器
+                    col2_tags += '</div>'
+                    
+                    # 渲染标签容器
+                    st.markdown(col2_tags, unsafe_allow_html=True)
 
 def render_filter_tasks_expander(current_taskfile):
     """渲染任务过滤expander"""
