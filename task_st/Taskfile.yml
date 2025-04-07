@@ -21,7 +21,6 @@ tasks:
     - artist
     cmds:
     - '"{{.PYTHON}}" "src\scripts\comic\classify\artist_classify.py"'
-
   auto_cover:
     desc: 📔 自动封面生成器 - 为漫画创建封面图片
     dir: '{{.GlowToolBox}}'
@@ -97,7 +96,7 @@ tasks:
     - organize
     - archive
     cmds:
-    - '"{{.PYTHON}}" "src\scripts\folder\folder_extract_tool.py" -c -a -f -r'    
+    - '"{{.PYTHON}}" "src\scripts\folder\folder_extract_tool.py" -c -a -f -r'
   gallery_finder:
     desc: 🔍 图库查找器 - 查找并组织图库资源
     dir: '{{.GlowToolBox}}'
@@ -257,7 +256,7 @@ tasks:
     - filter
     - dimension
     cmds:
-    - '"{{.PYTHON}}" "src\scripts\fliter\width_filter.py"'
+    - '"{{.PYTHON}}" "src\scripts\fliter\width_filter.py" -c'
   st:
     desc: 🚀 任务管理器 - 启动图形化任务管理界面
     dir: '{{.GlowToolBox}}\src\scripts\task\task_gui\task_st'
@@ -270,7 +269,7 @@ tasks:
       platforms:
       - windows
     - '"{{.PYTHON}}" "run_task_manager.py" -noterm '
-  wf:uname:
+  wf:uuid:
     desc: 🔄 工作流管理器 - 管理工作流任务
     dir: '{{.GlowToolBox}}'
     tags:
@@ -279,7 +278,7 @@ tasks:
     cmds:
     - task: one_name
     - task: auto_uuid
-  wf:cono:
+  wf:organize:
     desc: 🔄 工作流管理器 - 管理工作流任务
     dir: '{{.GlowToolBox}}'
     tags:
@@ -294,12 +293,25 @@ tasks:
     - task: video_format
     - task: organize_folder
     - task: sn_fix
-  wf:cofi:
+  wf:filter:
     desc: 🔄 工作流管理器 - 管理工作流任务
     dir: '{{.GlowToolBox}}'
     tags:
     - workflow
     - filter
     cmds:
-    - '"{{.PYTHON}}" "src/scripts/fliter/recruit_cover_filter.py" -c -ht 16 -fn 3 -bn 0 --duplicate-filter-mode watermark'
-    - '"{{.PYTHON}}" "src/scripts/fliter/recruit_cover_filter.py -c -ht 16 -fn 3 -bn 5 --duplicate-filter-mode hash'
+    - '"{{.PYTHON}}" "src/scripts/fliter/recruit_cover_filter.py" -c -ht 16 -fn 3
+      -bn 0 --duplicate-filter-mode watermark'
+    - '"{{.PYTHON}}" "src/scripts/fliter/recruit_cover_filter.py -c -ht 16 -fn 3 -bn
+      5 --duplicate-filter-mode hash'
+  wf:upscale:
+    desc: 🔄 工作流管理器 - 管理工作流任务
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - workflow
+    - upscale
+    cmds:
+    - task: janai_monitor
+    - task: pics_convert
+    - task: pics_convert
+    - task: organize_folder
