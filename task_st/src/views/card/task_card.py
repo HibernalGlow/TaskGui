@@ -191,11 +191,11 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
             runtime = get_task_runtime(task['name'])
             
             # 如果有运行记录，显示运行信息
-            if runtime.get("run_count", 0) > 0:
-                col_a, col_b, col_c = st.columns(3)
-                with col_a:
-                    st.markdown(f"**运行次数**: {runtime.get('run_count', 0)}")
-                with col_b:
-                    st.markdown(f"**最后运行**: {runtime.get('last_run', 'N/A')}")
-                with col_c:
-                    st.markdown(f"**最后状态**: {runtime.get('last_status', 'N/A')}")
+            # if runtime.get("run_count", 0) > 0:
+            #     col_a, col_b, col_c = st.columns(3)
+            #     with col_a:
+            #         st.markdown(f"**运行次数**: {runtime.get('run_count', 0)}")
+            #     with col_b:
+            #         st.markdown(f"**最后运行**: {runtime.get('last_run', 'N/A')}")
+            #     with col_c:
+            #         st.markdown(f"**最后状态**: {runtime.get('last_status', 'N/A')}")
