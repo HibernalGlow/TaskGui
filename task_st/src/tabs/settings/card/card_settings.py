@@ -1,6 +1,7 @@
 import streamlit as st
 from src.utils.selection_utils import get_card_view_settings, update_card_view_settings
 from src.tabs.settings.basic.basic_settings import load_basic_settings, save_basic_settings
+from src.components.tag_filters import get_all_tags
 
 def render_card_settings():
     """渲染卡片设置"""
@@ -82,8 +83,20 @@ def render_card_settings():
         help="启用后，卡片将按照第一个标签进行分组显示"
     )
     
+    # 获取所有可用标签
+    all_tags = get_all_tags()
+    
+    # 置顶标签设置
+    pinned_tags = st.multiselect(
+        "置顶标签（优先显示）",
+        options=all_tags,
+        default=settings.get('pinned_tags', []),
+        help="选择要优先显示的标签，这些标签会显示在分组的最前面"
+    )
+    
     # 保存设置
-    if card_group_by_tag != settings.get('card_group_by_tag', False):
+    if card_group_by_tag != settings.get('card_group_by_tag', False) or pinned_tags != settings.get('pinned_tags', []):
         settings['card_group_by_tag'] = card_group_by_tag
+        settings['pinned_tags'] = pinned_tags
         save_basic_settings(settings)
         st.success("设置已保存") 

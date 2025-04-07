@@ -117,8 +117,8 @@ tasks:
     desc: 🔭 Janai监控 - 监控Janai转换进度
     dir: '{{.GlowToolBox}}'
     tags:
-    - comic
     - upscale
+    - comic
     - monitor
     cmds:
     - '"{{.PYTHON}}" "src\scripts\comic\upscale\janai_monitor.py"'
@@ -236,8 +236,8 @@ tasks:
     desc: 🔍 图像放大总线 - 管理图像放大流程
     dir: '{{.GlowToolBox}}'
     tags:
-    - filter
     - upscale
+    - filter
     cmds:
     - '"{{.PYTHON}}" "src\scripts\fliter\upscale_bus.py"'
   video_format:
@@ -253,6 +253,7 @@ tasks:
     desc: 📏 宽度过滤器 - 基于宽度过滤图像
     dir: '{{.GlowToolBox}}'
     tags:
+    - upscale
     - filter
     - dimension
     cmds:

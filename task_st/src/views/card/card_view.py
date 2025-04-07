@@ -29,6 +29,35 @@ def group_tasks_by_first_tag(tasks_df):
     
     return grouped_tasks
 
+def sort_grouped_tasks(grouped_tasks, pinned_tags):
+    """对分组后的任务进行排序，置顶标签优先显示
+    
+    参数:
+        grouped_tasks: 按标签分组的任务字典
+        pinned_tags: 置顶标签列表
+        
+    返回:
+        list: 排序后的(标签, 任务列表)元组列表
+    """
+    # 将分组转换为列表以便排序
+    groups = list(grouped_tasks.items())
+    
+    # 定义排序函数
+    def sort_key(item):
+        tag = item[0]
+        if tag in pinned_tags:
+            # 置顶标签按其在pinned_tags中的顺序排序
+            return (0, pinned_tags.index(tag))
+        elif tag == "未分类":
+            # 未分类放在最后
+            return (2, 0)
+        else:
+            # 其他标签按字母顺序排序
+            return (1, tag)
+    
+    # 排序并返回
+    return sorted(groups, key=sort_key)
+
 def render_card_view(filtered_df, current_taskfile, key_prefix="card_view"):
     """渲染卡片视图
     
@@ -43,6 +72,7 @@ def render_card_view(filtered_df, current_taskfile, key_prefix="card_view"):
     # 加载基本设置
     settings = load_basic_settings()
     group_by_tag = settings.get('card_group_by_tag', False)
+    pinned_tags = settings.get('pinned_tags', [])
     
     # 添加每行卡片数量的滑动条
     cards_per_row = st.slider(
@@ -58,8 +88,11 @@ def render_card_view(filtered_df, current_taskfile, key_prefix="card_view"):
         # 按标签分组显示
         grouped_tasks = group_tasks_by_first_tag(filtered_df)
         
+        # 对分组进行排序
+        sorted_groups = sort_grouped_tasks(grouped_tasks, pinned_tags)
+        
         # 遍历每个标签组
-        for tag, tasks in grouped_tasks.items():
+        for tag, tasks in sorted_groups:
             # 显示标签标题
             st.markdown(f"### {tag}")
             
