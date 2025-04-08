@@ -231,39 +231,33 @@ def render_outline_expander(current_taskfile):
                     st.markdown(col2_tags, unsafe_allow_html=True)
 
 def render_filter_tasks_expander(current_taskfile):
-    """渲染任务过滤expander"""
-    with st.expander("🔍 任务过滤", expanded=True):
-        # 任务搜索框
-        search_term = st.text_input("搜索任务:", 
-                                  placeholder="输入关键词搜索",
-                                  key="sidebar_search")
-        
-        # 目录筛选
-        # 获取所有任务目录
-        tasks_df = read_taskfile(current_taskfile)
-        if tasks_df is not None and not tasks_df.empty:
-            all_dirs = tasks_df["directory"].unique().tolist()
-            all_dirs = [d for d in all_dirs if d]  # 排除空目录
-            all_dirs.sort()
+    """渲染过滤任务expander"""
+    with st.expander("🔍 过滤任务", expanded=True):
+        # 获取任务列表用于过滤
+        try:
+            tasks_df = read_taskfile(current_taskfile)
+            task_names = tasks_df["name"].tolist()
             
-            # 添加"全部"选项
-            dir_options = ["全部"] + all_dirs
-            
-            # 初始化目录筛选状态
-            if 'directory_filter' not in st.session_state:
-                st.session_state.directory_filter = "全部"
-            
-            # 目录下拉框
-            selected_dir = st.selectbox(
-                "按目录筛选:",
-                options=dir_options,
-                index=dir_options.index(st.session_state.directory_filter),
-                key="sidebar_directory"
+            # 使用多选组件进行任务筛选
+            filtered_tasks = st.multiselect(
+                "搜索任务名称:",
+                options=sorted(task_names),
+                default=[],
+                key="search_task_multiselect",
+                help="输入关键词搜索或直接选择要过滤的任务"
             )
             
-            # 更新目录筛选状态
-            if selected_dir != st.session_state.directory_filter:
-                st.session_state.directory_filter = selected_dir
+            # 将选定的任务存储到session中供其他组件使用
+            if 'filtered_tasks' not in st.session_state:
+                st.session_state.filtered_tasks = []
+            
+            # 只有当选择发生变化时才更新
+            if set(filtered_tasks) != set(st.session_state.filtered_tasks):
+                st.session_state.filtered_tasks = filtered_tasks
+        except Exception as e:
+            st.error(f"加载任务失败: {str(e)}")
+            st.session_state.filtered_tasks = []
+
 
 def render_edit_task_expander(current_taskfile):
     """渲染编辑任务expander"""
