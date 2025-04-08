@@ -293,10 +293,12 @@ tasks:
     - workflow
     - filter
     cmds:
-    - '"{{.PYTHON}}" "src/scripts/fliter/recruit_cover_filter.py" -c -ht 16 -fn 3
-      -bn 0 --duplicate-filter-mode watermark'
-    - '"{{.PYTHON}}" "src/scripts/fliter/recruit_cover_filter.py -c -ht 16 -fn 3 -bn
-      5 --duplicate-filter-mode hash'
+    - task: recruit_cover_filter
+    - task: recruit_cover_filter
+    # - '"{{.PYTHON}}" "src/scripts/fliter/recruit_cover_filter.py" -c -ht 16 -fn 3
+    #   -bn 0 --duplicate-filter-mode watermark'
+    # - '"{{.PYTHON}}" "src/scripts/fliter/recruit_cover_filter.py -c -ht 16 -fn 3 -bn
+    #   5 --duplicate-filter-mode hash'
   wf:upscale:
     desc: 🔄 工作流管理器 - 管理工作流任务
     dir: '{{.GlowToolBox}}'
