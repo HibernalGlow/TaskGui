@@ -1,12 +1,15 @@
 import streamlit as st
 import pandas as pd
 import os
+import time
+import gc
 from code_editor import code_editor
 from src.utils.selection_utils import (
     get_global_state, update_global_state, 
     export_yaml_state as export_global_state_yaml, 
     import_global_state_yaml,
-    validate_yaml, update_task_runtime, record_task_run
+    validate_yaml, update_task_runtime, record_task_run,
+    get_memory_usage, run_gc, clear_memory_cache, optimize_memory_cache
 )
 
 def render_state_manager():
@@ -25,7 +28,7 @@ def render_state_manager():
     st.write(f"选中任务数: {len([t for t, info in global_state.get('select', {}).items() if info])}")
     
     # 创建标签页名称和对应索引的映射
-    tab_names = ["YAML编辑器", "任务文件", "选中任务", "任务运行时", "用户偏好"]
+    tab_names = ["YAML编辑器", "任务文件", "选中任务", "任务运行时", "用户偏好", "内存管理"]
     tab_indices = {name: idx for idx, name in enumerate(tab_names)}
     
     # 创建标签页
@@ -344,4 +347,171 @@ def render_state_manager():
                 st.success("用户偏好已更新")
                 st.rerun()
         else:
-            st.info("没有用户偏好数据") 
+            st.info("没有用户偏好数据")
+    
+    # ===== 内存管理标签页 =====
+    with tabs[tab_indices["内存管理"]]:
+        render_memory_manager()
+
+def render_memory_manager():
+    """渲染内存管理器页面"""
+    st.subheader("内存监控与管理")
+    st.info("在这里您可以监控和管理应用程序的内存使用情况")
+    
+    # 获取当前内存使用情况
+    memory_usage = get_memory_usage()
+    
+    # 显示内存使用情况
+    st.markdown("### 当前内存使用情况")
+    
+    # 使用进度条显示内存使用率
+    memory_percent = memory_usage["percent"]
+    if memory_percent < 60:
+        st.progress(memory_percent / 100, text=f"内存使用率: {memory_percent:.2f}%")
+    elif memory_percent < 80:
+        st.progress(memory_percent / 100, text=f"内存使用率: {memory_percent:.2f}%")
+        st.warning(f"内存使用率较高: {memory_percent:.2f}%")
+    else:
+        st.progress(memory_percent / 100, text=f"内存使用率: {memory_percent:.2f}%")
+        st.error(f"内存使用率过高: {memory_percent:.2f}%")
+    
+    # 显示详细内存信息
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("物理内存使用", f"{memory_usage['rss']:.2f} MB")
+    with col2:
+        st.metric("虚拟内存使用", f"{memory_usage['vms']:.2f} MB")
+    
+    # 显示缓存信息
+    st.metric("内存缓存大小", f"{memory_usage['cache_size']:.2f} KB")
+    
+    # 内存管理操作
+    st.markdown("### 内存管理操作")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("执行垃圾回收", key="run_gc"):
+            run_gc()
+            st.success("垃圾回收已执行")
+            time.sleep(1)
+            st.rerun()
+    
+    with col2:
+        if st.button("优化内存缓存", key="optimize_cache"):
+            optimize_memory_cache()
+            st.success("内存缓存已优化")
+            time.sleep(1)
+            st.rerun()
+    
+    with col3:
+        if st.button("清理内存缓存", key="clear_cache"):
+            clear_memory_cache()
+            st.success("内存缓存已清理")
+            time.sleep(1)
+            st.rerun()
+    
+    # 内存使用历史记录
+    st.markdown("### 内存使用历史")
+    
+    # 初始化历史记录
+    if "memory_history" not in st.session_state:
+        st.session_state.memory_history = []
+    
+    # 添加当前内存使用情况到历史记录
+    st.session_state.memory_history.append({
+        "timestamp": time.time(),
+        "rss": memory_usage["rss"],
+        "percent": memory_usage["percent"]
+    })
+    
+    # 只保留最近30条记录
+    if len(st.session_state.memory_history) > 30:
+        st.session_state.memory_history = st.session_state.memory_history[-30:]
+    
+    # 显示内存使用历史图表
+    if len(st.session_state.memory_history) > 1:
+        import plotly.express as px
+        import pandas as pd
+        
+        # 创建数据框
+        df = pd.DataFrame(st.session_state.memory_history)
+        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
+        
+        # 创建图表
+        fig = px.line(df, x="timestamp", y=["rss", "percent"], 
+                      title="内存使用历史",
+                      labels={"value": "值", "variable": "指标", "timestamp": "时间"},
+                      color_discrete_map={"rss": "blue", "percent": "red"})
+        
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("需要更多数据点来显示内存使用历史图表")
+    
+    # 内存优化建议
+    st.markdown("### 内存优化建议")
+    
+    if memory_percent > 80:
+        st.error("⚠️ 内存使用率过高，建议执行以下操作：")
+        st.markdown("1. 清理内存缓存")
+        st.markdown("2. 执行垃圾回收")
+        st.markdown("3. 关闭不必要的标签页")
+        st.markdown("4. 重启应用程序")
+    elif memory_percent > 60:
+        st.warning("⚠️ 内存使用率较高，建议执行以下操作：")
+        st.markdown("1. 优化内存缓存")
+        st.markdown("2. 执行垃圾回收")
+        st.markdown("3. 关闭不必要的标签页")
+    else:
+        st.success("✅ 内存使用情况良好")
+    
+    # 自动内存管理设置
+    st.markdown("### 自动内存管理设置")
+    
+    # 初始化自动内存管理设置
+    if "auto_memory_management" not in st.session_state:
+        st.session_state.auto_memory_management = {
+            "enabled": True,
+            "gc_interval": 300,
+            "warning_threshold": 80,
+            "critical_threshold": 90
+        }
+    
+    # 自动内存管理开关
+    st.session_state.auto_memory_management["enabled"] = st.toggle(
+        "启用自动内存管理",
+        value=st.session_state.auto_memory_management["enabled"]
+    )
+    
+    if st.session_state.auto_memory_management["enabled"]:
+        # 垃圾回收间隔
+        st.session_state.auto_memory_management["gc_interval"] = st.slider(
+            "垃圾回收间隔（秒）",
+            min_value=60,
+            max_value=3600,
+            value=st.session_state.auto_memory_management["gc_interval"],
+            step=60
+        )
+        
+        # 警告阈值
+        st.session_state.auto_memory_management["warning_threshold"] = st.slider(
+            "内存警告阈值（%）",
+            min_value=50,
+            max_value=90,
+            value=st.session_state.auto_memory_management["warning_threshold"],
+            step=5
+        )
+        
+        # 危险阈值
+        st.session_state.auto_memory_management["critical_threshold"] = st.slider(
+            "内存危险阈值（%）",
+            min_value=60,
+            max_value=95,
+            value=st.session_state.auto_memory_management["critical_threshold"],
+            step=5
+        )
+        
+        # 保存设置按钮
+        if st.button("保存自动内存管理设置"):
+            # 这里可以添加保存设置的代码
+            st.success("自动内存管理设置已保存") 

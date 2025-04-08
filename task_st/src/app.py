@@ -4,6 +4,8 @@ import os
 import sys
 import traceback
 import tempfile
+import time
+import gc
 from code_editor import code_editor
 
 # 导入自定义模块
@@ -26,7 +28,8 @@ from src.utils.selection_utils import (
     save_global_state, register_task_file, register_tasks_from_df,
     update_task_runtime, record_task_run, init_global_state,
     display_yaml_in_ui, validate_yaml, get_selected_tasks,
-    load_background_settings, save_background_settings
+    load_background_settings, save_background_settings,
+    get_memory_usage, run_gc, clear_memory_cache
 )
 
 # 导入新的模块化组件
@@ -43,6 +46,38 @@ try:
 except ImportError:
     AVIF_JXL_SUPPORT = False
     print("提示：未找到AVIF或JXL支持库，建议安装：pip install pillow-avif-plugin pillow-jpegxl")
+
+# 内存监控配置
+MEMORY_MONITOR_INTERVAL = 300  # 内存监控间隔（秒）
+last_memory_monitor_time = 0
+
+def monitor_memory_usage():
+    """监控内存使用情况"""
+    global last_memory_monitor_time
+    
+    current_time = time.time()
+    if current_time - last_memory_monitor_time < MEMORY_MONITOR_INTERVAL:
+        return
+    
+    last_memory_monitor_time = current_time
+    
+    try:
+        # 获取内存使用情况
+        memory_usage = get_memory_usage()
+        
+        # 记录内存使用情况
+        print(f"内存监控 - 使用: {memory_usage['rss']:.2f} MB ({memory_usage['percent']:.2f}%), 缓存: {memory_usage['cache_size']:.2f} KB")
+        
+        # 如果内存使用率超过80%，执行垃圾回收
+        if memory_usage["percent"] > 80:
+            print(f"内存使用率较高 ({memory_usage['percent']:.2f}%)，执行垃圾回收")
+            run_gc()
+            
+            # 再次检查内存使用情况
+            memory_usage = get_memory_usage()
+            print(f"垃圾回收后内存使用: {memory_usage['rss']:.2f} MB ({memory_usage['percent']:.2f}%)")
+    except Exception as e:
+        print(f"监控内存使用情况时出错: {str(e)}")
 
 def main():
     """主函数"""
@@ -100,6 +135,9 @@ def main():
         
         # 从全局状态获取选中的任务
         selected_tasks = get_selected_tasks()
+        
+        # 监控内存使用情况
+        monitor_memory_usage()
         
         # 侧边栏内容
         with st.sidebar:
@@ -206,6 +244,7 @@ def main():
         if "🔧 状态" in tab_indices:
             with tabs[tab_indices["🔧 状态"]]:
                 render_state_manager()
+
             
     except Exception as e:
         st.error(f"发生错误: {str(e)}")

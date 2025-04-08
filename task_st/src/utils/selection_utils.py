@@ -2,11 +2,20 @@ import streamlit as st
 import json
 import yaml
 import os
+import gc
+import psutil
+import time
 from datetime import datetime
 from pathlib import Path
 
 # 全局内存缓存
 _MEMORY_CACHE = None  # 内存缓存
+_MEMORY_CACHE_TIMESTAMP = None  # 内存缓存时间戳
+_MEMORY_CACHE_SIZE = 0  # 内存缓存大小（字节）
+_MEMORY_CACHE_MAX_SIZE = 50 * 1024 * 1024  # 最大缓存大小（50MB）
+_MEMORY_CACHE_MAX_AGE = 3600  # 最大缓存年龄（秒）
+_LAST_GC_TIME = 0  # 上次垃圾回收时间
+_GC_INTERVAL = 300  # 垃圾回收间隔（秒）
 
 # 本地配置文件路径
 # LOCAL_CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".glowtoolbox")
@@ -60,16 +69,25 @@ def init_global_state():
     """
     初始化全局任务状态 - 仅使用内存
     """
-    global _MEMORY_CACHE
+    global _MEMORY_CACHE, _MEMORY_CACHE_TIMESTAMP
+    
+    # 检查是否需要执行垃圾回收
+    check_and_run_gc()
     
     if 'global_task_state' not in st.session_state:
         # 优先从内存缓存加载
-        if _MEMORY_CACHE is not None:
-            st.session_state.global_task_state = _MEMORY_CACHE
-            return
-        else:
-            # 如果内存缓存为空，创建默认状态
-            create_default_state()
+        if _MEMORY_CACHE is not None and _MEMORY_CACHE_TIMESTAMP is not None:
+            # 检查缓存是否过期
+            current_time = time.time()
+            if current_time - _MEMORY_CACHE_TIMESTAMP < _MEMORY_CACHE_MAX_AGE:
+                st.session_state.global_task_state = _MEMORY_CACHE
+                return
+            else:
+                # 缓存过期，清除缓存
+                clear_memory_cache()
+        
+        # 如果内存缓存为空或已过期，创建默认状态
+        create_default_state()
     
     # 添加本地配置信息
     load_local_data()
@@ -228,9 +246,23 @@ def get_global_state():
 # 更新内存缓存
 def update_memory_cache():
     """更新内存缓存"""
-    global _MEMORY_CACHE
+    global _MEMORY_CACHE, _MEMORY_CACHE_TIMESTAMP, _MEMORY_CACHE_SIZE
+    
     if 'global_task_state' in st.session_state:
-        _MEMORY_CACHE = st.session_state.global_task_state.copy()
+        # 创建深拷贝以避免引用问题
+        _MEMORY_CACHE = json.loads(json.dumps(st.session_state.global_task_state))
+        _MEMORY_CACHE_TIMESTAMP = time.time()
+        
+        # 估算内存缓存大小
+        try:
+            _MEMORY_CACHE_SIZE = len(json.dumps(_MEMORY_CACHE).encode('utf-8'))
+            
+            # 如果缓存大小超过限制，执行清理
+            if _MEMORY_CACHE_SIZE > _MEMORY_CACHE_MAX_SIZE:
+                optimize_memory_cache()
+        except Exception as e:
+            print(f"估算内存缓存大小时出错: {str(e)}")
+            _MEMORY_CACHE_SIZE = 0
 
 # 更新全局状态
 def update_global_state(state_dict, save_to_file=False):
@@ -698,8 +730,13 @@ def import_global_state_yaml(yaml_str, rerun=True):
         return False
 
 def save_global_state(force=False):
-    """仅更新内存缓存 (兼容旧接口)"""
+    """更新内存缓存并执行内存优化 (兼容旧接口)"""
     update_memory_cache()
+    
+    # 如果强制保存或缓存大小超过限制，执行内存优化
+    if force or _MEMORY_CACHE_SIZE > _MEMORY_CACHE_MAX_SIZE:
+        optimize_memory_cache()
+    
     return True
 
 # 获取选中的任务列表
@@ -1021,3 +1058,119 @@ def update_card_view_settings(settings):
     
     # 保存到本地文件
     save_local_config(local_config)
+
+# 新增内存管理函数
+
+def check_and_run_gc():
+    """检查是否需要执行垃圾回收"""
+    global _LAST_GC_TIME
+    
+    current_time = time.time()
+    if current_time - _LAST_GC_TIME > _GC_INTERVAL:
+        run_gc()
+        _LAST_GC_TIME = current_time
+
+def run_gc():
+    """执行垃圾回收"""
+    try:
+        # 强制垃圾回收
+        gc.collect()
+        
+        # 获取当前进程
+        process = psutil.Process(os.getpid())
+        
+        # 获取内存使用情况
+        memory_info = process.memory_info()
+        memory_percent = process.memory_percent()
+        
+        # 如果内存使用率超过80%，执行更激进的清理
+        if memory_percent > 80:
+            # 清理内存缓存
+            clear_memory_cache()
+            
+            # 再次强制垃圾回收
+            gc.collect(2)  # 使用更激进的垃圾回收
+            
+            # 记录内存使用情况
+            print(f"内存使用率过高 ({memory_percent:.2f}%)，已执行内存清理")
+            print(f"当前内存使用: {memory_info.rss / (1024 * 1024):.2f} MB")
+    except Exception as e:
+        print(f"执行垃圾回收时出错: {str(e)}")
+
+def clear_memory_cache():
+    """清除内存缓存"""
+    global _MEMORY_CACHE, _MEMORY_CACHE_TIMESTAMP, _MEMORY_CACHE_SIZE
+    
+    _MEMORY_CACHE = None
+    _MEMORY_CACHE_TIMESTAMP = None
+    _MEMORY_CACHE_SIZE = 0
+    
+    # 强制垃圾回收
+    gc.collect()
+
+def optimize_memory_cache():
+    """优化内存缓存，减少内存使用"""
+    global _MEMORY_CACHE, _MEMORY_CACHE_SIZE
+    
+    if _MEMORY_CACHE is None:
+        return
+    
+    try:
+        # 创建优化后的缓存
+        optimized_cache = {
+            "version": _MEMORY_CACHE.get("version", "1.0"),
+            "last_updated": _MEMORY_CACHE.get("last_updated", datetime.now().isoformat()),
+            "task_files": {},
+            "tasks": {},
+            "select": _MEMORY_CACHE.get("select", {}),
+            "user_preferences": _MEMORY_CACHE.get("user_preferences", {})
+        }
+        
+        # 只保留必要的任务文件信息
+        for file_path, file_info in _MEMORY_CACHE.get("task_files", {}).items():
+            optimized_cache["task_files"][file_path] = {
+                "path": file_info.get("path", ""),
+                "last_modified": file_info.get("last_modified", ""),
+                "task_count": file_info.get("task_count", 0)
+            }
+        
+        # 只保留必要的任务信息
+        for task_name, task_info in _MEMORY_CACHE.get("tasks", {}).items():
+            optimized_cache["tasks"][task_name] = {
+                "name": task_info.get("name", task_name),
+                "source_file": task_info.get("source_file", ""),
+                "last_run": task_info.get("last_run", ""),
+                "run_count": task_info.get("run_count", 0)
+            }
+        
+        # 更新缓存
+        _MEMORY_CACHE = optimized_cache
+        
+        # 重新计算缓存大小
+        _MEMORY_CACHE_SIZE = len(json.dumps(_MEMORY_CACHE).encode('utf-8'))
+        
+        print(f"内存缓存已优化，当前大小: {_MEMORY_CACHE_SIZE / 1024:.2f} KB")
+    except Exception as e:
+        print(f"优化内存缓存时出错: {str(e)}")
+
+def get_memory_usage():
+    """获取当前内存使用情况"""
+    try:
+        process = psutil.Process(os.getpid())
+        memory_info = process.memory_info()
+        memory_percent = process.memory_percent()
+        
+        return {
+            "rss": memory_info.rss / (1024 * 1024),  # MB
+            "vms": memory_info.vms / (1024 * 1024),  # MB
+            "percent": memory_percent,
+            "cache_size": _MEMORY_CACHE_SIZE / 1024 if _MEMORY_CACHE_SIZE > 0 else 0  # KB
+        }
+    except Exception as e:
+        print(f"获取内存使用情况时出错: {str(e)}")
+        return {
+            "rss": 0,
+            "vms": 0,
+            "percent": 0,
+            "cache_size": 0
+        }
