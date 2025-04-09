@@ -254,13 +254,12 @@ tasks:
     desc: 🚀 任务管理器 - 启动图形化任务管理界面
     dir: '{{.GlowToolBox}}\src\scripts\task\task_gui\task_st'
     tags:
-    - gui
     - task
+    - gui
     - manager
     cmds:
-    - cmd: cmd.exe /c start "" "C:\Users\30902\Desktop\任务管理器.lnk"
-      platforms:
-      - windows
+    - '{''cmd'': ''cmd.exe /c start "" "C:\\Users\\30902\\Desktop\\任务管理器.lnk"'', ''platforms'':
+      [''windows'']}'
     - '"{{.PYTHON}}" "run_task_manager.py" -noterm '
   wf:uuid:
     desc: 🔄 工作流管理器 - 管理工作流任务
@@ -295,10 +294,6 @@ tasks:
     cmds:
     - task: recruit_cover_filter
     - task: recruit_cover_filter
-    # - '"{{.PYTHON}}" "src/scripts/fliter/recruit_cover_filter.py" -c -ht 16 -fn 3
-    #   -bn 0 --duplicate-filter-mode watermark'
-    # - '"{{.PYTHON}}" "src/scripts/fliter/recruit_cover_filter.py -c -ht 16 -fn 3 -bn
-    #   5 --duplicate-filter-mode hash'
   wf:upscale:
     desc: 🔄 工作流管理器 - 管理工作流任务
     dir: '{{.GlowToolBox}}'
@@ -309,3 +304,12 @@ tasks:
     - task: pics_convert
     - task: janai_monitor
     - task: organize_folder
+  wf:convert:
+    desc: 🔄 工作流管理器 - 管理工作流任务
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - workflow
+    - convert
+    cmds:
+    - task: auto_repack
+    - task: pics_convert
