@@ -29,6 +29,7 @@ dependencies = [
     "toml",
     "watchdog",
     "streamlit-extras",
+    "task"
 ]
 
 [project.optional-dependencies]
@@ -59,3 +60,5 @@ target-version = ["py38"]
 [tool.isort]
 profile = "black"
 line_length = 88
+
+
