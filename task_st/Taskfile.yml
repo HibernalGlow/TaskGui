@@ -223,7 +223,7 @@ tasks:
     - sleep
     - timer
     cmds:
-    - '"{{.PYTHON}}" "src\scripts\os\sleep_timer.py"'
+    - '"{{.PYTHON}}" "src\scripts\os\sleep_timer.py" --noterm'
   timestamps_record:
     desc: ⏱️ 时间戳记录 - 记录文件时间戳信息
     dir: '{{.GlowToolBox}}'
