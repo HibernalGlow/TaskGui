@@ -215,6 +215,15 @@ tasks:
     - fix
     cmds:
     - '"{{.PYTHON}}" "src\scripts\refactor\sn_fix.py" -c'
+  sleep_timer:
+    desc: ⏱️ 时间戳记录 - 记录文件时间戳信息
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - os
+    - sleep
+    - timer
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\os\sleep_timer.py"'
   timestamps_record:
     desc: ⏱️ 时间戳记录 - 记录文件时间戳信息
     dir: '{{.GlowToolBox}}'
@@ -254,12 +263,13 @@ tasks:
     desc: 🚀 任务管理器 - 启动图形化任务管理界面
     dir: '{{.GlowToolBox}}\src\scripts\task\task_gui\task_st'
     tags:
-    - task
     - gui
+    - task
     - manager
     cmds:
-    - '{''cmd'': ''cmd.exe /c start "" "C:\\Users\\30902\\Desktop\\任务管理器.lnk"'', ''platforms'':
-      [''windows'']}'
+    - cmd: cmd.exe /c start "" "C:\Users\30902\Desktop\任务管理器.lnk"
+      platforms:
+      - windows
     - '"{{.PYTHON}}" "run_task_manager.py" -noterm '
   wf:uuid:
     desc: 🔄 工作流管理器 - 管理工作流任务
