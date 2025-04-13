@@ -33,10 +33,11 @@ tasks:
     desc: ♻️ 自动回收 - 清理并回收不需要的文件
     dir: '{{.GlowToolBox}}'
     tags:
+    - os
     - folder
     - cleanup
     cmds:
-    - '"{{.PYTHON}}" "src\scripts\folder\auto_recycle.py"'
+    - '"{{.PYTHON}}" "src\scripts\folder\auto_recycle.py" --noterm'
   auto_repack:
     desc: 📦 自动重打包 - 重新打包文件夹内容
     dir: '{{.GlowToolBox}}'
