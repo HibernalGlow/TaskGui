@@ -46,7 +46,7 @@ tasks:
     - folder
     - archive
     cmds:
-    - '"{{.PYTHON}}" "src\scripts\folder\auto_repack\main.py"'
+    - '"{{.PYTHON}}" "src\projects\AutoRepack\main.py"'
   auto_unzip:
     desc: 📂 自动解压 - 解压缩存档文件
     dir: '{{.GlowToolBox}}'
