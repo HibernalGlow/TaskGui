@@ -7,7 +7,7 @@ favorite_tags:
 - workflow
 background_settings:
   enabled: false
-  sidebar_enabled: false
+  sidebar_enabled: true
   header_banner_enabled: false
   sidebar_banner_enabled: true
   image_path: E:\1PIC\2503\Music!!!!!_128400400_Criin.avif

@@ -262,7 +262,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\fliter\width_filter.py" -c'
   st:
     desc: 🚀 任务管理器 - 启动图形化任务管理界面
-    dir: '{{.GlowToolBox}}\src\scripts\task\task_gui\task_st'
+    dir: '{{.GlowToolBox}}\src\projects\TaskGui\task_st'
     tags:
     - gui
     - task

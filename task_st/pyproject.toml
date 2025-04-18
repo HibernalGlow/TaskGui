@@ -29,7 +29,13 @@ dependencies = [
     "toml",
     "watchdog",
     "streamlit-extras",
-    "task"
+    "streamlit-code-editor",
+    "task",
+    "psutil",
+    "streamlit-ace",
+    "pillow-avif-plugin",
+    "pillow-jxl-plugin",
+
 ]
 
 [project.optional-dependencies]
