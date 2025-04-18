@@ -1,0 +1,31 @@
+[server]
+enableStaticServing = true
+enableCORS = false
+enableXsrfProtection = false
+maxUploadSize = 200
+maxMessageSize = 200
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#39C5BB"
+backgroundColor = "rgba(255, 255, 255, 1.0)"
+secondaryBackgroundColor = "rgba(240, 242, 246, 1.0)"
+textColor = "#262730"
+# font = "霞鹜文楷"
+
+# [[theme.fontFaces]]
+# font = "霞鹜文楷"
+# url = ".streamlit/static/LXGWWenKaiMono-Regular.ttf"
+# weight = 500
+# style = "normal"
+
+# [[theme.fontFaces]]
+# font = "霞鹜文楷"
+# url = ".streamlit/static/LXGWWenKaiMono-Medium.ttf"
+# weight = 700
+# style = "bold"
+
+[logger]
+level = "info" 

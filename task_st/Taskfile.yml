@@ -1,0 +1,326 @@
+version: '3'
+vars:
+  PYTHON: .venv\Scripts\python.exe
+  GlowToolBox: D:\1VSCODE\GlowToolBox
+tasks:
+  artbook_dedup:
+    desc: 🖼️ 艺术书去重工具 - 删除重复的艺术书图片
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - filter
+    - dedup
+    - artbook
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\fliter\artbook_dedup.py"'
+  artist_classify:
+    desc: 🖼️ 艺术家分类工具 - 根据艺术家分类图片
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - filter
+    - classify
+    - artist
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\comic\classify\artist_classify.py"'
+  auto_cover:
+    desc: 📔 自动封面生成器 - 为漫画创建封面图片
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - comic
+    - cover
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\comic\uuid\auto_cover.py"'
+  auto_recycle:
+    desc: ♻️ 自动回收 - 清理并回收不需要的文件
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - os
+    - folder
+    - cleanup
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\folder\auto_recycle.py" --noterm'
+  auto_repack:
+    desc: 📦 自动重打包 - 重新打包文件夹内容
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - folder
+    - archive
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\folder\auto_repack\main.py"'
+  auto_unzip:
+    desc: 📂 自动解压 - 解压缩存档文件
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - folder
+    - archive
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\folder\auto_unzip.py"'
+  auto_uuid:
+    desc: 🔖 自动UUID - 为漫画生成唯一标识符
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - comic
+    - uuid
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\comic\uuid\auto_uuid.py"'
+  batch_img_filter:
+    desc: 🎭 批量图像过滤器 - 处理大量图像文件
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - filter
+    - batch
+    - image
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\fliter\batch_img_filter.py"'
+  comic_low_width:
+    desc: 📏 漫画低宽度检测 - 查找低分辨率漫画
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - comic
+    - filter
+    - dimension
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\comic-low-width\main.py"'
+  find_same_artist:
+    desc: 👨‍🎨 查找相同艺术家 - 归类同一作者的作品
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - comic
+    - classify
+    - artist
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\comic\classify\find_same_artist.py"'
+  folder_extract_tool:
+    desc: 📂 文件夹提取工具 - 整理文件夹结构和压缩包
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - organize
+    - folder
+    - archive
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\folder\folder_extract_tool.py" -c -a -f -r'
+  gallery_finder:
+    desc: 🔍 图库查找器 - 查找并组织图库资源
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - archive
+    - finder
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\nodes\archive\gallery_finder.py" -c -o'
+  janai_monitor:
+    desc: 🔭 Janai监控 - 监控Janai转换进度
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - upscale
+    - comic
+    - monitor
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\comic\upscale\janai_monitor.py"'
+  manga_archive_classifier:
+    desc: 📚 漫画归档分类器 - 对漫画进行分类整理
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - comic
+    - classify
+    - archive
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\comic\manga_archive_classifier.py" -c'
+  merge_part_folders:
+    desc: 🔀 合并部分文件夹 - 将分散的文件夹合并
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - organize
+    - folder
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\folder\merge_part_folders.py"'
+  no_translate_find:
+    desc: 🔤 查找未翻译内容 - 识别未翻译的文本
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - filter
+    - translate
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\fliter\no_translate_find.py" -c'
+  one_name:
+    desc: 📝 统一命名 - 标准化文件名称
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - comic
+    - uuid
+    - naming
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\comic\uuid\one_name.py"'
+  organize_folder:
+    desc: 📁 整理文件夹 - 结构化整理文件夹内容
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - organize
+    - folder
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\folder\organize_folder.py"'
+  pics_convert:
+    desc: 🎨 图片转换 - 转换图片格式或大小
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - pics
+    - convert
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\pics\pics_convert.py" '
+  psd_convert_clipboard:
+    desc: 📋 PSD剪贴板转换 - 将PSD内容转换至剪贴板
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - pics
+    - psd
+    - clipboard
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\pics\psd_convert.py" --clipboard'
+  recruit_cover_filter:
+    desc: 🕵️ 招募封面过滤 - 过滤特定类型的封面
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - filter
+    - cover
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\fliter\recruit_cover_filter.py"'
+  rename_images:
+    desc: 🏷️ 重命名图片 - 批量重命名图像文件
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - folder
+    - image
+    - rename
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\folder\rename_images.py"'
+  restore_bak:
+    desc: 🔄 恢复备份 - 从备份文件恢复
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - refactor
+    - backup
+    - restore
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\refactor\restore_bak.py"'
+  single_packer:
+    desc: 📦 单一打包CG - 打包特定CG内容
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - archive
+    - packer
+    cmds:
+    - '"{{.PYTHON}}" "src\nodes\archive\single_packer.py" -c -g'
+  sn_fix:
+    desc: 🔧 序列号修复 - 修复错误的序列号
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - refactor
+    - fix
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\refactor\sn_fix.py" -c'
+  sleep_timer:
+    desc: ⏱️ 时间戳记录 - 记录文件时间戳信息
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - os
+    - sleep
+    - timer
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\os\sleep_timer.py" --noterm'
+  timestamps_record:
+    desc: ⏱️ 时间戳记录 - 记录文件时间戳信息
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - folder
+    - metadata
+    - timestamp
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\folder\timestamps_record.py"'
+  upscale_bus:
+    desc: 🔍 图像放大总线 - 管理图像放大流程
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - upscale
+    - filter
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\fliter\upscale_bus.py"'
+  video_format:
+    desc: 🎬 视频格式转换 - 处理视频格式问题
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - folder
+    - video
+    - format
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\folder\video_format.py" -c'
+  width_filter:
+    desc: 📏 宽度过滤器 - 基于宽度过滤图像
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - upscale
+    - filter
+    - dimension
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\fliter\width_filter.py" -c'
+  st:
+    desc: 🚀 任务管理器 - 启动图形化任务管理界面
+    dir: '{{.GlowToolBox}}\src\scripts\task\task_gui\task_st'
+    tags:
+    - gui
+    - task
+    - manager
+    cmds:
+    - cmd: cmd.exe /c start "" "C:\Users\30902\Desktop\任务管理器.lnk"
+      platforms:
+      - windows
+    - '"{{.PYTHON}}" "run_task_manager.py" -noterm '
+  wf:uuid:
+    desc: 🔄 工作流管理器 - 管理工作流任务
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - workflow
+    - uuid
+    cmds:
+    - task: one_name
+    - task: auto_uuid
+  wf:organize:
+    desc: 🔄 工作流管理器 - 管理工作流任务
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - workflow
+    - organize
+    cmds:
+    - task: merge_part_folders
+    - task: psd_convert_clipboard
+    - task: auto_repack
+    - task: single_packer
+    - task: rename_images
+    - task: video_format
+    - task: organize_folder
+    - task: sn_fix
+  wf:filter:
+    desc: 🔄 工作流管理器 - 管理工作流任务
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - workflow
+    - filter
+    cmds:
+    - task: recruit_cover_filter
+    - task: recruit_cover_filter
+  wf:upscale:
+    desc: 🔄 工作流管理器 - 管理工作流任务
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - workflow
+    - upscale
+    cmds:
+    - task: pics_convert
+    - task: janai_monitor
+    - task: organize_folder
+  wf:convert:
+    desc: 🔄 工作流管理器 - 管理工作流任务
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - workflow
+    - convert
+    cmds:
+    - task: auto_repack
+    - task: pics_convert
