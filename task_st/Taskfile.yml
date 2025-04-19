@@ -273,6 +273,14 @@ tasks:
       platforms:
       - windows
     - '"{{.PYTHON}}" "run_task_manager.py" -noterm '
+  title2list:
+    desc: 📏 标题转列表 - 将标题转换为多级列表
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - md
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\md\title2list.py"'
+
   wf:uuid:
     desc: 🔄 工作流管理器 - 管理工作流任务
     dir: '{{.GlowToolBox}}'
