@@ -174,7 +174,7 @@ tasks:
     - psd
     - clipboard
     cmds:
-    - '"{{.PYTHON}}" "src\scripts\pics\psd_convert.py" --clipboard'
+    - '"{{.PYTHON}}" "src\projects\PsdConvert\main.py" --clipboard'
   recruit_cover_filter:
     desc: 🕵️ 招募封面过滤 - 过滤特定类型的封面
     dir: '{{.GlowToolBox}}'
