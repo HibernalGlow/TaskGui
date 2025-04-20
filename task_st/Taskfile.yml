@@ -63,6 +63,15 @@ tasks:
     - uuid
     cmds:
     - '"{{.PYTHON}}" "src\scripts\comic\uuid\auto_uuid.py"'
+  analyze_size:
+    desc: 🖼️ 艺术书去重工具 - 删除重复的艺术书图片
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - refactor
+    - analyze
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\refactor\analyze_size.py"'
+    
   batch_img_filter:
     desc: 🎭 批量图像过滤器 - 处理大量图像文件
     dir: '{{.GlowToolBox}}'
