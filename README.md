@@ -1,3 +1,12 @@
+# TaskGui
+
+一个提供图形用户界面 (GUI) 来管理或执行任务的工具。
+
+## 功能
+
+*   提供可视化的任务管理界面。
+*   可能与 Taskfile.yml 或其他任务运行器集成。
+
 # Taskfile GUI 工具
 
 这是一个简单的GUI工具，用于解析、选择和执行[Taskfile](https://taskfile.dev/)中定义的任务。
@@ -121,4 +130,4 @@ task --taskfile path/to/Taskfile.yml task1 task2 task3
 
 ## 许可证
 
-MIT 
+MIT

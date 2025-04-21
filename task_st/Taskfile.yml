@@ -142,6 +142,16 @@ tasks:
     - folder
     cmds:
     - '"{{.PYTHON}}" "src\scripts\folder\merge_part_folders.py"'
+    - '"{{.PYTHON}}" "src\scripts\comic\manga_archive_classifier.py" -c'
+  migrate_structure:
+    desc: 🔀 迁移文件结构 - 处理文件夹结构的迁移
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - refactor
+    - migrate
+    - organize
+    cmds:
+    - '"{{.PYTHON}}" "src\scripts\refactor\migrate_structure.py"'
   no_translate_find:
     desc: 🔤 查找未翻译内容 - 识别未翻译的文本
     dir: '{{.GlowToolBox}}'
