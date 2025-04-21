@@ -352,3 +352,12 @@ tasks:
     cmds:
     - task: auto_repack
     - task: pics_convert
+  wf:handbrake:
+    desc: 🔄 工作流管理器 - 管理工作流任务
+    dir: '{{.GlowToolBox}}'
+    tags:
+    - workflow
+    - video
+    cmds:
+    - task: video_format
+    - task: migrate_structure
