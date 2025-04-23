@@ -227,7 +227,7 @@ tasks:
     - archive
     - packer
     cmds:
-    - '"{{.PYTHON}}" "src\nodes\archive\single_packer.py" -c -g'
+    - '"{{.PYTHON}}" "src\nodes\archive\single_packer.py" -g'
   sn_fix:
     desc: 🔧 序列号修复 - 修复错误的序列号
     dir: '{{.GlowToolBox}}'
