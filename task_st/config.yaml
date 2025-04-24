@@ -1,0 +1,50 @@
+favorite_tags:
+- classify
+- filter
+- organize
+- upscale
+- uuid
+- workflow
+background_settings:
+  enabled: false
+  sidebar_enabled: true
+  header_banner_enabled: false
+  sidebar_banner_enabled: true
+  image_path: E:\1PIC\2503\Music!!!!!_128400400_Criin.avif
+  sidebar_image_path: ''
+  header_banner_path: E:\1PIC\22 · LOONG · 33_116538352_Criin.webp
+  sidebar_banner_path: E:\1PIC\2503\2025音律联觉\2025音律联觉（2）.avif
+  opacity: 0.7
+  blur: 0
+user_preferences:
+  ui_settings:
+    card_view:
+      show_description: false
+      show_tags: true
+      show_directory: false
+      show_command: false
+      use_sidebar_editor: true
+card_group_by_tag: true
+pinned_tags:
+- workflow
+- filter
+- pics
+- organize
+- upscale
+- classify
+- uuid
+basic_settings:
+  dark_mode: false
+  auto_load_recent: true
+  run_mode: sequential
+  auto_backup: true
+  backup_interval: 30
+  show_welcome: true
+  max_log_files: 10
+  notify_on_completion: true
+  show_card_tab: true
+  show_table_tab: false
+  show_preview_tab: false
+  show_dashboard_tab: false
+  show_settings_tab: true
+  show_state_tab: true

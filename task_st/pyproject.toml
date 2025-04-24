@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "task-manager"
+version = "0.1.0"
+description = "基于Streamlit的任务管理器"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.8"
+# 修改许可证格式，使用简单字符串
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    # 删除许可证分类器，避免重复
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "streamlit>=1.32.0",
+    "pandas",
+    "matplotlib",
+    "streamlit-aggrid",
+    "pyperclip",
+    "pyyaml",
+    "numpy",
+    "toml",
+    "watchdog",
+    "streamlit-extras",
+    "streamlit-code-editor",
+    "task",
+    "psutil",
+    "streamlit-ace",
+    "pillow-avif-plugin",
+    "pillow-jxl-plugin",
+
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "isort",
+]
+
+[project.scripts]
+task-manager = "run_task_manager:main"
+
+[tool.setuptools]
+# 修改包目录配置，让setuptools找到当前目录
+package-dir = {"" = "."}
+# 不指定特定的包名，让setuptools自动发现
+
+[tool.setuptools.packages.find]
+# 包含当前目录，不需要指定task_st目录
+include = ["*"]
+# 排除测试和文档目录
+exclude = ["tests", "docs"]
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+
