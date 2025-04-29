@@ -175,3 +175,4 @@ cython_debug/
 src/convert/compression_blacklist.json
 *.bak.*
 *.bak
+/__pycache__
