@@ -2,7 +2,7 @@ version: '3'
 vars:
   PYTHON: .venv\Scripts\python.exe
   GlowToolBox: D:\1VSCODE\GlowToolBox
-  Projects: src\
+  Projects: D:\1VSCODE\Projects
 tasks:
   artbook_dedup:
     desc: 🖼️ 艺术书去重工具 - 删除重复的艺术书图片
@@ -71,7 +71,6 @@ tasks:
     - analyze
     cmds:
     - '"{{.PYTHON}}" "src\scripts\refactor\analyze_size.py"'
-    
   batch_img_filter:
     desc: 🎭 批量图像过滤器 - 处理大量图像文件
     dir: '{{.GlowToolBox}}'
@@ -81,15 +80,6 @@ tasks:
     - image
     cmds:
     - '"{{.PYTHON}}" "src\scripts\fliter\batch_img_filter.py"'
-  comic_low_width:
-    desc: 📏 漫画低宽度检测 - 查找低分辨率漫画
-    dir: '{{.GlowToolBox}}'
-    tags:
-    - comic
-    - filter
-    - dimension
-    cmds:
-    - '"{{.PYTHON}}" "src\scripts\comic-low-width\main.py"'
   find_same_artist:
     desc: 👨‍🎨 查找相同艺术家 - 归类同一作者的作品
     dir: '{{.GlowToolBox}}'
@@ -116,15 +106,14 @@ tasks:
     - finder
     cmds:
     - '"{{.PYTHON}}" "src\scripts\nodes\archive\gallery_finder.py" -c -o'
-  janai_monitor:
-    desc: 🔭 Janai监控 - 监控Janai转换进度
+  hash_prepare:
+    desc: 🔍 哈希准备工具 - 准备文件哈希值
     dir: '{{.GlowToolBox}}'
     tags:
-    - upscale
-    - comic
-    - monitor
+    - filter
+    - hash
     cmds:
-    - '"{{.PYTHON}}" "src\scripts\comic\upscale\janai_monitor.py"'
+    - '"{{.PYTHON}}" "src\scripts\comic\hash_prepare.py"'
   manga_archive_classifier:
     desc: 📚 漫画归档分类器 - 对漫画进行分类整理
     dir: '{{.GlowToolBox}}'
@@ -142,7 +131,6 @@ tasks:
     - folder
     cmds:
     - '"{{.PYTHON}}" "src\scripts\folder\merge_part_folders.py"'
-    - '"{{.PYTHON}}" "src\scripts\comic\manga_archive_classifier.py" -c'
   migrate_structure:
     desc: 🔀 迁移文件结构 - 处理文件夹结构的迁移
     dir: '{{.GlowToolBox}}'
@@ -299,7 +287,6 @@ tasks:
     - md
     cmds:
     - '"{{.PYTHON}}" "src\scripts\md\title2list.py"'
-
   wf:uuid:
     desc: 🔄 工作流管理器 - 管理工作流任务
     dir: '{{.GlowToolBox}}'
