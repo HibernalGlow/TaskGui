@@ -7,6 +7,7 @@ from src.tabs.settings.background.background_settings import render_background_s
 from src.tabs.settings.card.card_settings import render_card_settings
 from src.tabs.settings.table.table_settings import render_table_settings
 from src.tabs.settings.sidebar.sidebar_settings import render_sidebar_settings
+from src.tabs.settings.taskfile.taskfile_settings import render_taskfile_settings
 
 # 重新导出函数，保持向后兼容性
 __all__ = [
@@ -17,7 +18,8 @@ __all__ = [
     'render_background_settings',
     'render_card_settings',
     'render_table_settings',
-    'render_sidebar_settings'
+    'render_sidebar_settings',
+    'render_taskfile_settings'
 ]
 
 def render_settings_tab():
@@ -25,7 +27,7 @@ def render_settings_tab():
     st.markdown("## ⚙️ 系统设置")
     
     # 创建设置子标签页
-    settings_tabs = st.tabs(["基本设置", "🎨 背景设置", "卡片设置", "📊 表格设置", "侧边栏设置"])
+    settings_tabs = st.tabs(["基本设置", "🎨 背景设置", "卡片设置", "📊 表格设置", "侧边栏设置", "📂 任务文件管理"])
     
     # 基本设置标签页
     with settings_tabs[0]:
@@ -45,4 +47,8 @@ def render_settings_tab():
         
     # 侧边栏设置标签页
     with settings_tabs[4]:
-        render_sidebar_settings() 
+        render_sidebar_settings()
+        
+    # 任务文件管理标签页
+    with settings_tabs[5]:
+        render_taskfile_settings()

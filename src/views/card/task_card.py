@@ -69,6 +69,9 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
     if edit_key not in st.session_state:
         st.session_state[edit_key] = False
     
+    # 获取任务的实际源文件路径（合并模式下可能与current_taskfile不同）
+    taskfile_path = task.get('source_file', current_taskfile)
+    
     # 在expander中显示卡片内容
     with st.expander(f"{task['emoji']} {task['name']}", expanded=True):
         # 如果是编辑模式，显示编辑表单
@@ -81,7 +84,7 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
             # 渲染编辑表单
             render_task_edit_form(
                 task=task, 
-                taskfile_path=current_taskfile, 
+                taskfile_path=taskfile_path, 
                 on_save_callback=lambda: setattr(st.session_state, edit_key, False),
                 with_back_button=True,
                 back_button_callback=back_button_callback
@@ -102,8 +105,12 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
             
             # 显示命令 - 根据设置显示
             if card_settings.get("show_command", True):
-                cmd = get_task_command(task['name'], current_taskfile)
+                cmd = get_task_command(task['name'], taskfile_path)
                 st.code(cmd, language="bash")
+            
+            # 在合并模式下显示来源文件
+            if 'source_file' in task and task['source_file'] != current_taskfile:
+                st.markdown(f"**来源**: `{os.path.basename(task['source_file'])}`")
             
             # 如果需要显示选择框
             if show_checkbox:
@@ -157,13 +164,15 @@ def render_task_card(task, current_taskfile, idx=0, view_type="preview", show_ch
                         elif "run_" in btn_key:
                             if st.button(config["icon"], key=btn_key, help=config["help"], type=button_type):
                                 with st.spinner(f"正在启动任务 {task['name']}..."):
-                                    run_task_via_cmd(task['name'], current_taskfile)
+                                    # 使用任务的源文件路径，而不是当前默认的任务文件路径
+                                    run_task_via_cmd(task['name'], taskfile_path)
                                     record_task_run(task['name'], status="started")
                                     
                         # 复制命令按钮
                         elif "copy_" in btn_key:
                             if st.button(config["icon"], key=btn_key, help=config["help"], type=button_type):
-                                cmd = get_task_command(task['name'], current_taskfile)
+                                # 使用任务的源文件路径生成命令
+                                cmd = get_task_command(task['name'], taskfile_path)
                                 copy_to_clipboard(cmd)
                                 
                         # 编辑按钮

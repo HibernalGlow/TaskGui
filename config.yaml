@@ -44,6 +44,7 @@ pinned_tags:
 - uuid
 taskfiles:
 - D:\1VSCODE\Projects\LazyCommand\TaskGui\Taskfile.yml
+- D:\1VSCODE\GlowToolBox\Taskfile.yml
 user_preferences:
   ui_settings:
     card_view:
