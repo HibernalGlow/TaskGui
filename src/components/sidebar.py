@@ -12,6 +12,8 @@ from src.services.task_runner import run_task_via_cmd
 from src.views.card.card_view import group_tasks_by_first_tag, sort_grouped_tasks
 from src.utils.file_utils import copy_to_clipboard
 import hashlib
+# 导入新的任务文件管理组件
+from src.components.taskfile_manager_ui import render_taskfile_manager_expander
 
 def get_tag_color(tag):
     """为标签生成一致的颜色
@@ -558,6 +560,11 @@ def render_sidebar(current_taskfile):
     
     # 定义expander组件
     expander_components = {
+        "taskfile_manager": {
+            "name": "📂 任务文件管理",
+            "function": render_taskfile_manager_expander,
+            "enabled": True
+        },
         "outline": {
             "name": "📑 分组大纲",
             "function": render_outline_expander,
@@ -591,14 +598,18 @@ def render_sidebar(current_taskfile):
     }
     
     # 默认expander顺序
-    default_order = ["outline", "filter_tasks", "edit_task", "tag_filters", "system", "appearance"]
+    default_order = ["taskfile_manager", "outline", "filter_tasks", "edit_task", "tag_filters", "system", "appearance"]
     
     # 获取用户设置的顺序
     expander_order = sidebar_settings.get("expander_order", default_order)
     
+    # 确保新的taskfile_manager组件在顺序中
+    if "taskfile_manager" not in expander_order:
+        expander_order.insert(0, "taskfile_manager")
+    
     # 添加新的分组大纲组件到顺序中(如果不存在)
     if "outline" not in expander_order:
-        expander_order.insert(0, "outline")
+        expander_order.insert(1, "outline")
     
     # 添加新的外观设置组件到顺序中(如果不存在)
     if "appearance" not in expander_order:

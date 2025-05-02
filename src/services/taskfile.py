@@ -3,10 +3,48 @@ import yaml
 import json
 import pandas as pd
 import streamlit as st
+from src.utils.taskfile_manager import get_taskfile_manager
 
 def read_taskfile(file_path):
     """
     读取Taskfile并返回DataFrame
+    
+    参数:
+        file_path: Taskfile路径
+        
+    返回:
+        包含任务信息的DataFrame
+    """
+    # 如果启用了合并模式，读取所有配置的Taskfile
+    manager = get_taskfile_manager()
+    if manager.get_merge_mode():
+        # 获取所有配置的Taskfile
+        taskfiles = manager.get_taskfiles()
+        if not taskfiles:
+            # 如果没有配置任务文件，回退到单一模式
+            return read_single_taskfile(file_path)
+        
+        # 创建空的DataFrame来存储所有任务
+        all_tasks_df = pd.DataFrame()
+        
+        # 读取每个Taskfile并合并结果
+        for tf in taskfiles:
+            if os.path.exists(tf):
+                task_df = read_single_taskfile(tf)
+                if task_df is not None and not task_df.empty:
+                    # 添加来源文件标记
+                    task_df['source_file'] = tf
+                    # 合并到总DataFrame
+                    all_tasks_df = pd.concat([all_tasks_df, task_df], ignore_index=True)
+        
+        return all_tasks_df
+    else:
+        # 单一模式，只读取指定的Taskfile
+        return read_single_taskfile(file_path)
+
+def read_single_taskfile(file_path):
+    """
+    读取单个Taskfile文件
     
     参数:
         file_path: Taskfile路径
@@ -83,6 +121,10 @@ def load_taskfile(file_path):
     # 设置当前Taskfile路径
     st.session_state.last_taskfile_path = file_path
     
+    # 将文件路径添加到多Taskfile管理器
+    manager = get_taskfile_manager()
+    manager.add_taskfile(file_path)
+    
     # 读取任务数据
     return read_taskfile(file_path)
 
@@ -157,4 +199,4 @@ def filter_tasks(tasks_df):
             lambda x: any(tag in x for tag in tags_to_filter) if isinstance(x, list) else False
         )]
     
-    return filtered_df 
+    return filtered_df

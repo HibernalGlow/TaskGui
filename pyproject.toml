@@ -29,7 +29,7 @@ dependencies = [
     "watchdog",
     "streamlit-extras",
     "streamlit-code-editor",
-    "task",
+    "go-task-bin",
     "psutil",
     "streamlit-ace",
     "pillow-avif-plugin",

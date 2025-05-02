@@ -41,12 +41,12 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\folder\auto_recycle.py" --noterm'
   auto_repack:
     desc: 📦 自动重打包 - 重新打包文件夹内容
-    dir: '{{.GlowToolBox}}'
+    dir: '{{.Projects}}'
     tags:
     - folder
     - archive
     cmds:
-    - '"{{.PYTHON}}" "src\projects\AutoRepack\main.py"'
+    - '"{{.PYTHON}}" "PackU\AutoRepack\main.py"'
   auto_unzip:
     desc: 📂 自动解压 - 解压缩存档文件
     dir: '{{.GlowToolBox}}'
@@ -270,7 +270,7 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\fliter\width_filter.py" -c'
   st:
     desc: 🚀 任务管理器 - 启动图形化任务管理界面
-    dir: '{{.GlowToolBox}}\src\projects\TaskGui\task_st'
+    dir: '{{.Projects}}\LazyCommand\TaskGui'
     tags:
     - gui
     - task
@@ -279,7 +279,7 @@ tasks:
     - cmd: cmd.exe /c start "" "C:\Users\30902\Desktop\任务管理器.lnk"
       platforms:
       - windows
-    - '"{{.PYTHON}}" "run_task_manager.py" -noterm '
+    - '"{{.PYTHON}}" "run.py" -noterm '
   title2list:
     desc: 📏 标题转列表 - 将标题转换为多级列表
     dir: '{{.GlowToolBox}}'

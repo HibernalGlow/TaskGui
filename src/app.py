@@ -104,28 +104,54 @@ def main():
             if 'sidebar_banner_path' not in st.session_state.background_settings:
                 st.session_state.background_settings['sidebar_banner_path'] = ''
         
-        # 获取任务文件列表
+        # 获取任务文件管理器
+        from src.utils.taskfile_manager import get_taskfile_manager
+        taskfile_manager = get_taskfile_manager()
+        
+        # 获取可用Taskfile列表
         taskfiles = find_taskfiles()
         if not taskfiles:
             st.error("未找到任务文件。请确保当前目录下有Taskfile.yml文件。")
             return
         
-        # 获取默认任务文件
-        default_taskfile = get_nearest_taskfile()
-        if not default_taskfile:
-            default_taskfile = taskfiles[0]
+        # 获取当前活动Taskfile或默认Taskfile
+        active_taskfile = taskfile_manager.get_active_taskfile()
+        if not active_taskfile:
+            # 如果没有活动任务文件，使用最近的或第一个可用的
+            default_taskfile = get_nearest_taskfile()
+            if not default_taskfile:
+                default_taskfile = taskfiles[0]
+            
+            # 设置为活动任务文件
+            taskfile_manager.set_active_taskfile(default_taskfile)
+            active_taskfile = default_taskfile
+        
+        # 确保活动任务文件存在
+        if not os.path.exists(active_taskfile):
+            # 如果活动任务文件不存在，重置为默认值
+            default_taskfile = get_nearest_taskfile()
+            if not default_taskfile:
+                default_taskfile = taskfiles[0] if taskfiles else None
+                
+            if default_taskfile:
+                # 设置为活动任务文件
+                taskfile_manager.set_active_taskfile(default_taskfile)
+                active_taskfile = default_taskfile
+            else:
+                st.error("所有配置的任务文件都不存在。")
+                return
         
         # 注册任务文件
-        register_task_file(default_taskfile)
+        register_task_file(active_taskfile)
         
         # 加载任务文件
-        tasks_df = load_taskfile(default_taskfile)
+        tasks_df = load_taskfile(active_taskfile)
         if tasks_df is None or tasks_df.empty:
             st.error("无法加载任务文件或任务文件为空。")
             return
         
         # 注册所有任务
-        register_tasks_from_df(tasks_df, default_taskfile)
+        register_tasks_from_df(tasks_df, active_taskfile)
         
         # 准备数据框
         tasks_df = prepare_dataframe(tasks_df)
@@ -155,11 +181,8 @@ def main():
                 # 出现任何异常，禁用横幅并继续
                 print(f"显示侧边栏横幅时出错：{str(e)}")
             
-            # 在侧边栏顶部渲染操作按钮
-            # render_action_buttons(selected_tasks, default_taskfile, key_prefix="sidebar", is_sidebar=True)
-            
             # 渲染侧边栏
-            render_sidebar(default_taskfile)
+            render_sidebar(active_taskfile)
         
         # 渲染标签过滤器 - 代码已移至侧边栏，仅保留调用以保持兼容性
         render_tag_filters(all_tags)
@@ -186,9 +209,6 @@ def main():
             st.session_state.background_settings['header_banner_enabled'] = False
             save_background_settings(st.session_state.background_settings)
             print(f"显示顶部横幅时出错：{str(e)}")
-        
-        # 渲染主界面操作按钮
-        # render_action_buttons(selected_tasks, default_taskfile, key_prefix="main_preview")
         
         # 加载基本设置以确定要显示哪些标签页
         if 'basic_settings' not in st.session_state:
@@ -218,17 +238,17 @@ def main():
         # 表格视图
         if "📊 表格" in tab_indices:
             with tabs[tab_indices["📊 表格"]]:
-                render_table_view(filtered_df, default_taskfile, show_sidebar=False)  # 关闭右侧预览
+                render_table_view(filtered_df, active_taskfile, show_sidebar=False)  # 关闭右侧预览
         
         # 卡片视图
         if "🗂️ 卡片" in tab_indices:
             with tabs[tab_indices["🗂️ 卡片"]]:
-                render_card_view(filtered_df, default_taskfile)
+                render_card_view(filtered_df, active_taskfile)
         
         # 预览页签
         if "🔍 预览" in tab_indices:
             with tabs[tab_indices["🔍 预览"]]:
-                render_preview_tab(filtered_df, default_taskfile)
+                render_preview_tab(filtered_df, active_taskfile)
         
         # 仪表盘页签
         if "📈 仪表盘" in tab_indices:
@@ -244,8 +264,7 @@ def main():
         if "🔧 状态" in tab_indices:
             with tabs[tab_indices["🔧 状态"]]:
                 render_state_manager()
-
             
     except Exception as e:
         st.error(f"发生错误: {str(e)}")
-        st.code(traceback.format_exc()) 
+        st.code(traceback.format_exc())
