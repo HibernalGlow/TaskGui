@@ -279,7 +279,7 @@ tasks:
     - cmd: cmd.exe /c start "" "C:\Users\30902\Desktop\任务管理器.lnk"
       platforms:
       - windows
-    - '"{{.PYTHON}}" "run.py" -noterm '
+    - '"{{.PYTHON}}" "taskgui\core\run.py" -noterm '
   title2list:
     desc: 📏 标题转列表 - 将标题转换为多级列表
     dir: '{{.GlowToolBox}}'

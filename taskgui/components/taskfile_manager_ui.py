@@ -1,8 +1,8 @@
 import streamlit as st
 import os
-from taskgui.utils.taskfile_manager import get_taskfile_manager
+from taskgui.config.taskfile_manager import get_taskfile_manager
 from taskgui.utils.file_utils import find_taskfiles, get_nearest_taskfile
-from taskgui.services.taskfile import read_taskfile, load_taskfile
+from taskgui.services.taskfile import load_taskfile
 from taskgui.utils.selection_utils import register_task_file, register_tasks_from_df
 
 def render_taskfile_manager_expander(current_taskfile):

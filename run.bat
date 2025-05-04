@@ -1,3 +1,0 @@
-@echo off
-echo 正在启动GlowToolBox任务管理器...
-python run_task_manager.py 

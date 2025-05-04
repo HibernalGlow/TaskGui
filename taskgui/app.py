@@ -105,7 +105,7 @@ def main():
                 st.session_state.background_settings['sidebar_banner_path'] = ''
         
         # 获取任务文件管理器
-        from taskgui.utils.taskfile_manager import get_taskfile_manager
+        from taskgui.config.taskfile_manager import get_taskfile_manager
         taskfile_manager = get_taskfile_manager()
         
         # 获取可用Taskfile列表

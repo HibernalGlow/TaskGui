@@ -45,10 +45,6 @@ dev = [
     "isort",
 ]
 
-[project.scripts]
-taskst = "taskgui.core.cli:main"
-tst = "taskgui.core.cli:main"
-
 [tool.setuptools]
 # 修改包目录配置，让setuptools找到当前目录
 package-dir = {"" = "."}
@@ -67,5 +63,7 @@ target-version = ["py38"]
 [tool.isort]
 profile = "black"
 line_length = 88
-
+[project.scripts]
+taskst = "taskgui.core.cli:main"
+tst = "taskgui.core.cli:main"
 

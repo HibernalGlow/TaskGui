@@ -132,7 +132,7 @@ def get_all_tags(taskfile_path):
 
 def restart_application():
     """重启应用程序"""
-    run_script = "run_task_manager.py"
+    run_script = "taskgui/core/run.py"
     
     # 启动新实例
     if os.path.exists(run_script):

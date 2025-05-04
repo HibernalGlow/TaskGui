@@ -11,20 +11,20 @@ background_settings:
   sidebar_enabled: true
   sidebar_image_path: ''
 basic_settings:
-  dark_mode: false
-  auto_load_recent: true
-  run_mode: sequential
   auto_backup: true
+  auto_load_recent: true
   backup_interval: 30
-  show_welcome: true
+  dark_mode: false
   max_log_files: 10
   notify_on_completion: true
+  run_mode: sequential
   show_card_tab: true
-  show_table_tab: false
-  show_preview_tab: false
   show_dashboard_tab: false
+  show_preview_tab: false
   show_settings_tab: true
   show_state_tab: true
+  show_table_tab: false
+  show_welcome: true
 card_group_by_tag: true
 favorite_tags:
 - classify

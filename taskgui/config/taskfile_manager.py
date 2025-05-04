@@ -7,11 +7,16 @@ class TaskfileManager:
     """多Taskfile管理器"""
     
     def __init__(self):
-        self.config_file = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
-            "config.yaml"
-        )
+        # 使用当前脚本所在目录作为配置文件位置
+        config_dir = os.path.dirname(os.path.abspath(__file__))
+        self.config_file = os.path.join(config_dir, 'config.yaml')
+        print(f"TaskfileManager初始化：使用配置文件路径 {self.config_file}")
+        # 确保根目录不会被使用
+        # root_config = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'config.yaml')
+        # if os.path.exists(root_config):
+        #     print(f"警告：根目录存在配置文件 {root_config}，但不会被使用")
         self.init_manager()
+    
     
     def init_manager(self) -> None:
         """初始化管理器"""
@@ -21,7 +26,9 @@ class TaskfileManager:
     
     def load_taskfiles_config(self) -> Dict[str, Any]:
         """从配置文件加载Taskfile配置"""
+        print(f"尝试从 {self.config_file} 加载配置")
         if not os.path.exists(self.config_file):
+            print(f"配置文件不存在：{self.config_file}")
             return {"taskfiles": [], "active_taskfile": None, "merge_mode": False}
         
         try:
@@ -36,6 +43,7 @@ class TaskfileManager:
             if 'merge_mode' not in config:
                 config['merge_mode'] = False
             
+            print(f"成功加载配置，taskfiles数量：{len(config['taskfiles'])}")
             return config
         except Exception as e:
             print(f"加载Taskfile配置时出错: {str(e)}")
@@ -43,6 +51,7 @@ class TaskfileManager:
     
     def save_taskfiles_config(self, config: Dict[str, Any]) -> bool:
         """保存Taskfile配置到配置文件"""
+        print(f"尝试保存配置到 {self.config_file}")
         try:
             # 读取现有配置
             if os.path.exists(self.config_file):
@@ -50,6 +59,8 @@ class TaskfileManager:
                     full_config = yaml.safe_load(f) or {}
             else:
                 full_config = {}
+                # 确保目录存在
+                os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
             
             # 更新taskfiles相关配置
             full_config['taskfiles'] = config.get('taskfiles', [])
@@ -60,6 +71,7 @@ class TaskfileManager:
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 yaml.dump(full_config, f, default_flow_style=False, allow_unicode=True)
             
+            print(f"成功保存配置到 {self.config_file}")
             return True
         except Exception as e:
             print(f"保存Taskfile配置时出错: {str(e)}")
