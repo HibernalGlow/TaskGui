@@ -7,6 +7,7 @@ import psutil
 import time
 from datetime import datetime
 from pathlib import Path
+from taskgui.config.config_manager import get_config, get_setting, update_setting, save_config
 
 # 全局内存缓存
 _MEMORY_CACHE = None  # 内存缓存
@@ -17,52 +18,30 @@ _MEMORY_CACHE_MAX_AGE = 3600  # 最大缓存年龄（秒）
 _LAST_GC_TIME = 0  # 上次垃圾回收时间
 _GC_INTERVAL = 300  # 垃圾回收间隔（秒）
 
-# 本地配置文件路径
-# LOCAL_CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".glowtoolbox")
-# LOCAL_CONFIG_FILE = os.path.join(LOCAL_CONFIG_DIR, "local_config.yaml")
+# 以下原始配置路径定义不再使用，但保留注释以便了解历史变更
+# LOCAL_CONFIG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config")
+# LOCAL_CONFIG_FILE = os.path.join(LOCAL_CONFIG_DIR, "config.yaml")
 
-# 修改为脚本目录
-LOCAL_CONFIG_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-LOCAL_CONFIG_FILE = os.path.join(LOCAL_CONFIG_DIR, "config.yaml")
-
-# 确保配置目录存在
+# 确保配置目录存在 - 使用config_manager模块，此函数不再需要
 def ensure_config_dir():
     """确保配置目录存在"""
-    if not os.path.exists(LOCAL_CONFIG_DIR):
-        try:
-            os.makedirs(LOCAL_CONFIG_DIR)
-        except Exception as e:
-            print(f"创建配置目录失败: {str(e)}")
-            return False
+    # 该功能由config_manager负责
     return True
 
-# 加载本地配置
+# 加载本地配置 - 使用config_manager模块中的get_config函数
 def load_local_config():
     """从本地文件加载配置"""
-    if not os.path.exists(LOCAL_CONFIG_FILE):
-        return {}
-    
-    try:
-        with open(LOCAL_CONFIG_FILE, 'r', encoding='utf-8') as f:
-            config = yaml.safe_load(f)
-            return config if config else {}
-    except Exception as e:
-        print(f"加载配置文件失败: {str(e)}")
-        return {}
+    return get_config()
 
-# 保存本地配置
+# 保存本地配置 - 使用config_manager模块中的update_setting和save_config函数
 def save_local_config(config):
     """保存配置到本地文件"""
-    if not ensure_config_dir():
-        return False
+    # 遍历config中的所有顶级键，逐一更新
+    for section, value in config.items():
+        update_setting(section, value=value)
     
-    try:
-        with open(LOCAL_CONFIG_FILE, 'w', encoding='utf-8') as f:
-            yaml.dump(config, f, sort_keys=False, allow_unicode=True, indent=2)
-        return True
-    except Exception as e:
-        print(f"保存配置文件失败: {str(e)}")
-        return False
+    # 保存配置
+    return save_config()
 
 # 初始化全局任务状态
 def init_global_state():

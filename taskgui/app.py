@@ -8,6 +8,10 @@ import time
 import gc
 from code_editor import code_editor
 
+# 首先执行配置文件迁移
+from .config.migrate_config import migrate_config_file
+migrate_config_file()
+
 # 导入自定义模块
 from taskgui.utils.session_utils import init_session_state, setup_css
 from taskgui.services.taskfile import load_taskfile, read_taskfile
