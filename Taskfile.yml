@@ -167,21 +167,21 @@ tasks:
     - '"{{.PYTHON}}" "src\scripts\folder\organize_folder.py"'
   pics_convert:
     desc: 🎨 图片转换 - 转换图片格式或大小
-    dir: '{{.GlowToolBox}}'
+    dir: '{{.Projects}}\ImageAll\PicsConvert'
     tags:
     - pics
     - convert
     cmds:
-    - '"{{.PYTHON}}" "src\projects\PicsConvert\main.py" '
-  psd_convert_clipboard:
+    - '"{{.PYTHON}}" "main.py" '
+  psd_convert:
     desc: 📋 PSD剪贴板转换 - 将PSD内容转换至剪贴板
-    dir: '{{.GlowToolBox}}'
+    dir: '{{.Projects}}'
     tags:
     - pics
     - psd
     - clipboard
     cmds:
-    - '"{{.PYTHON}}" "src\projects\PsdConvert\main.py" --clipboard'
+    - '"{{.PYTHON}}" "ImageAll\PsdConvert\main.py"'
   recruit_cover_filter:
     desc: 🕵️ 招募封面过滤 - 过滤特定类型的封面
     dir: '{{.GlowToolBox}}'
@@ -304,7 +304,7 @@ tasks:
     - organize
     cmds:
     - task: merge_part_folders
-    - task: psd_convert_clipboard
+    - task: psd_convert
     - task: auto_repack
     - task: single_packer
     - task: rename_images

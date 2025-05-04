@@ -2,12 +2,12 @@
 import streamlit as st
 
 # 导入各个子模块的设置渲染函数
-from src.tabs.settings.basic.basic_settings import render_basic_settings, load_basic_settings, save_basic_settings
-from src.tabs.settings.background.background_settings import render_background_settings
-from src.tabs.settings.card.card_settings import render_card_settings
-from src.tabs.settings.table.table_settings import render_table_settings
-from src.tabs.settings.sidebar.sidebar_settings import render_sidebar_settings
-from src.tabs.settings.taskfile.taskfile_settings import render_taskfile_settings
+from taskgui.tabs.settings.basic.basic_settings import render_basic_settings, load_basic_settings, save_basic_settings
+from taskgui.tabs.settings.background.background_settings import render_background_settings
+from taskgui.tabs.settings.card.card_settings import render_card_settings
+from taskgui.tabs.settings.table.table_settings import render_table_settings
+from taskgui.tabs.settings.sidebar.sidebar_settings import render_sidebar_settings
+from taskgui.tabs.settings.taskfile.taskfile_settings import render_taskfile_settings
 
 # 重新导出函数，保持向后兼容性
 __all__ = [

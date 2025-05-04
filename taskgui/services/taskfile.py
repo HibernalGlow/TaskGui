@@ -3,7 +3,7 @@ import yaml
 import json
 import pandas as pd
 import streamlit as st
-from src.utils.taskfile_manager import get_taskfile_manager
+from taskgui.utils.taskfile_manager import get_taskfile_manager
 
 def read_taskfile(file_path):
     """

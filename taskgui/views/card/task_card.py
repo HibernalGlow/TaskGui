@@ -1,9 +1,9 @@
 import streamlit as st
 import os
-from src.utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
-from src.services.task_runner import run_task_via_cmd
-from src.utils.selection_utils import update_task_selection, get_task_selection_state, record_task_run, get_task_runtime, get_card_view_settings
-from src.views.card.task_card_editor import render_task_edit_form
+from taskgui.utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
+from taskgui.services.task_runner import run_task_via_cmd
+from taskgui.utils.selection_utils import update_task_selection, get_task_selection_state, record_task_run, get_task_runtime, get_card_view_settings
+from taskgui.views.card.task_card_editor import render_task_edit_form
 import hashlib
 
 def get_tag_color(tag):

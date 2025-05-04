@@ -1,6 +1,6 @@
 import streamlit as st
-from src.views.table.aggrid_config import init_aggrid_settings
-from src.views.table.aggrid_ui import render_settings_ui
+from taskgui.views.table.aggrid_config import init_aggrid_settings
+from taskgui.views.table.aggrid_ui import render_settings_ui
 
 def render_table_settings():
     """渲染表格设置标签页"""

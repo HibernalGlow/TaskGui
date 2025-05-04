@@ -1,8 +1,8 @@
 import streamlit as st
-from src.utils.selection_utils import get_card_view_settings, update_card_view_settings, load_local_config, save_local_config
-from src.tabs.settings.basic.basic_settings import load_basic_settings, save_basic_settings
-from src.components.tag_filters import get_all_tags
-from src.utils.file_utils import get_nearest_taskfile
+from taskgui.utils.selection_utils import get_card_view_settings, update_card_view_settings, load_local_config, save_local_config
+from taskgui.tabs.settings.basic.basic_settings import load_basic_settings, save_basic_settings
+from taskgui.components.tag_filters import get_all_tags
+from taskgui.utils.file_utils import get_nearest_taskfile
 
 def render_card_settings():
     """渲染卡片设置"""

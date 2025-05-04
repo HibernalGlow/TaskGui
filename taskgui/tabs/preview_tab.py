@@ -1,6 +1,6 @@
 import streamlit as st
-from src.utils.selection_utils import get_selected_tasks
-from src.views.card.card_view import render_card_view
+from taskgui.utils.selection_utils import get_selected_tasks
+from taskgui.views.card.card_view import render_card_view
 
 def render_preview_tab(filtered_df, default_taskfile):
     """渲染预览标签页"""

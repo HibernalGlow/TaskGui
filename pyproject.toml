@@ -34,7 +34,7 @@ dependencies = [
     "streamlit-ace",
     "pillow-avif-plugin",
     "pillow-jxl-plugin",
-    "streamlit_echarts"
+    "streamlit_echarts",
 
 ]
 
@@ -46,8 +46,9 @@ dev = [
 ]
 
 [project.scripts]
-taskst = "cli:main"
-tst = "cli:main"
+taskst = "taskgui.core.cli:main"
+tst = "taskgui.core.cli:main"
+
 [tool.setuptools]
 # 修改包目录配置，让setuptools找到当前目录
 package-dir = {"" = "."}

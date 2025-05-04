@@ -10,14 +10,14 @@ except ImportError:
     st.error("未安装st-aggrid。请使用 `pip install streamlit-aggrid` 安装")
 
 # 导入选择状态更新函数
-from src.utils.selection_utils import get_selected_tasks, init_global_state
+from taskgui.utils.selection_utils import get_selected_tasks, init_global_state
 
 # 导入自定义模块
-from src.views.table.aggrid_config import init_aggrid_settings
+from taskgui.views.table.aggrid_config import init_aggrid_settings
 # 移除下面的导入，不再在表格视图中显示设置
-# from src.views.table.aggrid_ui import render_settings_ui
-from src.views.table.aggrid_data import prepare_display_data, process_grid_selection_changes
-from src.views.table.aggrid_renderers import build_grid_options
+# from taskgui.views.table.aggrid_ui import render_settings_ui
+from taskgui.views.table.aggrid_data import prepare_display_data, process_grid_selection_changes
+from taskgui.views.table.aggrid_renderers import build_grid_options
 
 def render_aggrid_table(filtered_df, current_taskfile):
     """使用AgGrid渲染表格 - 使用内存状态管理"""

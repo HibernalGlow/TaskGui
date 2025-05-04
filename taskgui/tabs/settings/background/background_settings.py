@@ -1,9 +1,9 @@
 import streamlit as st
 import os
 import re
-from src.utils.selection_utils import load_background_settings, save_background_settings
-from src.components.sidebar import set_background_image, set_sidebar_background
-from src.ui.styles import reset_background_css
+from taskgui.utils.selection_utils import load_background_settings, save_background_settings
+from taskgui.components.sidebar import set_background_image, set_sidebar_background
+from taskgui.ui.styles import reset_background_css
 
 def load_background_color_settings():
     """从config.toml文件加载背景色设置，包括RGB值和透明度设置"""

@@ -83,8 +83,8 @@ def setup_css():
     
     # 加载背景设置
     try:
-        from src.utils.selection_utils import load_background_settings
-        from src.components.sidebar import set_background_image, set_sidebar_background
+        from taskgui.utils.selection_utils import load_background_settings
+        from taskgui.components.sidebar import set_background_image, set_sidebar_background
         
         # 获取背景设置
         bg_settings = load_background_settings()

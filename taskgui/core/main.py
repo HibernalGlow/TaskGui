@@ -9,10 +9,10 @@ import atexit
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # 导入模块化组件
-from src.ui.config import setup_page_config
-from src.ui.styles import apply_custom_css, add_clipboard_js
-from src.app import main
-from src.utils.selection_utils import get_memory_usage, run_gc, clear_memory_cache
+from taskgui.ui.config import setup_page_config
+from taskgui.ui.styles import apply_custom_css, add_clipboard_js
+from taskgui.app import main
+from taskgui.utils.selection_utils import get_memory_usage, run_gc, clear_memory_cache
 
 # 内存管理配置
 MEMORY_CHECK_INTERVAL = 60  # 内存检查间隔（秒）

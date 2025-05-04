@@ -1,5 +1,5 @@
 import streamlit as st
-from src.views.table.aggrid_config import update_aggrid_setting, reset_to_default_settings
+from taskgui.views.table.aggrid_config import update_aggrid_setting, reset_to_default_settings
 
 def render_settings_ui():
     """渲染AgGrid高级设置UI"""

@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-from src.utils.selection_utils import update_task_selection, get_task_selection_state
+from taskgui.utils.selection_utils import update_task_selection, get_task_selection_state
 
 def prepare_display_data(filtered_df):
     """准备表格显示数据"""
@@ -29,7 +29,7 @@ def prepare_display_data(filtered_df):
 
 def process_grid_selection_changes(grid_return):
     """处理表格勾选状态变化"""
-    from src.utils.selection_utils import force_save_state, get_selected_tasks
+    from taskgui.utils.selection_utils import force_save_state, get_selected_tasks
     
     if 'data' not in grid_return:
         return False

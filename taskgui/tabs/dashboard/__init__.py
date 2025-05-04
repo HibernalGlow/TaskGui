@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 from streamlit_echarts import st_echarts
 from datetime import datetime, timedelta
-from src.utils.selection_utils import get_global_state, get_selected_tasks
-from src.components.tag_filters import get_all_tags
+from taskgui.utils.selection_utils import get_global_state, get_selected_tasks
+from taskgui.components.tag_filters import get_all_tags
 
 def render_dashboard():
     """渲染仪表盘页面"""

@@ -9,19 +9,19 @@ import gc
 from code_editor import code_editor
 
 # 导入自定义模块
-from src.utils.session_utils import init_session_state, setup_css
-from src.services.taskfile import load_taskfile, read_taskfile
-from src.services.dataframe import prepare_dataframe, filter_tasks
-from src.components.tag_filters import get_all_tags, render_tag_filters
-from src.views.table.table_view import render_table_view
-from src.views.card.card_view import render_card_view
-from src.components.sidebar import render_sidebar, get_base64_encoded_image, set_background_image, set_sidebar_background
-from src.utils.file_utils import open_file, get_directory_files, find_taskfiles, get_nearest_taskfile, copy_to_clipboard, get_task_command
-from src.services.task_runner import run_task_via_cmd, run_multiple_tasks
-from src.components.preview_card import render_action_buttons
-from src.manage.state_manager import render_state_manager
-from src.tabs.dashboard import render_dashboard
-from src.utils.selection_utils import (
+from taskgui.utils.session_utils import init_session_state, setup_css
+from taskgui.services.taskfile import load_taskfile, read_taskfile
+from taskgui.services.dataframe import prepare_dataframe, filter_tasks
+from taskgui.components.tag_filters import get_all_tags, render_tag_filters
+from taskgui.views.table.table_view import render_table_view
+from taskgui.views.card.card_view import render_card_view
+from taskgui.components.sidebar import render_sidebar, get_base64_encoded_image, set_background_image, set_sidebar_background
+from taskgui.utils.file_utils import open_file, get_directory_files, find_taskfiles, get_nearest_taskfile, copy_to_clipboard, get_task_command
+from taskgui.services.task_runner import run_task_via_cmd, run_multiple_tasks
+from taskgui.components.preview_card import render_action_buttons
+from taskgui.manage.state_manager import render_state_manager
+from taskgui.tabs.dashboard import render_dashboard
+from taskgui.utils.selection_utils import (
     get_global_state, update_global_state, 
     export_yaml_state as export_global_state_yaml, 
     import_global_state_yaml,
@@ -33,10 +33,10 @@ from src.utils.selection_utils import (
 )
 
 # 导入新的模块化组件
-from src.ui.config import setup_page_config
-from src.ui.styles import apply_custom_css, add_clipboard_js
-from src.tabs.settings import render_settings_tab, load_basic_settings
-from src.tabs.preview_tab import render_preview_tab
+from taskgui.ui.config import setup_page_config
+from taskgui.ui.styles import apply_custom_css, add_clipboard_js
+from taskgui.tabs.settings import render_settings_tab, load_basic_settings
+from taskgui.tabs.preview_tab import render_preview_tab
 
 # 导入Pillow增强插件
 try:
@@ -92,7 +92,7 @@ def main():
         init_global_state()
         
         # 初始化AgGrid设置
-        from src.views.table.aggrid_config import init_aggrid_settings
+        from taskgui.views.table.aggrid_config import init_aggrid_settings
         init_aggrid_settings()
         
         # 加载背景设置
@@ -105,7 +105,7 @@ def main():
                 st.session_state.background_settings['sidebar_banner_path'] = ''
         
         # 获取任务文件管理器
-        from src.utils.taskfile_manager import get_taskfile_manager
+        from taskgui.utils.taskfile_manager import get_taskfile_manager
         taskfile_manager = get_taskfile_manager()
         
         # 获取可用Taskfile列表

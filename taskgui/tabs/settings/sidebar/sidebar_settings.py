@@ -1,5 +1,5 @@
 import streamlit as st
-from src.utils.selection_utils import get_card_view_settings, update_card_view_settings
+from taskgui.utils.selection_utils import get_card_view_settings, update_card_view_settings
 
 def render_sidebar_settings():
     """渲染侧边栏设置标签页"""

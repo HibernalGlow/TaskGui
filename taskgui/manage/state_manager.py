@@ -4,7 +4,7 @@ import os
 import time
 import gc
 from code_editor import code_editor
-from src.utils.selection_utils import (
+from taskgui.utils.selection_utils import (
     get_global_state, update_global_state, 
     export_yaml_state as export_global_state_yaml, 
     import_global_state_yaml,

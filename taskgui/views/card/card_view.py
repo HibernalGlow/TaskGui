@@ -1,10 +1,10 @@
 import streamlit as st
 import os
-from src.utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
-from src.services.task_runner import run_task_via_cmd
-from src.components.batch_operations import render_batch_operations
-from src.utils.selection_utils import update_task_selection, get_task_selection_state, init_global_state, record_task_run, load_local_config
-from src.views.card.task_card import render_task_card
+from taskgui.utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
+from taskgui.services.task_runner import run_task_via_cmd
+from taskgui.components.batch_operations import render_batch_operations
+from taskgui.utils.selection_utils import update_task_selection, get_task_selection_state, init_global_state, record_task_run, load_local_config
+from taskgui.views.card.task_card import render_task_card
 
 def group_tasks_by_first_tag(tasks_df):
     """按第一个标签对任务进行分组

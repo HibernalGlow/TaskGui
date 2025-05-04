@@ -1,10 +1,10 @@
 import streamlit as st
 import os
 import pandas as pd
-from src.utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
-from src.views.table.aggrid_table import render_aggrid_table
-from src.components.batch_operations import render_batch_operations
-from src.utils.selection_utils import force_save_state
+from taskgui.utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
+from taskgui.views.table.aggrid_table import render_aggrid_table
+from taskgui.components.batch_operations import render_batch_operations
+from taskgui.utils.selection_utils import force_save_state
 
 def render_table_view(filtered_df, current_taskfile, show_sidebar=True):
     """

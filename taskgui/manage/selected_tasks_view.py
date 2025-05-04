@@ -3,10 +3,10 @@ import os
 import yaml
 import shutil
 from datetime import datetime
-from src.utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
-from src.services.task_runner import run_task_via_cmd
-from src.views.card.task_card_editor import render_task_edit_form
-from src.utils.selection_utils import clear_all_selections, get_global_state, init_global_state
+from taskgui.utils.file_utils import get_task_command, copy_to_clipboard, open_file, get_directory_files
+from taskgui.services.task_runner import run_task_via_cmd
+from taskgui.views.card.task_card_editor import render_task_edit_form
+from taskgui.utils.selection_utils import clear_all_selections, get_global_state, init_global_state
 
 def render_selected_tasks_section(filtered_df, current_taskfile):
     """渲染已选择任务的区域，包括清除选择按钮和卡片视图"""
@@ -32,7 +32,7 @@ def render_selected_tasks_section(filtered_df, current_taskfile):
             if not selected_tasks:
                 st.warning("请先选择要运行的任务")
             else:
-                from src.services.task_runner import run_multiple_tasks
+                from taskgui.services.task_runner import run_multiple_tasks
                 with st.spinner(f"正在启动 {len(selected_tasks)} 个任务..."):
                     result_msgs = run_multiple_tasks(
                         selected_tasks, 
@@ -161,7 +161,7 @@ def render_selected_tasks_sidebar(filtered_df, current_taskfile):
             if not selected_tasks:
                 st.warning("请先选择要运行的任务")
             else:
-                from src.services.task_runner import run_multiple_tasks
+                from taskgui.services.task_runner import run_multiple_tasks
                 with st.spinner(f"正在启动 {len(selected_tasks)} 个任务..."):
                     result_msgs = run_multiple_tasks(
                         selected_tasks, 

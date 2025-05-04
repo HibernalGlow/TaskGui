@@ -1,6 +1,6 @@
 import streamlit as st
-from src.utils.file_utils import get_task_command, copy_to_clipboard
-from src.services.task_runner import run_multiple_tasks
+from taskgui.utils.file_utils import get_task_command, copy_to_clipboard
+from taskgui.services.task_runner import run_multiple_tasks
 
 def render_batch_operations(current_taskfile, view_key="default"):
     """

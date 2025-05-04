@@ -21,7 +21,7 @@ def render_tag_filters(all_tags):
 def get_all_tags(taskfile_path):
     """获取所有可用的标签"""
     try:
-        from src.services.taskfile import read_taskfile
+        from taskgui.services.taskfile import read_taskfile
         tasks_df = read_taskfile(taskfile_path)
         all_tags = []
         for tags in tasks_df["tags"]:

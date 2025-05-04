@@ -1,19 +1,19 @@
 import streamlit as st
-from src.services.taskfile import read_taskfile, load_taskfile
-from src.utils.selection_utils import save_favorite_tags, save_background_settings, load_background_settings, get_selected_tasks, get_card_view_settings, load_local_config, update_global_state, get_global_state, get_task_selection_state, update_task_selection, record_task_run
+from taskgui.services.taskfile import read_taskfile, load_taskfile
+from taskgui.utils.selection_utils import save_favorite_tags, save_background_settings, load_background_settings, get_selected_tasks, get_card_view_settings, load_local_config, update_global_state, get_global_state, get_task_selection_state, update_task_selection, record_task_run
 import os
 import sys
 import subprocess
 import base64
-from src.components.preview_card import render_action_buttons
+from taskgui.components.preview_card import render_action_buttons
 import pandas as pd
-from src.utils.file_utils import get_directory_files, get_task_command
-from src.services.task_runner import run_task_via_cmd
-from src.views.card.card_view import group_tasks_by_first_tag, sort_grouped_tasks
-from src.utils.file_utils import copy_to_clipboard
+from taskgui.utils.file_utils import get_directory_files, get_task_command
+from taskgui.services.task_runner import run_task_via_cmd
+from taskgui.views.card.card_view import group_tasks_by_first_tag, sort_grouped_tasks
+from taskgui.utils.file_utils import copy_to_clipboard
 import hashlib
 # 导入已被移到设置页面的任务文件管理组件 (仅用于注释，不使用)
-# from src.components.taskfile_manager_ui import render_taskfile_manager_expander
+# from taskgui.components.taskfile_manager_ui import render_taskfile_manager_expander
 
 def get_tag_color(tag):
     """为标签生成一致的颜色
@@ -354,7 +354,7 @@ def render_edit_task_expander(current_taskfile):
             st.markdown(f"<div style='font-size:1rem; font-weight:bold; margin-bottom:0.5rem;'>当前编辑: {st.session_state.edit_task_in_sidebar.get('name', '')}</div>", unsafe_allow_html=True)
             
             # 使用task_card_editor中的函数渲染编辑表单
-            from src.views.card.task_card_editor import render_task_edit_form
+            from taskgui.views.card.task_card_editor import render_task_edit_form
             
             # 定义保存后的回调函数
             def on_save_callback():
@@ -480,7 +480,7 @@ def render_system_expander(current_taskfile):
 def render_appearance_expander(current_taskfile):
     """渲染外观设置expander"""
     # 导入背景设置相关函数
-    from src.utils.selection_utils import load_background_settings, save_background_settings
+    from taskgui.utils.selection_utils import load_background_settings, save_background_settings
     
     # 获取当前背景设置
     if 'background_settings' not in st.session_state:
