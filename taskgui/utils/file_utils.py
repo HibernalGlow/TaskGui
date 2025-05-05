@@ -48,14 +48,25 @@ def get_task_command(task_name, taskfile_path=None):
 # 查找Taskfile文件
 def find_taskfiles(start_dir=None):
     """
-    在指定目录及其父目录中寻找Taskfile
+    获取可用的Taskfile列表
     
     参数:
-        start_dir: 起始目录
+        start_dir: 起始目录（可选）
         
     返回:
         Taskfile路径列表
     """
+    from taskgui.config.taskfile_manager import get_taskfile_manager
+    
+    # 优先从配置中获取已添加的任务文件
+    manager = get_taskfile_manager()
+    taskfiles = manager.get_taskfiles()
+    
+    # 如果配置中已有任务文件，直接返回
+    if taskfiles:
+        return taskfiles
+    
+    # 如果配置中没有任务文件，则通过文件系统搜索
     if not start_dir:
         start_dir = os.getcwd()
     
@@ -68,19 +79,19 @@ def find_taskfiles(start_dir=None):
         '.task.y*ml'
     ]
     
-    taskfiles = []
+    found_taskfiles = []
     
     # 在当前目录及子目录中查找
     for pattern in taskfile_patterns:
         search_pattern = os.path.join(start_dir, '**', pattern)
-        taskfiles.extend(glob.glob(search_pattern, recursive=True))
+        found_taskfiles.extend(glob.glob(search_pattern, recursive=True))
     
     # 添加当前目录的匹配
     for pattern in taskfile_patterns:
         search_pattern = os.path.join(start_dir, pattern)
-        taskfiles.extend(glob.glob(search_pattern))
+        found_taskfiles.extend(glob.glob(search_pattern))
     
-    return sorted(list(set(taskfiles)))
+    return sorted(list(set(found_taskfiles)))
 
 # 获取最近的Taskfile
 def get_nearest_taskfile(start_dir=None):
@@ -291,4 +302,4 @@ def resolve_taskfile_variables(path):
         
     except Exception as e:
         print(f"解析Taskfile变量时出错: {str(e)}")
-        return path 
+        return path
