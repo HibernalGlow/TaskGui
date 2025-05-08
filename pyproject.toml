@@ -35,7 +35,7 @@ dependencies = [
     "pillow-avif-plugin",
     "pillow-jxl-plugin",
     "streamlit_echarts",
-
+    "pystray>=0.19.5",
 ]
 
 [project.optional-dependencies]
@@ -64,6 +64,5 @@ target-version = ["py38"]
 profile = "black"
 line_length = 88
 [project.scripts]
-taskst = "taskgui.core.cli:main"
-tst = "taskgui.core.cli:main"
-
+taskst = "taskgui.cli:main"
+tst = "taskgui.cli:main"
