@@ -20,9 +20,15 @@ class TaskfileManager:
     
     def init_manager(self) -> None:
         """初始化管理器"""
-        # 确保会话状态中有taskfile配置
-        if 'taskfiles_config' not in st.session_state:
-            st.session_state.taskfiles_config = self.load_taskfiles_config()
+        try:
+            # 确保会话状态中有taskfile配置
+            if 'taskfiles_config' not in st.session_state:
+                st.session_state.taskfiles_config = self.load_taskfiles_config()
+        except Exception as e:
+            print(f"初始化Taskfile配置时出错: {str(e)}")
+            # 即使session_state无法访问，也提供默认配置
+            # 这样托盘功能仍然可以工作
+            self._default_config = {"taskfiles": [], "active_taskfile": None, "merge_mode": False}
     
     def load_taskfiles_config(self) -> Dict[str, Any]:
         """从配置文件加载Taskfile配置"""
