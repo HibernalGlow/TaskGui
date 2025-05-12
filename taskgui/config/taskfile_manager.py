@@ -26,12 +26,16 @@ class TaskfileManager:
             # 确保会话状态中有taskfile配置
             # 先检查st对象是否有session_state属性
             if hasattr(st, 'session_state'):
-                if 'taskfiles_config' not in st.session_state:
-                    st.session_state.taskfiles_config = self.load_taskfiles_config()
+                # 检查session_state中是否已有taskfiles_config
+                if not hasattr(st.session_state, 'taskfiles_config'):
+                    config = self.load_taskfiles_config()
+                    st.session_state.taskfiles_config = config
+                    print("初始化taskfiles_config成功")
             else:
                 print("警告: streamlit的session_state不可用")
         except Exception as e:
-            print(f"初始化Taskfile配置时出错: {str(e)}")            # 即使session_state无法访问，也提供默认配置
+            print(f"初始化Taskfile配置时出错: {str(e)}")
+            # 即使session_state无法访问，也提供默认配置
             # 这样托盘功能仍然可以工作
     
     def _get_config_safe(self) -> Dict[str, Any]:

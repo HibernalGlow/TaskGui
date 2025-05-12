@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from taskgui.config.taskfile_manager import get_taskfile_manager
-from taskgui.utils.file_utils import find_taskfiles, get_nearest_taskfile
+from taskgui.utils.file_utils import find_taskfiles
 from taskgui.services.taskfile import load_taskfile
 from taskgui.utils.selection_utils import register_task_file, register_tasks_from_df
 

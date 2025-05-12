@@ -40,6 +40,12 @@ def get_task_command(task_name, taskfile_path=None):
     返回:
         命令字符串
     """
+    # 如果未指定taskfile_path，使用配置中的活动taskfile
+    if not taskfile_path:
+        from taskgui.config.taskfile_manager import get_taskfile_manager
+        manager = get_taskfile_manager()
+        taskfile_path = manager.get_active_taskfile()
+    
     if taskfile_path and os.path.exists(taskfile_path):
         return f'task --taskfile "{taskfile_path}" {task_name}'
     else:
@@ -63,7 +69,7 @@ def find_taskfiles(start_dir=None):
     taskfiles = manager.get_taskfiles()
     
     # 如果配置中已有任务文件，直接返回
-    if taskfiles:
+    if (taskfiles):
         return taskfiles
     
     # 如果配置中没有任务文件，则通过文件系统搜索
@@ -94,16 +100,33 @@ def find_taskfiles(start_dir=None):
     return sorted(list(set(found_taskfiles)))
 
 # 获取最近的Taskfile
-def get_nearest_taskfile(start_dir=None):
+def get_nearest_taskfile(start_dir=None, prefer_config=True):
     """
     获取最近的Taskfile
     
     参数:
         start_dir: 起始目录
+        prefer_config: 是否优先使用配置中的活动Taskfile
         
     返回:
         Taskfile的完整路径，如果没有找到则返回None
     """
+    # 优先使用配置中的活动Taskfile
+    if prefer_config:
+        from taskgui.config.taskfile_manager import get_taskfile_manager
+        manager = get_taskfile_manager()
+        active_taskfile = manager.get_active_taskfile()
+        if active_taskfile and os.path.exists(active_taskfile):
+            return active_taskfile
+        
+        # 如果优先配置但是没有找到活动taskfile，再看是否有其他配置的taskfiles
+        taskfiles = manager.get_taskfiles()
+        if taskfiles:
+            # 如果有配置的taskfiles，使用第一个存在的文件
+            for tf in taskfiles:
+                if os.path.exists(tf):
+                    return tf
+    
     if not start_dir:
         start_dir = os.getcwd()
     
@@ -146,6 +169,33 @@ def get_nearest_taskfile(start_dir=None):
     # 如果还没找到，则返回已找到的第一个Taskfile
     taskfiles = find_taskfiles(start_dir)
     return taskfiles[0] if taskfiles else None
+
+# 获取配置中的Taskfile
+def get_config_taskfile():
+    """
+    只从配置中获取活动Taskfile，不会查找文件系统
+    
+    返回:
+        配置中的活动Taskfile路径，如果没有则返回None
+    """
+    from taskgui.config.taskfile_manager import get_taskfile_manager
+    manager = get_taskfile_manager()
+    active_taskfile = manager.get_active_taskfile()
+    
+    # 确保文件仍然存在
+    if active_taskfile and os.path.exists(active_taskfile):
+        return active_taskfile
+    
+    # 如果活动taskfile不存在，尝试使用配置的其他taskfile
+    taskfiles = manager.get_taskfiles()
+    if taskfiles:
+        for tf in taskfiles:
+            if os.path.exists(tf):
+                # 找到一个存在的taskfile，设为活动taskfile
+                manager.set_active_taskfile(tf)
+                return tf
+    
+    return None
 
 # 打开文件或目录
 def open_file(file_path):
@@ -257,8 +307,8 @@ def resolve_taskfile_variables(path):
     if "{{." not in path:
         return path
         
-    # 获取Taskfile路径
-    taskfile_path = get_nearest_taskfile()
+    # 获取Taskfile路径，优先使用配置中的活动Taskfile
+    taskfile_path = get_nearest_taskfile(prefer_config=True)
     if not taskfile_path:
         print("无法找到Taskfile.yml文件")
         return path

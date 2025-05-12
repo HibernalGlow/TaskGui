@@ -112,6 +112,10 @@ def main():
         from taskgui.config.taskfile_manager import get_taskfile_manager
         taskfile_manager = get_taskfile_manager()
         
+        # 确保st.session_state.taskfiles_config已初始化
+        if not hasattr(st.session_state, 'taskfiles_config'):
+            st.session_state.taskfiles_config = taskfile_manager.load_taskfiles_config()
+            
         # 获取可用Taskfile列表
         taskfiles = find_taskfiles()
         if not taskfiles:
@@ -121,10 +125,8 @@ def main():
         # 获取当前活动Taskfile或默认Taskfile
         active_taskfile = taskfile_manager.get_active_taskfile()
         if not active_taskfile:
-            # 如果没有活动任务文件，使用最近的或第一个可用的
-            default_taskfile = get_nearest_taskfile()
-            if not default_taskfile:
-                default_taskfile = taskfiles[0]
+            # 如果没有活动任务文件，使用第一个可用的任务文件
+            default_taskfile = taskfiles[0]
             
             # 设置为活动任务文件
             taskfile_manager.set_active_taskfile(default_taskfile)
@@ -133,7 +135,7 @@ def main():
         # 确保活动任务文件存在
         if not os.path.exists(active_taskfile):
             # 如果活动任务文件不存在，重置为默认值
-            default_taskfile = get_nearest_taskfile()
+            default_taskfile = get_nearest_taskfile(prefer_config=True)
             if not default_taskfile:
                 default_taskfile = taskfiles[0] if taskfiles else None
                 
@@ -142,8 +144,8 @@ def main():
                 taskfile_manager.set_active_taskfile(default_taskfile)
                 active_taskfile = default_taskfile
             else:
-                st.error("所有配置的任务文件都不存在。")
-                return
+                st.error("未找到有效的Taskfile，请添加或创建一个。")
+                active_taskfile = None
         
         # 注册任务文件
         register_task_file(active_taskfile)

@@ -85,7 +85,7 @@ def render_card_settings():
     )
     
     # 获取当前任务文件路径
-    default_taskfile = get_nearest_taskfile()
+    default_taskfile = get_nearest_taskfile(prefer_config=True)
     
     # 获取所有可用标签
     all_tags = get_all_tags(default_taskfile) if default_taskfile else []
@@ -103,4 +103,4 @@ def render_card_settings():
         config['card_group_by_tag'] = card_group_by_tag
         config['pinned_tags'] = pinned_tags
         save_local_config(config)
-        st.success("设置已保存") 
+        st.success("设置已保存")
