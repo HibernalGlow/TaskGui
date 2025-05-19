@@ -1,0 +1,3 @@
+@echo off
+echo 正在启动 TaskST 桌面应用...
+python tauri_app\main.py

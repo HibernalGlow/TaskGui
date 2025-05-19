@@ -1,0 +1,9 @@
+identifier = "default"
+description = "TaskST应用的基础权限配置"
+windows = ["main"]
+permissions = [
+    "core:default",
+    "pytauri:default", # 用于pytauri的IPC通信
+    "dialog:default",
+    "opener:default"   # 允许打开外部链接
+]

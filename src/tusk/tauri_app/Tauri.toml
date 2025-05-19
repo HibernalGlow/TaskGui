@@ -1,0 +1,18 @@
+"$schema" = "https://schema.tauri.app/config/2"
+productName = "TaskST Desktop"
+version = "0.1.0"
+identifier = "com.taskst.desktop"
+
+[build]
+frontendDist = "./frontend"
+
+[app]
+withGlobalTauri = true
+
+[[app.windows]]
+title = "TaskST - 任务管理器"
+width = 1200
+height = 800
+resizable = true
+decorations = true
+fullscreen = false

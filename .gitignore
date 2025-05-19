@@ -176,6 +176,5 @@ src/convert/compression_blacklist.json
 *.bak.*
 *.bak
 /__pycache__
-/config_backup
 config.yaml
 /taskgui/config/config.yaml

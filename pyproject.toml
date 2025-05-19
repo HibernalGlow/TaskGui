@@ -45,14 +45,19 @@ dev = [
     "isort",
 ]
 
+desktop = [
+    "pytauri-wheel==0.5.*",
+    "anyio",
+]
+
 [tool.setuptools]
 # 修改包目录配置，让setuptools找到当前目录
-package-dir = {"" = "."}
+package-dir = {"" = "src"}
 # 不指定特定的包名，让setuptools自动发现
 
 [tool.setuptools.packages.find]
-# 包含当前目录，不需要指定task_st目录
-include = ["*"]
+# 包含taskst包，明确指定要包含的包
+where = ["src"]
 # 排除测试和文档目录
 exclude = ["tests", "docs"]
 
@@ -64,5 +69,5 @@ target-version = ["py38"]
 profile = "black"
 line_length = 88
 [project.scripts]
-taskst = "taskgui.cli:main"
-tst = "taskgui.cli:main"
+taskst = "taskst.cli:main"
+tst = "taskst.cli:main"
